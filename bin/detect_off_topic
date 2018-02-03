@@ -1,0 +1,5 @@
+#!/usr/bin/env python
+
+import offtopic
+
+raise NotImplementedError("No script here yet, please come back later.")
