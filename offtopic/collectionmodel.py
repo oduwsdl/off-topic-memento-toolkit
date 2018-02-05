@@ -156,6 +156,7 @@ class CollectionModel:
                 )
 
     def getTimeMap(self, urit):
+        # TODO: there may be too much data for low memory systems
         return copy.deepcopy( self.collection_timemaps[urit] )
 
     def addMemento(self, urim, content, headers):
