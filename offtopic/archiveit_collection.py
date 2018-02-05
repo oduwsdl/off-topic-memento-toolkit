@@ -333,8 +333,6 @@ def scrape_main_collection_data(soup):
 
 def scrape_optional_collection_data(soup):
 
-    logger = logging.getLogger(__name__)
-
     data = {}
 
     metadata_tags = soup.find_all("div", "entity-meta")
@@ -352,9 +350,6 @@ def scrape_optional_collection_data(soup):
 def get_metadata_from_web_page(pages_dir, data_type):
 
     logger = logging.getLogger(__name__)
-
-    collection_data = {}
-    main_collection_data = {}
 
     logger.info("processing collection pages from directory {}".format(pages_dir))
 
@@ -377,8 +372,6 @@ def get_metadata_from_web_page(pages_dir, data_type):
             data_type, pages_dir))
 
 def scrape_seed_metadata(soup):
-
-    logger = logging.getLogger(__name__)
 
     data = []
 
@@ -550,8 +543,7 @@ class ArchiveItCollection:
                     self.logger.info("could not find cache, fetching web pages for seed metadata")
     
                     if not os.path.exists(self.pages_dir):
-                        os.makedirs(pages_dir)
-    
+                        os.makedirs(self.pages_dir)
     
                     fetch_collection_web_pages(self.collection_id, self.pages_dir, 
                         page_number=1, result_count=result_count, use_cache=self.use_cached)

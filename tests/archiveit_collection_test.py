@@ -68,8 +68,6 @@ class TestArchiveItCollection(unittest.TestCase):
         zipref.extractall(working_directory)
         zipref.close()
 
-        logger = logging.getLogger(__name__) 
-
         aic = ArchiveItCollection(12, working_directory=working_directory, use_cached=True)
 
         metadata = aic.return_collection_metadata_dict()
@@ -117,8 +115,6 @@ class TestArchiveItCollection(unittest.TestCase):
         zipref = zipfile.ZipFile(testdatafile, 'r')
         zipref.extractall(working_directory)
         zipref.close()
-
-        logger = logging.getLogger(__name__) 
 
         aic = ArchiveItCollection(6820, working_directory=working_directory, use_cached=True)
 
@@ -171,8 +167,6 @@ class TestArchiveItCollection(unittest.TestCase):
         zipref = zipfile.ZipFile(testdatafile, 'r')
         zipref.extractall(working_directory)
         zipref.close()
-
-        logger = logging.getLogger(__name__) 
 
         aic = ArchiveItCollection(7000, working_directory=working_directory, use_cached=True)
 
@@ -264,8 +258,6 @@ class TestArchiveItCollection(unittest.TestCase):
         zipref = zipfile.ZipFile(testdatafile, 'r')
         zipref.extractall(working_directory)
         zipref.close()
-
-        logger = logging.getLogger(__name__) 
 
         aic = ArchiveItCollection(5728, working_directory=working_directory, use_cached=True)
 
