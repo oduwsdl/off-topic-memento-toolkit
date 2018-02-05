@@ -186,3 +186,34 @@ class CollectionModel:
                     urim))
 
         return data
+
+    def getHeaders(self, objecttype, uri):
+
+        if objecttype == "timemaps":
+            directory = self.timemap_directory
+        else:
+            directory = self.memento_directory
+
+        try:
+
+            filename_digest = self.urimap[objecttype][uri]
+
+            with open("{}/{}_headers.json".format(
+                directory, filename_digest)) as fileinput:
+                data = json.load(fileinput)
+
+        except KeyError:
+            raise CollectionModelException(
+                "The URI [{}] headers are not saved "
+                "in this collection model".format(
+                    uri))
+
+        return data
+
+    def getMementoHeaders(self, urim):
+
+        return self.getHeaders("mementos", urim)
+
+    def getTimeMapHeaders(self, urit):
+
+        return self.getHeaders("timemaps", urit)

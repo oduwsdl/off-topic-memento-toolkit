@@ -248,8 +248,12 @@ class TestingCollectionModel(unittest.TestCase):
 
         self.assertEqual(testmemcontent, cm.getMementoContent(testurim))
 
+        self.assertEqual(testmemheaders, cm.getMementoHeaders(testurim))
+
         self.maxDiff = None
 
         self.assertEqual(testtimemapdict, cm.getTimeMap(testurit))
+
+        self.assertEqual(testtimemapheaders, cm.getTimeMapHeaders(testurit))
 
         shutil.rmtree(test_directory)
