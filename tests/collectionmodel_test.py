@@ -8,6 +8,10 @@ from datetime import datetime
 
 from offtopic import collectionmodel
 
+# Disabled this pylint rule because of too many false positives
+# Ref: http://pylint-messages.wikidot.com/messages:e1101
+# pylint: disable=no-member
+
 class TestingCollectionModel(unittest.TestCase):
 
     def check_fileobjects_exist(self, files_to_check):
@@ -250,10 +254,14 @@ class TestingCollectionModel(unittest.TestCase):
 
         self.assertEqual(testmemheaders, cm.getMementoHeaders(testurim))
 
+        self.assertEqual([testurim], cm.getMementoURIList())
+
         self.maxDiff = None
 
         self.assertEqual(testtimemapdict, cm.getTimeMap(testurit))
 
         self.assertEqual(testtimemapheaders, cm.getTimeMapHeaders(testurit))
+
+        self.assertEqual([testurit], cm.getTimeMapURIList())
 
         shutil.rmtree(test_directory)

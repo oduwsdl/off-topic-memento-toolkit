@@ -9,6 +9,10 @@ from datetime import date
 
 from offtopic.timemap import convert_LinkTimeMap_to_dict
 
+# Disabled this pylint rule because of too many false positives
+# Ref: http://pylint-messages.wikidot.com/messages:e1101
+# pylint: disable=no-member
+
 # Thanks https://stackoverflow.com/questions/11875770/how-to-overcome-datetime-datetime-not-json-serializable
 def json_serial(obj):
     """JSON serializer for objects not serializable by default json code"""
@@ -217,3 +221,15 @@ class CollectionModel:
     def getTimeMapHeaders(self, urit):
 
         return self.getHeaders("timemaps", urit)
+
+    def getMementoURIList(self):
+
+        return copy.deepcopy(
+            list(self.urimap["mementos"].keys())
+        )
+
+    def getTimeMapURIList(self):
+
+        return copy.deepcopy(
+            list(self.urimap["timemaps"].keys())
+        )
