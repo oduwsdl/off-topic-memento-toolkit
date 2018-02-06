@@ -6,8 +6,8 @@ import os
 from offtopic import CollectionModel
 from offtopic import get_collection_model
 
-import logging
-logging.basicConfig(level=logging.DEBUG)
+# import logging
+# logging.basicConfig(level=logging.DEBUG)
 
 class InputTypeTest(unittest.TestCase):
 
@@ -85,4 +85,6 @@ class InputTypeTest(unittest.TestCase):
             "from-warc::20110201020320::http://abcnews.go.com/video/playlistPane?id=2808979&videoID=12787224&tabID=9482931&sectionID=2808950&playlistID=2808979&page=8&pageSize=5"
         ))
 
-        shutil.rmtree(working_directory)
+        # testtmcontent = 
+
+        # shutil.rmtree(working_directory)

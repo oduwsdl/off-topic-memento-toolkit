@@ -1,10 +1,19 @@
 import logging
+import json
 
 from datetime import datetime
+from datetime import date
 
 from warcio.archiveiterator import ArchiveIterator
 
 from offtopic import CollectionModel
+
+def json_serial(obj):
+    """JSON serializer for objects not serializable by default json code"""
+
+    if isinstance(obj, (datetime, date)):
+        return obj.isoformat()
+    raise TypeError ("Type %s not serializable" % type(obj))
 
 def extract_urim_mdt_content_from_record(record):
 
@@ -54,6 +63,39 @@ def extract_urim_mdt_content_from_record(record):
 
     return urir, memento_datetime, headers, content
 
+def generate_timemap_from_timemap_data(urir, timemap_data):
+
+    timemap_dict = {}
+
+    timemap_dict["original_uri"] = urir
+    timemap_dict["timegate_uri"] = "from-warc::timegate::{}".format(urir)
+    timemap_dict["timemap_uri"] = {}
+    timemap_dict["timemap_uri"]["json_format"] = \
+        "from-warc::timegate::{}".format(urir)
+    timemap_dict["mementos"] = {}
+    timemap_dict["mementos"]["list"] = []
+
+    memento_list = timemap_dict["mementos"]["list"]
+
+    list_for_sorting = []
+
+    for entry in timemap_data:
+
+        mdt = entry["datetime"]
+        uri = entry["uri"]
+
+        memento_list.append(entry)
+
+        list_for_sorting.append((mdt, uri))
+
+    sorted_list_for_sorting = sorted(list_for_sorting)
+
+    timemap_dict["mementos"]["first"] = sorted_list_for_sorting[0]
+    timemap_dict["mementos"]["last"] = sorted_list_for_sorting[-1]
+
+    return timemap_dict
+
+
 def get_collection_model_from_warc(warcfiles, working_directory):
 
     logger = logging.getLogger(__name__)
@@ -61,6 +103,8 @@ def get_collection_model_from_warc(warcfiles, working_directory):
     logger.warn("Only HTML entities are extracted from warcfiles")
 
     cm = CollectionModel(working_directory)
+
+    timemaps_data = {}
 
     for warcfile in warcfiles:
 
@@ -76,6 +120,26 @@ def get_collection_model_from_warc(warcfiles, working_directory):
                         memento_datetime.strftime("%Y%m%d%H%M%S"), urir
                     )
                     cm.addMemento(urim, content, headers)
+
+                    timemaps_data.setdefault(urir, []).append({
+                        "datetime": memento_datetime,
+                        "uri": urim
+                    })
+
+    for urir in timemaps_data:
+
+        urit = "from-warc::timemap::{}".format(urir)
+
+        timemap_data = timemaps_data[urir]
+
+        timemap_json = json.dumps(
+            generate_timemap_from_timemap_data(urir, timemap_data),
+            default=json_serial
+        )
+
+        timemap_headers = {}
+
+        cm.addTimeMap(urit, timemap_json, timemap_headers)
 
     return cm
 

@@ -118,7 +118,6 @@ class CollectionModel:
                         "datetime": datetime.strptime( entry['datetime'], "%Y-%m-%dT%H:%M:%S" )
                         }
                     )
-                    
 
                 self.collection_timemaps[urit] = tmdata
 
@@ -134,7 +133,10 @@ class CollectionModel:
 
         if type(content) == str:
 
-            json_timemap = convert_LinkTimeMap_to_dict(content, skipErrors=True)
+            try:
+                json_timemap = json.loads(content)
+            except json.JSONDecodeError:
+                json_timemap = convert_LinkTimeMap_to_dict(content, skipErrors=True)
 
             self.collection_timemaps[urit] = json_timemap
 
