@@ -1,4 +1,5 @@
 import unittest
+import sys
 import os
 import hashlib
 import shutil
@@ -11,6 +12,9 @@ from offtopic import collectionmodel
 # Disabled this pylint rule because of too many false positives
 # Ref: http://pylint-messages.wikidot.com/messages:e1101
 # pylint: disable=no-member
+
+# import logging
+# logging.basicConfig(level=logging.DEBUG)
 
 class TestingCollectionModel(unittest.TestCase):
 
@@ -129,6 +133,14 @@ class TestingCollectionModel(unittest.TestCase):
         shutil.rmtree(working_directory)
 
     def test_mementos_happy_path(self):
+        """
+            The following should not happen:
+
+            TypeError: write() argument must be str, not bytes
+
+            so our input is bytes and our output is bytes to conform to the 
+            libraries that will use CollectionModel.
+        """
 
         working_directory="/tmp/collectionmodel_test/test_mementos"
         memento_directory = "{}/mementos/".format(working_directory)
@@ -143,7 +155,7 @@ class TestingCollectionModel(unittest.TestCase):
             "memento-datetime": "value3"
         }
 
-        testmemcontent = "<html><body>mementotext</body></html>"
+        testmemcontent = b"<html><body>mementotext</body></html>"
 
         testurim1 = "testing-storage:memento1"
 
@@ -161,6 +173,42 @@ class TestingCollectionModel(unittest.TestCase):
         self.check_fileobjects_exist(files_to_check)
 
         shutil.rmtree(working_directory)
+
+    def test_string_not_bytes_memento(self):
+
+
+        working_directory="/tmp/collectionmodel_test/test_mementos"
+        memento_directory = "{}/mementos/".format(working_directory)
+       
+        cm = collectionmodel.CollectionModel(working_directory=working_directory)
+
+        self.assertIsNotNone(cm, "CollectionModel failed to instantiate")
+
+        testmemheaders = {
+            "header1": "value1",
+            "header2": "value2",
+            "memento-datetime": "value3"
+        }
+
+        testmemcontent = b"<html><body>mementotext</body></html>"
+
+        testurim1 = "testing-storage:memento1"
+
+        cm.addMemento(testurim1, testmemcontent, testmemheaders )
+
+        self.assertEqual(cm.getMementoContent(testurim1), testmemcontent)
+
+        filename_digest = hashlib.sha3_256(bytes(testurim1, "utf8")).hexdigest()
+
+        files_to_check = [
+            "{}/{}_headers.json".format( memento_directory, filename_digest ),
+            "{}/{}.orig".format( memento_directory, filename_digest )
+        ]
+
+        self.check_fileobjects_exist(files_to_check)
+
+        shutil.rmtree(working_directory)
+
 
     def test_missing_memento(self):
 
@@ -203,7 +251,7 @@ class TestingCollectionModel(unittest.TestCase):
             "memento-datetime": "value3"
         }
 
-        testmemcontent = "<html><body>mementotext</body></html>"
+        testmemcontent = b"<html><body>mementotext</body></html>"
 
         testtimemapheaders = {
             "header1": "value1",

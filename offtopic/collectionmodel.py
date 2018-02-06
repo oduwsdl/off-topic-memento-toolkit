@@ -3,6 +3,7 @@ import os
 import hashlib
 import json
 import csv
+import logging
 
 from datetime import datetime
 from datetime import date
@@ -66,7 +67,10 @@ class CollectionModel:
         self.memento_metadatafile.close()
 
     def load_data_from_directory(self):
-        print("loading_data from directory {}".format(self.timemap_directory))
+
+        logger = logging.getLogger(__name__)
+
+        logger.info("loading data from directory {}".format(self.timemap_directory))
 
         timemap_metadatafile = open("{}/metadata.csv".format(
             self.timemap_directory
@@ -168,7 +172,7 @@ class CollectionModel:
             json.dump(headers, out, default=json_serial)
 
         with open("{}/{}.orig".format(
-            self.memento_directory, filename_digest), 'w') as out:
+            self.memento_directory, filename_digest), 'wb') as out:
             out.write(content)
 
         self.urimap["mementos"][urim] = filename_digest
@@ -182,7 +186,7 @@ class CollectionModel:
             filename_digest = self.urimap["mementos"][urim]
 
             with open("{}/{}.orig".format(
-                self.memento_directory, filename_digest)) as fileinput:
+                self.memento_directory, filename_digest), 'rb') as fileinput:
                 data = fileinput.read()
 
         except KeyError:

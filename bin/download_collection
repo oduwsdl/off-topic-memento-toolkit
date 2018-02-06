@@ -7,3 +7,4 @@ raise NotImplementedError("No script here yet, please come back later.")
 # determine the type of input: WARC, TimeMap, Archive-It Collection ID, Test Data
 # execute the appropriate input type class and fill the CollectionModel
 # print the directory name where the data is saved
+

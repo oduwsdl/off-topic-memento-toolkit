@@ -291,7 +291,7 @@ def scrape_main_collection_data(soup):
         data["description"] = \
             metadata_tags[0].find_all("p", "seamTextPara")[0].get_text().strip().replace('\n', '<br />')
     except IndexError:
-        logger.error("Failed to find description using screen scraping, "
+        logger.warning("Failed to find description using screen scraping, "
             "setting to No description...")
         data["description"] = "No description."
 
