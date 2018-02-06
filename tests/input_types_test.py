@@ -3,6 +3,8 @@ import shutil
 import zipfile
 import os
 
+from datetime import datetime
+
 from offtopic import CollectionModel
 from offtopic import get_collection_model
 
@@ -85,6 +87,35 @@ class InputTypeTest(unittest.TestCase):
             "from-warc::20110201020320::http://abcnews.go.com/video/playlistPane?id=2808979&videoID=12787224&tabID=9482931&sectionID=2808950&playlistID=2808979&page=8&pageSize=5"
         ))
 
-        # testtmcontent = 
+        testtmcontent = {
+            "original_uri": "http://crowdvoice.org/emergency-law-and-police-brutality-in-egypt/contents/4012/vote/down",
+            "timegate_uri": "from-warc::timegate::http://crowdvoice.org/emergency-law-and-police-brutality-in-egypt/contents/4012/vote/down",
+            "timemap_uri": {
+                "json_format": "from-warc::timemap::http://crowdvoice.org/emergency-law-and-police-brutality-in-egypt/contents/4012/vote/down"
+            },
+            "mementos": {
+                "list": [
+                    {
+                        "datetime": datetime(2011, 2, 1, 2, 5, 7),
+                        "uri": "from-warc::20110201020507::http://crowdvoice.org/emergency-law-and-police-brutality-in-egypt/contents/4012/vote/down"
+                    }
+                ],
+                "first": {
+                    "datetime": datetime(2011, 2, 1, 2, 5, 7),
+                    "uri": "from-warc::20110201020507::http://crowdvoice.org/emergency-law-and-police-brutality-in-egypt/contents/4012/vote/down"
+                },
+                "last": {
+                    "datetime": datetime(2011, 2, 1, 2, 5, 7),
+                    "uri": "from-warc::20110201020507::http://crowdvoice.org/emergency-law-and-police-brutality-in-egypt/contents/4012/vote/down"
+                }
+            }
+        }
 
-        # shutil.rmtree(working_directory)
+        self.maxDiff = None
+
+        self.assertEqual(
+            testtmcontent,
+            cm.getTimeMap("from-warc::timemap::http://crowdvoice.org/emergency-law-and-police-brutality-in-egypt/contents/4012/vote/down")
+        )
+
+        shutil.rmtree(working_directory)

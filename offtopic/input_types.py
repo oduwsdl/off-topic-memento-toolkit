@@ -71,7 +71,7 @@ def generate_timemap_from_timemap_data(urir, timemap_data):
     timemap_dict["timegate_uri"] = "from-warc::timegate::{}".format(urir)
     timemap_dict["timemap_uri"] = {}
     timemap_dict["timemap_uri"]["json_format"] = \
-        "from-warc::timegate::{}".format(urir)
+        "from-warc::timemap::{}".format(urir)
     timemap_dict["mementos"] = {}
     timemap_dict["mementos"]["list"] = []
 
@@ -90,17 +90,23 @@ def generate_timemap_from_timemap_data(urir, timemap_data):
 
     sorted_list_for_sorting = sorted(list_for_sorting)
 
-    timemap_dict["mementos"]["first"] = sorted_list_for_sorting[0]
-    timemap_dict["mementos"]["last"] = sorted_list_for_sorting[-1]
+    timemap_dict["mementos"]["first"] = {
+        "datetime": sorted_list_for_sorting[0][0],
+        "uri": sorted_list_for_sorting[0][1]
+    }
+
+    timemap_dict["mementos"]["last"] = {
+        "datetime": sorted_list_for_sorting[-1][0],
+        "uri": sorted_list_for_sorting[-1][1]
+    }
 
     return timemap_dict
-
 
 def get_collection_model_from_warc(warcfiles, working_directory):
 
     logger = logging.getLogger(__name__)
 
-    logger.warn("Only HTML entities are extracted from warcfiles")
+    logger.warning("Only HTML entities are extracted from warcfiles")
 
     cm = CollectionModel(working_directory)
 
@@ -144,9 +150,6 @@ def get_collection_model_from_warc(warcfiles, working_directory):
     return cm
 
 def get_collection_model_from_archiveit(archiveit_cid, working_directory):
-
-
-
     pass
 
 def get_collection_model_from_timemap(urit, working_directory):

@@ -135,6 +135,34 @@ class CollectionModel:
 
             try:
                 json_timemap = json.loads(content)
+                fdt = datetime.strptime(
+                    json_timemap["mementos"]["first"]["datetime"],
+                    "%Y-%m-%dT%H:%M:%S"
+                )
+                ldt = datetime.strptime(
+                    json_timemap["mementos"]["last"]["datetime"],
+                    "%Y-%m-%dT%H:%M:%S"
+                )
+
+                json_timemap["mementos"]["first"]["datetime"] = fdt
+                json_timemap["mementos"]["last"]["datetime"] = ldt
+
+                updated_memlist = []
+
+                for mem in json_timemap["mementos"]["list"]:
+                    mdt = datetime.strptime(
+                        mem["datetime"],
+                        "%Y-%m-%dT%H:%M:%S"
+                    )
+
+                    uri = mem["uri"]
+                    updated_memlist.append({
+                        "datetime": mdt,
+                        "uri": uri
+                    })
+
+                json_timemap["mementos"]["list"] = updated_memlist
+
             except json.JSONDecodeError:
                 json_timemap = convert_LinkTimeMap_to_dict(content, skipErrors=True)
 
@@ -146,7 +174,7 @@ class CollectionModel:
                 
             with open("{}/{}.json".format(
                 self.timemap_directory, filename_digest), 'w') as out:
-                json.dump(json_timemap, out, default=json_serial)
+                json.dump(json_timemap, out, default=json_serial, indent=4)
 
             with open("{}/{}.orig".format(
                 self.timemap_directory, filename_digest), 'w') as out:
