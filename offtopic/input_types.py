@@ -1,5 +1,7 @@
 import logging
 import json
+import requests
+import multiprocessing
 
 from datetime import datetime
 from datetime import date
@@ -7,6 +9,9 @@ from datetime import date
 from warcio.archiveiterator import ArchiveIterator
 
 from offtopic import CollectionModel
+from offtopic import ArchiveItCollection
+
+multiprocessing.cpu_count()
 
 def json_serial(obj):
     """JSON serializer for objects not serializable by default json code"""
@@ -150,7 +155,27 @@ def get_collection_model_from_warc(warcfiles, working_directory):
     return cm
 
 def get_collection_model_from_archiveit(archiveit_cid, working_directory):
-    pass
+    
+    aic = ArchiveItCollection(archiveit_cid, working_directory=working_directory)
+
+    cm = CollectionModel(working_directory)
+
+    seed_uris = aic.list_seed_uris()
+
+    for urir in seed_uris:
+        urit = "http://wayback.archive-it.org/{}/timemap/link/{}".format(
+            archiveit_cid, urir
+        )
+
+        r = requests.get(urit)
+
+        timemap_content = r.text
+
+        headers = dict(r.headers)
+
+        cm.addTimeMap(urit, timemap_content, headers)
+
+        r.close()
 
 def get_collection_model_from_timemap(urit, working_directory):
     pass
