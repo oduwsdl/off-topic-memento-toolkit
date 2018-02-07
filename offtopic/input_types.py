@@ -1,17 +1,18 @@
 import logging
 import json
-import requests
 import multiprocessing
 
 from datetime import datetime
 from datetime import date
 
+from requests_futures.sessions import FuturesSession
+from requests.exceptions import ConnectionError, TooManyRedirects
 from warcio.archiveiterator import ArchiveIterator
 
 from offtopic import CollectionModel
 from offtopic import ArchiveItCollection
 
-multiprocessing.cpu_count()
+cpu_count = multiprocessing.cpu_count()
 
 def json_serial(obj):
     """JSON serializer for objects not serializable by default json code"""
@@ -154,6 +155,35 @@ def get_collection_model_from_warc(warcfiles, working_directory):
 
     return cm
 
+def generate_archiveit_urits(cid, seed_uris):
+
+    urit_list = []
+
+    for urir in seed_uris:
+        urit = "http://wayback.archive-it.org/{}/timemap/link/{}".format(
+            cid, urir
+        )
+
+        urit_list.append(urit)  
+
+    return urit_list
+
+def get_uri_responses(session, uris):
+
+    futures = {}
+
+    for uri in uris:
+
+        futures[uri] = session.get(uri)
+
+    return futures
+
+def list_generator(input_list):
+
+    while len(input_list) > 0:
+        for item in input_list:
+            yield item
+
 def get_collection_model_from_archiveit(archiveit_cid, working_directory):
     
     aic = ArchiveItCollection(archiveit_cid, working_directory=working_directory)
@@ -162,20 +192,81 @@ def get_collection_model_from_archiveit(archiveit_cid, working_directory):
 
     seed_uris = aic.list_seed_uris()
 
-    for urir in seed_uris:
-        urit = "http://wayback.archive-it.org/{}/timemap/link/{}".format(
-            archiveit_cid, urir
-        )
+    urits = generate_archiveit_urits(archiveit_cid, seed_uris)
 
-        r = requests.get(urit)
+    with FuturesSession(max_workers=cpu_count) as session:
+        futures = get_uri_responses(session, urits)
 
-        timemap_content = r.text
+    working_uri_list = list(futures.keys())
 
-        headers = dict(r.headers)
+    for urit in list_generator(working_uri_list):
 
-        cm.addTimeMap(urit, timemap_content, headers)
+        if futures[urit].done():
 
-        r.close()
+            try:
+                response = futures[urit].result()
+
+                http_status = response.status_code
+
+                if http_status == 200:
+
+                    timemap_content = response.text
+                    timemap_headers = dict(response.headers)
+                    timemap_headers["http-status"] = http_status
+
+                    cm.addTimeMap(urit, timemap_content, timemap_headers)
+
+                # TODO: else store connection errors in CollectionModel
+            
+            except ConnectionError:
+                # TODO: store connection errors in CollectionModel
+                working_uri_list.remove(urit)
+
+            except TooManyRedirects:
+                # TODO: store connection errors in CollectionModel
+                working_uri_list.remove(urit)
+
+    urims = []
+
+    for urit in cm.getTimeMapURIList():
+
+        timemap = cm.getTimeMap(urit)
+        for memento in timemap["mementos"]["list"]:
+            urims.append(memento["uri"])
+
+    with FuturesSession(max_workers=cpu_count) as session:
+        futures = get_uri_responses(session, urims)
+
+    working_uri_list = list(futures.keys())
+
+    for urim in list_generator(working_uri_list):
+
+        if futures[urim].done():
+
+            try:
+                response = futures[urim].result()
+
+                http_status = response.status_code
+
+                if http_status == 200:
+
+                    memento_content = response.text
+                    memento_headers = dict(response.headers)
+                    memento_headers["http-status"] = http_status
+
+                    cm.addMemento(urim, memento_content, memento_headers)
+
+                # TODO: else store connection errors in CollectionModel
+            
+            except ConnectionError:
+                # TODO: store connection errors in CollectionModel
+                working_uri_list.remove(urit)
+
+            except TooManyRedirects:
+                # TODO: store connection errors in CollectionModel
+                working_uri_list.remove(urit)
+                
+    return cm
 
 def get_collection_model_from_timemap(urit, working_directory):
     pass

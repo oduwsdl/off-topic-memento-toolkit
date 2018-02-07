@@ -22,7 +22,7 @@ setup(name='offtopic2',
     packages=['offtopic'],
     scripts=['bin/detect_off_topic'],
     install_requires=[
-        'requests',
+        'requests_futures',
         'bs4'
     ],
     # test_suite='setup.offtopic_test_suite',
