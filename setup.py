@@ -20,7 +20,7 @@ setup(name='offtopic2',
     author_email='jones.shawn.m@gmail.com',
     license='MIT',
     packages=['offtopic'],
-    scripts=['bin/detect_off_topic'],
+    scripts=['bin/detect_off_topic', 'bin/download_collection'],
     install_requires=[
         'requests_futures',
         'bs4'
