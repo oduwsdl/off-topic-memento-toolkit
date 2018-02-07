@@ -1,10 +1,68 @@
 #!/usr/bin/env python
 
-# from offtopic import CollectionModel
+import sys
+import logging
+import argparse
 
-raise NotImplementedError("No script here yet, please come back later.")
+import offtopic
 
 # determine the type of input: WARC, TimeMap, Archive-It Collection ID, Test Data
 # execute the appropriate input type class and fill the CollectionModel
 # print the directory name where the data is saved
 
+def process_arguments(args):
+
+    parser = argparse.ArgumentParser(prog="python {}".format(args[0]),
+        description='Detecting off-topic webpages.',
+        formatter_class=argparse.RawTextHelpFormatter)
+
+    parser.add_argument('-i', '--input', dest='input_type',
+        required=True, type=offtopic.process_input_types,
+        help="input data to use with one of the following:\n"
+        "* warc=[warc-filenames separated by commas with no spaces] - EXPERIMENTAL\n"
+        "* archiveit=[collection identifier or collection URI]\n"
+        "* timemap=[URI of TimeMap]\n"
+        "* dir=[existing input directory from prior run]"
+        )
+
+    parser.add_argument('-d', '--directory', dest='working_directory',
+        default='/tmp/working',
+        help='The working directory holding the data being downloaded'
+        ' and processed.')
+
+    parser.add_argument('-l', '--logfile', dest='logfile',
+        default=sys.stdout,
+        help="path to logging file")
+
+    parser.add_argument('-v', '--verbose', dest='verbose',
+        action='store_true',
+        help="raise the logging level to debug for more verbose output")
+
+    return parser.parse_args()
+
+if __name__ == '__main__':
+
+    args = process_arguments(sys.argv)
+
+    logger = offtopic.get_logger(
+        __name__, offtopic.calculate_loglevel(args.verbose),
+        args.logfile
+    )
+
+    logger.info("Starting acquisition of memento collection")
+    logger.debug("command-line arguments: {}".format(args))
+
+    input_type = args.input_type[0]
+    input_type_arguments = args.input_type[1]
+
+    cm = offtopic.get_collection_model(
+        input_type, input_type_arguments, args.working_directory
+    )
+
+    logger.info("Output has been written or extract to {}".format(
+        args.working_directory
+    ))
+
+    logger.info("Finished acquisition run")
+
+raise NotImplementedError("No script here yet, please come back later.")

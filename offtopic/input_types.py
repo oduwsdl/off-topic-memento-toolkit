@@ -1,6 +1,8 @@
 import logging
 import json
 import multiprocessing
+import requests
+import csv
 
 from datetime import datetime
 from datetime import date
@@ -234,8 +236,14 @@ def get_collection_model_from_archiveit(archiveit_cid, working_directory):
         for memento in timemap["mementos"]["list"]:
             urims.append(memento["uri"])
 
+    fetch_mementos(urims, cm)
+                
+    return cm
+
+def fetch_mementos(urimlist, collectionmodel):
+
     with FuturesSession(max_workers=cpu_count) as session:
-        futures = get_uri_responses(session, urims)
+        futures = get_uri_responses(session, urimlist)
 
     working_uri_list = list(futures.keys())
 
@@ -254,25 +262,93 @@ def get_collection_model_from_archiveit(archiveit_cid, working_directory):
                     memento_headers = dict(response.headers)
                     memento_headers["http-status"] = http_status
 
-                    cm.addMemento(urim, memento_content, memento_headers)
+                    collectionmodel.addMemento(
+                        urim, memento_content, memento_headers)
 
                 # TODO: else store connection errors in CollectionModel
             
             except ConnectionError:
                 # TODO: store connection errors in CollectionModel
-                working_uri_list.remove(urit)
+                working_uri_list.remove(urim)
 
             except TooManyRedirects:
                 # TODO: store connection errors in CollectionModel
-                working_uri_list.remove(urit)
-                
-    return cm
+                working_uri_list.remove(urim)
 
 def get_collection_model_from_timemap(urit, working_directory):
-    pass
+    
+    cm = CollectionModel(working_directory=working_directory)
+
+    r = requests.get(urit)
+
+    http_status = r.status_code
+
+    if http_status == 200:
+        content = r.text
+        headers = dict(r.headers)
+        headers["http-status"] = http_status
+        cm.addTimeMap(urit, content, headers)
+
+        timemap = cm.getTimeMap(urit)
+
+        urims = []
+
+        for memento in timemap["mementos"]["list"]:
+            urims.append(memento["uri"])
+
+        fetch_mementos(urims, cm)
+
+    else:
+        # TODO: Make an exception specific to this module for this case
+        raise Exception("No TimeMap was acquired from URI-T {}".format(urit))
 
 def get_collection_model_from_datafile(datafile, working_directory):
-    pass
+
+    cm = CollectionModel(working_directory=working_directory)
+
+    with open(datafile) as tsvfile:
+
+        reader = csv.DictReader(tsvfile)
+        timemaps_data = {}
+
+        for row in reader:
+
+            urir = "datafile-{}".format(row["id"])
+            mdt = datetime.strptime(row["date"], "%Y%m%d%H%M%S")
+            urim = row["URI"]
+            # ontopic = row["label"]
+
+            timemaps_data.setdefault(urir, []).append({
+                "datetime": mdt,
+                "uri": urim
+            })
+
+    for urir in timemaps_data:
+
+        urit = "from-datafile::timemap::{}".format(urir)
+        timemap_data = timemaps_data[urir]
+        
+        timemap_json = json.dumps(
+            generate_timemap_from_timemap_data(urir, timemap_data),
+            default=json_serial         
+        )
+
+        timemap_headers = {}
+        cm.addTimeMap(urit, timemap_json, timemap_headers)
+
+    urims = []
+
+    for urit in cm.getTimeMapURIList():
+
+        timemap = cm.getTimeMap(urit)
+
+        for memento in timemap["mementos"]["list"]:
+            urims.append(memento["uri"])
+
+    fetch_mementos(urims, cm)
+
+    return cm
+
 
 def get_collection_model_from_directory(working_directory):
     
