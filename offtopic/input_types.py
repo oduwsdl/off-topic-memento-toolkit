@@ -188,6 +188,8 @@ def list_generator(input_list):
 
 def get_collection_model_from_archiveit(archiveit_cid, working_directory):
     
+    archiveit_cid = archiveit_cid[0]
+
     aic = ArchiveItCollection(archiveit_cid, working_directory=working_directory)
 
     cm = CollectionModel(working_directory)
