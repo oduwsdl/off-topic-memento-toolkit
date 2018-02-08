@@ -2,6 +2,7 @@
 
 import sys
 import logging
+import logging.config
 import argparse
 
 import offtopic
@@ -64,5 +65,3 @@ if __name__ == '__main__':
     ))
 
     logger.info("Finished acquisition run")
-
-raise NotImplementedError("No script here yet, please come back later.")

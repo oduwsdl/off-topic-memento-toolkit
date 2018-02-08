@@ -10,6 +10,8 @@ import sys
 from datetime import datetime
 from bs4 import BeautifulSoup
 
+logger = logging.getLogger(__name__)
+
 collection_uri_prefix = "https://archive-it.org/collections"
 
 class ArchiveItCollectionException(Exception):
@@ -17,7 +19,7 @@ class ArchiveItCollectionException(Exception):
 
 def fetch_collection_web_page(collection_id, pages_dir):
 
-    logger = logging.getLogger(__name__)
+    # logger = logging.getLogger(__name__)
 
     collection_uri = "{}/{}".format(collection_uri_prefix, collection_id) 
 
@@ -35,7 +37,7 @@ def fetch_collection_web_page(collection_id, pages_dir):
 
 def fetch_collection_web_pages(collection_id, pages_dir, page_number=1, result_count=None, use_cache=True):
 
-    logger = logging.getLogger(__name__)
+    # logger = logging.getLogger(__name__)
 
     nextpage = get_next_collection_page(
         collection_id, pages_dir, page_number, result_count, use_cache)
@@ -57,7 +59,7 @@ def fetch_collection_web_pages(collection_id, pages_dir, page_number=1, result_c
 
 def get_next_collection_page(collection_id, pages_dir, page_number=1, result_count=None, use_cache=True):
 
-    logger = logging.getLogger(__name__)
+    # logger = logging.getLogger(__name__)
 
     logger.debug("result count: [{}]".format(result_count))
     logger.debug("page_number: [{}]".format(page_number))
@@ -155,9 +157,13 @@ def get_seed_report_timestamp(collection_id, pages_dir, use_cache=True):
 
 def get_result_count(collection_id, pages_dir, use_cache=True):
 
-    logger = logging.getLogger(__name__)
+    # logger = logging.getLogger(__name__)
 
     result_count = None
+
+    logger.debug("calculating result count for cid {} using pages directory {}".format(
+        collection_id, pages_dir
+    ))
 
     if (not os.path.exists("{}/1.html".format(pages_dir))) or \
         use_cache == False:
@@ -201,7 +207,11 @@ def get_result_count(collection_id, pages_dir, use_cache=True):
 
 def get_page_count(collection_id, pages_dir, use_cache=True):
 
-    logger = logging.getLogger(__name__)
+    # logger = logging.getLogger(__name__)
+
+    logger.debug("getting page count for collection id {}, "
+        "saving to directory {}".format(collection_id, pages_dir)
+    )
 
     page_count = None
 
@@ -240,7 +250,7 @@ def get_page_count(collection_id, pages_dir, use_cache=True):
 
 def scrape_main_collection_data(soup):
 
-    logger = logging.getLogger(__name__)
+    # logger = logging.getLogger(__name__)
 
     data = {}
 
@@ -349,7 +359,7 @@ def scrape_optional_collection_data(soup):
 
 def get_metadata_from_web_page(pages_dir, data_type):
 
-    logger = logging.getLogger(__name__)
+    # logger = logging.getLogger(__name__)
 
     logger.info("processing collection pages from directory {}".format(pages_dir))
 
@@ -403,7 +413,7 @@ def scrape_seed_metadata(soup):
 
 def get_seed_metadata_from_web_pages(pages_dir):
 
-    logger = logging.getLogger(__name__)
+    # logger = logging.getLogger(__name__)
 
     seed_metadata = [] 
 
@@ -525,7 +535,7 @@ class ArchiveItCollection:
         if not self.seed_metadata_loaded:
            
             self.logger.info("seed metadata has not yet been loaded for "
-                "collection {}".format(self.collection_id)) 
+                "collection {}".format(self.collection_id))
             self.logger.debug("caching: {}".format(self.use_cached))
 
             page_count = get_page_count(self.collection_id, self.pages_dir, use_cache=self.use_cached)
@@ -537,6 +547,8 @@ class ArchiveItCollection:
             self.logger.info("result count from loading is [{}]".format(result_count))
 
             if result_count:
+
+                self.logger.debug("result count: {}".format(result_count))
 
                 if not (self.use_cached and os.path.exists("{}/{}.html".format(self.pages_dir, page_count))):
     
@@ -692,9 +704,10 @@ class ArchiveItCollection:
 
     def list_seed_uris(self):
 
+        self.load_collection_metadata()
         self.load_seed_metadata()
 
-        return list(self.seed_metadata.keys())
+        return list(self.seed_metadata["seeds"].keys())
 
     def get_seed_metadata(self, uri):
 
@@ -793,7 +806,7 @@ if __name__ == "__main__":
     if os.path.exists('logging.ini'):
         logging.config.fileConfig('logging.ini')
 
-    logger = logging.getLogger(__name__) 
+    # logger = logging.getLogger(__name__) 
 
     logger.info("beginning execution...")
 

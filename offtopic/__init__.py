@@ -12,3 +12,14 @@ __all__ = ["CollectionModel", "CollectionModelException",
     "get_collection_model", "process_similarity_measure_inputs",
     "process_input_types", "get_logger", "calculate_loglevel", 
     "supported_input_types"]
+
+
+import logging
+try:  # Python 2.7+
+    from logging import NullHandler
+except ImportError:
+    class NullHandler(logging.Handler):
+        def emit(self, record):
+            pass
+
+logging.getLogger(__name__).addHandler(NullHandler())

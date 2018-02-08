@@ -1,3 +1,4 @@
+import sys
 import logging
 import json
 import multiprocessing
@@ -14,6 +15,8 @@ from warcio.archiveiterator import ArchiveIterator
 from offtopic import CollectionModel
 from offtopic import ArchiveItCollection
 
+logger = logging.getLogger(__name__)
+
 cpu_count = multiprocessing.cpu_count()
 
 def json_serial(obj):
@@ -25,7 +28,7 @@ def json_serial(obj):
 
 def extract_urim_mdt_content_from_record(record):
 
-    logger = logging.getLogger(__name__)
+    # # logger = logging.getLogger(__name__)
 
     urir = None
     memento_datetime = None
@@ -112,7 +115,7 @@ def generate_timemap_from_timemap_data(urir, timemap_data):
 
 def get_collection_model_from_warc(warcfiles, working_directory):
 
-    logger = logging.getLogger(__name__)
+    # logger = logging.getLogger(__name__)
 
     logger.warning("Only HTML entities are extracted from warcfiles")
 
@@ -176,6 +179,8 @@ def get_uri_responses(session, uris):
 
     for uri in uris:
 
+        logger.debug("fetching uri {}".format(uri))
+
         futures[uri] = session.get(uri)
 
     return futures
@@ -188,13 +193,35 @@ def list_generator(input_list):
 
 def get_collection_model_from_archiveit(archiveit_cid, working_directory):
     
+    # logger = logging.getLogger(__name__)
+
     archiveit_cid = archiveit_cid[0]
 
-    aic = ArchiveItCollection(archiveit_cid, working_directory=working_directory)
+    logger.info("Acquiring Archive-It collection {}".format(
+        archiveit_cid
+    ))
+
+    # logger.setLevel(logging.INFO)
+
+    logger.error("log level is set to {} == {}".format(logger.level, logging.INFO))
+    logger.debug("acquiring metadata about Archive-It colleciton {}".format(
+        archiveit_cid
+    ))
+
+    aic = ArchiveItCollection(archiveit_cid, working_directory=working_directory,
+        logger=logger)
+
+    logger.debug("creating collection model")
 
     cm = CollectionModel(working_directory)
 
+    logger.debug("generating list of seed URIs")
+
     seed_uris = aic.list_seed_uris()
+
+    logger.debug("seed URIs: {}".format(
+        seed_uris
+    ))
 
     urits = generate_archiveit_urits(archiveit_cid, seed_uris)
 
@@ -205,7 +232,11 @@ def get_collection_model_from_archiveit(archiveit_cid, working_directory):
 
     for urit in list_generator(working_uri_list):
 
+        logging.debug("checking if URI {} is done downloading".format(urit))
+
         if futures[urit].done():
+
+            logger.debug("URI {} is done, extracting content".format(urit))
 
             try:
                 response = futures[urit].result()
@@ -221,6 +252,7 @@ def get_collection_model_from_archiveit(archiveit_cid, working_directory):
                     cm.addTimeMap(urit, timemap_content, timemap_headers)
 
                 # TODO: else store connection errors in CollectionModel
+                working_uri_list.remove(urit)
             
             except ConnectionError:
                 # TODO: store connection errors in CollectionModel
@@ -260,7 +292,7 @@ def fetch_mementos(urimlist, collectionmodel):
 
                 if http_status == 200:
 
-                    memento_content = response.text
+                    memento_content = bytes(response.text, 'utf8')
                     memento_headers = dict(response.headers)
                     memento_headers["http-status"] = http_status
 
@@ -268,6 +300,7 @@ def fetch_mementos(urimlist, collectionmodel):
                         urim, memento_content, memento_headers)
 
                 # TODO: else store connection errors in CollectionModel
+                working_uri_list.remove(urim)
             
             except ConnectionError:
                 # TODO: store connection errors in CollectionModel
@@ -368,7 +401,7 @@ supported_input_types = {
 
 def get_collection_model(input_type, arguments, directory):
     
-    logger = logging.getLogger(__name__)    
+    # logger = logging.getLogger(__name__)    
 
     logger.info("Using input type {}".format(input_type))
     logger.debug("input type arguments: {}".format(arguments))

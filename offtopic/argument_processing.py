@@ -1,6 +1,7 @@
 import argparse
 import sys
 import logging
+import logging.config
 
 from offtopic import supported_input_types
 
@@ -71,8 +72,33 @@ def process_input_types(input_argument):
 
 
 def get_logger(appname, loglevel, logfile):
+
     logger = logging.getLogger(appname)
-    logger.setLevel(logging.DEBUG)
+
+    logging.config.dictConfig({
+        'version': 1,
+        'disable_existing_loggers': False,
+        'formatters': {
+            'standard': {
+                'format': '%(asctime)s [%(levelname)s] %(name)s: %(message)s'
+            },
+        },
+        'handlers': {
+            'default': {
+                'level':'DEBUG',
+                'class':'logging.StreamHandler',
+            },
+        },
+        'loggers': {
+            '': {
+                'handlers': ['default'],
+                'level': 'DEBUG',
+                'propagate': True
+            }
+        }
+    })
+    
+    # logger.setLevel(logging.DEBUG)
 
     # shamelessly stolen from logging HOWTO
     if logfile == sys.stdout:
