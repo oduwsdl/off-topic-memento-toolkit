@@ -23,7 +23,8 @@ setup(name='offtopic2',
     scripts=['bin/detect_off_topic', 'bin/download_collection'],
     install_requires=[
         'requests_futures',
-        'bs4'
+        'bs4',
+        'justext'
     ],
     # test_suite='setup.offtopic_test_suite',
     test_suite="tests"

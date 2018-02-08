@@ -163,6 +163,8 @@ class TestingCollectionModel(unittest.TestCase):
 
         self.assertEqual(cm.getMementoContent(testurim1), testmemcontent)
 
+        self.assertEqual(cm.getMementoContentWithoutBoilerplate(testurim1), b"mementotext\n")
+
         filename_digest = hashlib.sha3_256(bytes(testurim1, "utf8")).hexdigest()
 
         files_to_check = [

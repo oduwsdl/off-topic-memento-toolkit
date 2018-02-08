@@ -8,6 +8,8 @@ import logging
 from datetime import datetime
 from datetime import date
 
+from justext import justext, get_stoplist
+
 from offtopic.timemap import convert_LinkTimeMap_to_dict
 
 # Disabled this pylint rule because of too many false positives
@@ -225,6 +227,42 @@ class CollectionModel:
                     urim))
 
         return data
+
+    def getMementoContentWithoutBoilerplate(self, urim):
+
+        content_without_boilerplate = None
+
+        try:
+
+            filename_digest = self.urimap["mementos"][urim]
+
+            boilerplate_filename = "{}/{}.orig.noboilerplate".format(
+                self.memento_directory, filename_digest)
+
+            if not os.path.exists(boilerplate_filename):
+
+                with open("{}/{}.orig".format(
+                    self.memento_directory, filename_digest), 'rb') as fileinput:
+                    data = fileinput.read()
+
+                paragraphs = justext(data, get_stoplist('English'))
+
+                with open(boilerplate_filename, 'wb') as bpfile:
+                    
+                    for paragraph in paragraphs:
+                        bpfile.write(bytes("{}\n".format(paragraph.text), "utf8"))
+
+            with open(boilerplate_filename, 'rb') as bpfile:
+
+                content_without_boilerplate = bpfile.read()
+                    
+        except KeyError:
+            raise CollectionModelException(
+                "The URI-M [{}] is not saved in this collection model".format(
+                    urim))
+
+        return content_without_boilerplate
+
 
     def getHeaders(self, objecttype, uri):
 

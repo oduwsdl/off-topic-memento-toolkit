@@ -68,6 +68,13 @@ if __name__ == '__main__':
     logger.info('Starting topic analysis run.')
     logger.debug('command-line arguments: {}'.format(args))
 
+    input_type = args.input_type[0]
+    input_type_arguments = args.input_type[1]
+
+    cm = offtopic.get_collection_model(
+        input_type, input_type_arguments, args.working_directory
+    )
+
     logger.info("Finished analysis run")
 
 raise NotImplementedError("No script here yet, please come back later.")
