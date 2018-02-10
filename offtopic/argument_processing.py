@@ -73,8 +73,6 @@ def process_input_types(input_argument):
 
     return input_type, arguments
 
-
-
 def get_logger(appname, loglevel, logfile):
 
     logger = logging.getLogger(appname)

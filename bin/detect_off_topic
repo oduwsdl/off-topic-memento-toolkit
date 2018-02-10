@@ -29,6 +29,10 @@ def process_arguments(args):
         help='The working directory holding the data being downloaded'
         ' and processed.')
 
+    parser.add_argument('-t', '--output-type', dest='output_type',
+        default='json', help="output type for off-topic analysis\n"
+        "default is JSON")
+
     measurehelp = ""
     for measure in offtopic.supported_measures:
         measurehelp += "* {} - {}, default threshold {}\n".format(
@@ -86,5 +90,9 @@ if __name__ == '__main__':
             scoring[measure], 
             offtopic.supported_measures[measure]["default_threshold"])
 
+    with open(args.output_filename, "w") as outputfile:
+        offtopic.supported_output_types[args.output_type](outputfile, scoring, cm)
+
+    logger.info("output written to {}".format(args.output_filename))
 
     logger.info("Finished analysis run")

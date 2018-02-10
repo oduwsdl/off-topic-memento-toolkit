@@ -43,11 +43,13 @@ def compute_scores_against_first_memento_in_TimeMap(
 
     scoring = {}
     scoring["scorename"] = scorename
-    scoring["mementos"] = {}
+    scoring["timemaps"] = {}
 
     for urit in collection_model.getTimeMapURIList():
 
         timemap = collection_model.getTimeMap(urit)
+
+        scoring["timemaps"][urit] = {}
 
         # some TimeMaps have no mementos
         # e.g., http://wayback.archive-it.org/3936/timemap/link/http://www.peacecorps.gov/shutdown/?from=hpb
@@ -73,11 +75,11 @@ def compute_scores_against_first_memento_in_TimeMap(
 
                 memento_score = scorefunction(memento_tokens)
 
-                scoring["mementos"].setdefault(urim, {})
-                scoring["mementos"][urim].setdefault(scoredataname, {})
-                scoring["mementos"][urim].setdefault("score", {})
-                scoring["mementos"][urim][scoredataname] = memento_score
-                scoring["mementos"][urim]["score"] = distance_function(
+                scoring["timemaps"][urit].setdefault(urim, {})
+                scoring["timemaps"][urit][urim].setdefault(scoredataname, {})
+                scoring["timemaps"][urit][urim].setdefault("score", {})
+                scoring["timemaps"][urit][urim][scoredataname] = memento_score
+                scoring["timemaps"][urit][urim]["score"] = distance_function(
                     first_memento_score, memento_score
                 )
 
@@ -119,10 +121,14 @@ def calculate_wordcount_scores(collection_model):
 
 def evaluate_off_topic(scoring, threshold):
 
-    for urim in scoring["mementos"]:
+    for urit in scoring["timemaps"]:
 
-        if scoring["mementos"][urim]["score"] < threshold:
-            scoring["mementos"][urim]["on-topic"] = False
+        for urim in scoring["timemaps"][urit]:
+
+            scoring["timemaps"][urit][urim]["on-topic"] = False
+
+            if scoring["timemaps"][urit][urim]["score"] > threshold:
+                scoring["timemaps"][urit][urim]["on-topic"] = True
 
     return scoring
 
