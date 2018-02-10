@@ -230,7 +230,11 @@ class CollectionModel:
 
     def getMementoContentWithoutBoilerplate(self, urim):
 
+        logger = logging.getLogger()
+
         content_without_boilerplate = None
+
+        logger.info("acquiring memento content without boilerplate for {}".format(urim))
 
         try:
 

@@ -6,8 +6,6 @@ import argparse
 
 import offtopic
 
-supported_measures = []
-
 def process_arguments(args):
 
     parser = argparse.ArgumentParser(prog="python {}".format(args[0]),
@@ -32,10 +30,10 @@ def process_arguments(args):
         ' and processed.')
 
     measurehelp = ""
-    for measure in supported_measures:
+    for measure in offtopic.supported_measures:
         measurehelp += "* {} - {}, default threshold {}\n".format(
-            measure, supported_measures[measure]['name'],
-            supported_measures[measure]['default_threshold'])
+            measure, offtopic.supported_measures[measure]['name'],
+            offtopic.supported_measures[measure]['default_threshold'])
 
     parser.add_argument('-m', '--measures', dest='measures',
         default="cosine=0.15,wordcount=-0.85",
@@ -71,10 +69,22 @@ if __name__ == '__main__':
     input_type = args.input_type[0]
     input_type_arguments = args.input_type[1]
 
+    logger.debug("measures: {}".format(args.measures))
+
     cm = offtopic.get_collection_model(
         input_type, input_type_arguments, args.working_directory
     )
 
-    logger.info("Finished analysis run")
+    scoring = {}
 
-raise NotImplementedError("No script here yet, please come back later.")
+    for measure in args.measures:
+
+        logger.info("Processing mementos using measure {}".format(measure))
+        threshold = args.measures[measure]
+        scoring[measure] = offtopic.supported_measures[measure]["function"](cm)
+        scoring[measure] = offtopic.evaluate_off_topic(
+            scoring[measure], 
+            offtopic.supported_measures[measure]["default_threshold"])
+
+
+    logger.info("Finished analysis run")

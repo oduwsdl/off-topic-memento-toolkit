@@ -268,7 +268,8 @@ def get_collection_model_from_archiveit(archiveit_cid, working_directory):
 
         timemap = cm.getTimeMap(urit)
         for memento in timemap["mementos"]["list"]:
-            urims.append(memento["uri"])
+            raw_urim = memento["uri"].replace('/http', 'id_/http')
+            urims.append(raw_urim)
 
     fetch_mementos(urims, cm)
                 
