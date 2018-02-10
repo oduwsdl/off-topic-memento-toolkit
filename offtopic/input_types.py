@@ -28,8 +28,6 @@ def json_serial(obj):
 
 def extract_urim_mdt_content_from_record(record):
 
-    # # logger = logging.getLogger(__name__)
-
     urir = None
     memento_datetime = None
     headers = None
@@ -115,8 +113,6 @@ def generate_timemap_from_timemap_data(urir, timemap_data):
 
 def get_collection_model_from_warc(warcfiles, working_directory):
 
-    # logger = logging.getLogger(__name__)
-
     logger.warning("Only HTML entities are extracted from warcfiles")
 
     cm = CollectionModel(working_directory)
@@ -192,8 +188,6 @@ def list_generator(input_list):
             yield item
 
 def get_collection_model_from_archiveit(archiveit_cid, working_directory):
-    
-    # logger = logging.getLogger(__name__)
 
     archiveit_cid = archiveit_cid[0]
 
@@ -401,8 +395,6 @@ supported_input_types = {
 }
 
 def get_collection_model(input_type, arguments, directory):
-    
-    # logger = logging.getLogger(__name__)    
 
     logger.info("Using input type {}".format(input_type))
     logger.debug("input type arguments: {}".format(arguments))

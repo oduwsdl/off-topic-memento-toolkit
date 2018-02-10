@@ -5,12 +5,6 @@ import logging.config
 
 import offtopic
 
-# from offtopic import supported_input_types
-# from offtopic import supported_measures
-
-# supported_measures = []
-
-
 def process_similarity_measure_inputs(input_argument):
     
     input_measures = input_argument.split(',')
@@ -77,44 +71,15 @@ def get_logger(appname, loglevel, logfile):
 
     logger = logging.getLogger(appname)
 
-    logging.config.dictConfig({
-        'version': 1,
-        'disable_existing_loggers': False,
-        'formatters': {
-            'standard': {
-                'format': '%(asctime)s [%(levelname)s] %(name)s: %(message)s'
-            },
-        },
-        'handlers': {
-            'default': {
-                'level':'DEBUG',
-                'class':'logging.StreamHandler',
-            },
-        },
-        'loggers': {
-            '': {
-                'handlers': ['default'],
-                'level': 'DEBUG',
-                'propagate': True
-            }
-        }
-    })
-    
-    # logger.setLevel(logging.DEBUG)
-
-    # shamelessly stolen from logging HOWTO
     if logfile == sys.stdout:
-        ch = logging.StreamHandler()
+        logging.basicConfig( 
+            format='%(asctime)s [%(levelname)s] %(name)s: %(message)s',
+            level=loglevel)
     else:
-        ch = logging.FileHandler(logfile)
-
-    ch.setLevel(loglevel)
-
-    formatter = logging.Formatter(
-        '%(asctime)s - %(levelname)s - %(message)s')
-
-    ch.setFormatter(formatter)
-    logger.addHandler(ch)
+        logging.basicConfig( 
+            format='%(asctime)s [%(levelname)s] %(name)s: %(message)s',
+            level=loglevel,
+            filename=logfile)
 
     return logger
 

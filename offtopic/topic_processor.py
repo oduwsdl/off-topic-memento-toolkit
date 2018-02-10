@@ -9,6 +9,8 @@ from offtopic import CollectionModel
 from nltk.corpus import stopwords
 from nltk.stem.porter import PorterStemmer
 
+logger = logging.getLogger(__name__)
+
 stemmer = PorterStemmer()
 
 def stem_tokens(tokens):
@@ -38,8 +40,6 @@ def convert_to_raw_uri(urim):
 
 def compute_scores_against_first_memento_in_TimeMap(
     scorefunction, distance_function, collection_model, scorename, scoredataname):
-
-    logger = logging.getLogger(__name__)
 
     scoring = {}
     scoring["scorename"] = scorename

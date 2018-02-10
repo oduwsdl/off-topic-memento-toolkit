@@ -19,8 +19,6 @@ class ArchiveItCollectionException(Exception):
 
 def fetch_collection_web_page(collection_id, pages_dir):
 
-    # logger = logging.getLogger(__name__)
-
     collection_uri = "{}/{}".format(collection_uri_prefix, collection_id) 
 
     logger.debug("fetching page at {}".format(collection_uri))
@@ -36,8 +34,6 @@ def fetch_collection_web_page(collection_id, pages_dir):
     return pages_dir
 
 def fetch_collection_web_pages(collection_id, pages_dir, page_number=1, result_count=None, use_cache=True):
-
-    # logger = logging.getLogger(__name__)
 
     nextpage = get_next_collection_page(
         collection_id, pages_dir, page_number, result_count, use_cache)
@@ -58,8 +54,6 @@ def fetch_collection_web_pages(collection_id, pages_dir, page_number=1, result_c
 #        result_count=result_count, use_cache=use_cache)
 
 def get_next_collection_page(collection_id, pages_dir, page_number=1, result_count=None, use_cache=True):
-
-    # logger = logging.getLogger(__name__)
 
     logger.debug("result count: [{}]".format(result_count))
     logger.debug("page_number: [{}]".format(page_number))
@@ -157,8 +151,6 @@ def get_seed_report_timestamp(collection_id, pages_dir, use_cache=True):
 
 def get_result_count(collection_id, pages_dir, use_cache=True):
 
-    # logger = logging.getLogger(__name__)
-
     result_count = None
 
     logger.debug("calculating result count for cid {} using pages directory {}".format(
@@ -207,8 +199,6 @@ def get_result_count(collection_id, pages_dir, use_cache=True):
 
 def get_page_count(collection_id, pages_dir, use_cache=True):
 
-    # logger = logging.getLogger(__name__)
-
     logger.debug("getting page count for collection id {}, "
         "saving to directory {}".format(collection_id, pages_dir)
     )
@@ -249,8 +239,6 @@ def get_page_count(collection_id, pages_dir, use_cache=True):
 
 
 def scrape_main_collection_data(soup):
-
-    # logger = logging.getLogger(__name__)
 
     data = {}
 
@@ -359,8 +347,6 @@ def scrape_optional_collection_data(soup):
 
 def get_metadata_from_web_page(pages_dir, data_type):
 
-    # logger = logging.getLogger(__name__)
-
     logger.info("processing collection pages from directory {}".format(pages_dir))
 
     if os.listdir(pages_dir) == 0:
@@ -412,8 +398,6 @@ def scrape_seed_metadata(soup):
     return data
 
 def get_seed_metadata_from_web_pages(pages_dir):
-
-    # logger = logging.getLogger(__name__)
 
     seed_metadata = [] 
 

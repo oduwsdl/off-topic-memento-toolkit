@@ -12,6 +12,8 @@ from justext import justext, get_stoplist
 
 from offtopic.timemap import convert_LinkTimeMap_to_dict
 
+logger = logging.getLogger(__name__)
+
 # Disabled this pylint rule because of too many false positives
 # Ref: http://pylint-messages.wikidot.com/messages:e1101
 # pylint: disable=no-member
@@ -69,8 +71,6 @@ class CollectionModel:
         self.memento_metadatafile.close()
 
     def load_data_from_directory(self):
-
-        logger = logging.getLogger(__name__)
 
         logger.info("loading data from directory {}".format(self.timemap_directory))
 
