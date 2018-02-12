@@ -334,11 +334,15 @@ def get_collection_model_from_timemap(urit, working_directory):
 
 def get_collection_model_from_datafile(datafile, working_directory):
 
+    datafile = datafile[0]
+
+    logger.info("building collection data from datafile {}".format(datafile))
+
     cm = CollectionModel(working_directory=working_directory)
 
     with open(datafile) as tsvfile:
 
-        reader = csv.DictReader(tsvfile)
+        reader = csv.DictReader(tsvfile, delimiter='\t')
         timemaps_data = {}
 
         for row in reader:

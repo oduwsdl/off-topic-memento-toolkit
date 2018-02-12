@@ -18,7 +18,7 @@ def process_arguments(args):
         "* warc=[warc-filenames separated by commas with no spaces] - EXPERIMENTAL\n"
         "* archiveit=[collection identifier or collection URI]\n"
         "* timemap=[URI of TimeMap]\n"
-        "* goldtest=[tab-separated gold standard data file]"
+        "* goldtest=[tab-separated gold standard data file]\n"
         "* dir=[existing input directory from prior run]"
         )
 
