@@ -18,6 +18,7 @@ def process_arguments(args):
         "* warc=[warc-filenames separated by commas with no spaces] - EXPERIMENTAL\n"
         "* archiveit=[collection identifier or collection URI]\n"
         "* timemap=[URI of TimeMap]\n"
+        "* goldtest=[tab-separated gold standard data file]"
         "* dir=[existing input directory from prior run]"
         )
 
@@ -30,8 +31,10 @@ def process_arguments(args):
         ' and processed.')
 
     parser.add_argument('-t', '--output-type', dest='output_type',
-        default='json', help="output type for off-topic analysis\n"
-        "default is JSON")
+        default='json', help="output type for off-topic analysis:\n"
+        "* JSON - a JSON file containing the memento offtopic status(default)\n"
+        "* goldtest - a TSV file in the same format as the gold standard data"
+        )
 
     measurehelp = ""
     for measure in offtopic.supported_measures:

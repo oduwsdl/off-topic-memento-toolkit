@@ -3,11 +3,14 @@ import nltk
 import string
 import logging
 import logging.config
-
-from offtopic import CollectionModel
+import distance
 
 from nltk.corpus import stopwords
 from nltk.stem.porter import PorterStemmer
+from gensim import corpora, models, similarities
+from sklearn.metrics.pairwise import cosine_similarity
+
+from offtopic import CollectionModel
 
 logger = logging.getLogger(__name__)
 
@@ -132,21 +135,185 @@ def evaluate_off_topic(scoring, threshold):
 
     return scoring
 
+def calculate_jaccard_scores(collection_model):
+
+    scoring = {}
+    scoring["timemaps"] = {}
+
+    for urit in collection_model.getTimeMapURIList():
+
+        timemap = collection_model.getTimeMap(urit)
+
+        scoring["timemaps"][urit] = {}
+
+        if len(timemap["mementos"]["list"]) > 0:
+
+            first_urim = convert_to_raw_uri(timemap["mementos"]["first"]["uri"])
+
+            first_content = collection_model.getMementoContentWithoutBoilerplate(
+                first_urim
+            )
+            first_tokens = tokenize(first_content)
+            
+            for memento in timemap["mementos"]["list"]:
+
+                urim = convert_to_raw_uri(memento["uri"])
+
+                memento_content = collection_model.getMementoContentWithoutBoilerplate(
+                    urim
+                )
+                memento_tokens = tokenize(memento_content)
+                
+                scoring["timemaps"][urit].setdefault(urim, {})
+                scoring["timemaps"][urit][urim]["score"] = distance.jaccard(
+                    first_tokens, memento_tokens
+                )
+
+    return scoring
+
+def calculate_cosinesimilarity_scores(collection_model):
+
+    scoring = {}
+    scoring["timemaps"] = {}
+
+    for urit in collection_model.getTimeMapURIList():
+
+        timemap = collection_model.getTimeMap(urit)
+        tfidf_vectorizer = TfidfVectorizer()
+
+        scoring["timemaps"][urit] = {}
+
+        if len(timemap["mementos"]["list"]) > 0:
+
+            documents = []
+            urims = []
+            
+            for memento in timemap["mementos"]["list"]:
+
+                urim = convert_to_raw_uri(memento["uri"])
+
+                memento_content = collection_model.getMementoContentWithoutBoilerplate(
+                    urim
+                )
+
+                documents.append(memento_content)
+                urims.append(urim)
+
+            tfidf_matrix = tfidf_vectorizer.fit_transform(documents)
+            cscores = cosine_similarity(tfidf_matrix[0:1], tfidf_matrix)
+
+            for index in range(0, len(cscores)):
+                urim = urims[index]
+                scoring["timemaps"][urit].setdefault(urim, {})
+                scoring["timemaps"][urit][urim]["score"] = cscores[index]
+
+    return scoring
+
+def calculate_term_frequencies(tokens):
+
+    term_frequency = {}
+
+    for token in tokens:
+
+        term_frequency[token] += 1
+
+    return term_frequency
+
+# def calculate_tfintersection_scores(collection_model):
+
+#     scoring = {}
+#     scoring["timemaps"] = {}
+
+#     for urit in collection_model.getTimeMapURIList():
+
+#         timemap = collection_model.getTimeMap(urit)
+
+#         scoring["timemaps"][urit] = {}
+
+#         if len(timemap["mementos"]["list"]) > 0:
+
+#             first_urim = convert_to_raw_uri(timemap["mementos"]["first"]["uri"])
+
+#             first_content = collection_model.getMementoContentWithoutBoilerplate(first_urim)
+#             first_tokens = tokenize(first_content)
+#             first_term_freq = calculate_term_frequencies(first_tokens)
+
+#             for memento in timemap["mementos"]["list"]:
+
+#                 urim = convert_to_raw_uri(memento["uri"])
+
+#                 memento_content = collection_model.getMementoContentWithoutBoilerplate(urim)
+#                 memento_tokens = tokenize(memento_content)
+#                 memento_term_freq = calculate_term_frequencies(memento_tokens)
+
+#                 for term in first_term_freq
+
+                
+
+
+
+
+# def calculate_gensimlda_scores(collection_model):
+
+#     scoring = {}
+#     scoring["timemaps"] = {}
+
+#     for urit in collection_model.getTimeMapURIList():
+
+#         timemap = collection_model.getTimeMap(urit)
+
+#         scoring["timemaps"][urit] = {}
+
+#         # some TimeMaps have no mementos
+#         # e.g., http://wayback.archive-it.org/3936/timemap/link/http://www.peacecorps.gov/shutdown/?from=hpb
+#         if len(timemap["mementos"]["list"]) > 0:
+
+#             texts = []
+
+#             for memento in timemap["mementos"]["list"]:
+
+#                 urim = convert_to_raw_uri(memento["uri"])
+
+#                 memento_content = collection_model.getMementoContentWithoutBoilerplate(urim)
+#                 memento_tokens = tokenize(memento_content)
+
+#                 texts.append(memento_tokens)
+
+#             # TODO: don't do this in memory
+#             dictionary = corpora.Dictionary(texts)
+#             corpus = [dictionary.doc2bow(text) for text in texts]
+#             tfidf = models.TfidfModel(corpus)
+#             corpus_tfidf = tfidf[corpus]
+
+#             # TODO: how many topics do we need?
+#             lsi = models.LsiModel(corpus_tfidf, id2word=dictionary, num_topics=2)
+
+
+
+            
+
+
+
 supported_measures = {
     # "tfintersection": {
     #     "name": "TF-Intersection",
     #     "default_threshold": 0,
     #     "function": None
     # },
-    # "cosine": {
-    #     "name": "Cosine Similarity",
-    #     "default_threshold": 0.15,
-    #     "function": None
-    # },
-    # "jaccard": {
-    #     "name": "Jaccard Distance",
-    #     "default_threshold": 0.05,
-    #     "function": None
+    "cosine": {
+        "name": "Cosine Similarity",
+        "default_threshold": 0.15,
+        "function": calculate_cosinesimilarity_scores
+    },
+    "jaccard": {
+        "name": "Jaccard Distance",
+        "default_threshold": 0.05,
+        "function": calculate_jaccard_scores
+    },
+    # "gensim-lda": {
+    #     "name": "Gensim using LDA",
+    #     "default_threshold": 0,
+    #     "function": calculate_gensimlda_scores
     # },
     "wordcount": {
         "name": "Word Count",

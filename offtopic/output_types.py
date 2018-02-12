@@ -1,6 +1,7 @@
 import json
 import csv
 import logging
+# import warcio
 
 def output_json(outputfile, jsondata, collectionmodel):
     json.dump(jsondata, outputfile, indent=4)
@@ -49,6 +50,11 @@ def output_datafile(outputfile, jsondata, collectionmodel):
 
     for row in outputdata:
         writer.writerow(row)
+
+# def output_wat(outputfile, jsondata, collectionmodel):
+    
+    # TODO: the "Payload-Metadata" part of the WAT file could be a place to put our scoring data
+    # pass
 
 supported_output_types = {
     # 'wat': output_wat,

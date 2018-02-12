@@ -390,7 +390,7 @@ supported_input_types = {
     'warc': get_collection_model_from_warc,
     'archiveit': get_collection_model_from_archiveit,
     'timemap': get_collection_model_from_timemap,
-    'datafile': get_collection_model_from_datafile,
+    'goldtest': get_collection_model_from_datafile,
     'dir': get_collection_model_from_directory
 }
 
