@@ -59,5 +59,5 @@ def output_datafile(outputfile, jsondata, collectionmodel):
 supported_output_types = {
     # 'wat': output_wat,
     'json': output_json,
-    'datafile': output_datafile
+    'golddatafile': output_datafile
 }
