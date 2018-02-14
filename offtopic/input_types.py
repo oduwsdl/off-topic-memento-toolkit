@@ -237,6 +237,7 @@ def get_collection_model_from_archiveit(archiveit_cid, working_directory):
 
                 http_status = response.status_code
 
+                # TODO: handle 301 and 302 - potentially re-request non-raw memento to get Location header URI
                 if http_status == 200:
 
                     timemap_content = response.text
@@ -244,6 +245,11 @@ def get_collection_model_from_archiveit(archiveit_cid, working_directory):
                     timemap_headers["http-status"] = http_status
 
                     cm.addTimeMap(urit, timemap_content, timemap_headers)
+                
+                # else:
+
+
+
 
                 # TODO: else store connection errors in CollectionModel
                 working_uri_list.remove(urit)
@@ -350,8 +356,11 @@ def get_collection_model_from_datafile(datafile, working_directory):
             urir = "datafile-{}".format(row["id"])
             mdt = datetime.strptime(row["date"], "%Y%m%d%H%M%S")
             urim = row["URI"]
-            # ontopic = row["label"]
 
+            if "wayback.archive-it.org" in urim:
+                urim = urim.replace('/http', 'id_/http')
+
+            # ontopic = row["label"]
             timemaps_data.setdefault(urir, []).append({
                 "datetime": mdt,
                 "uri": urim
@@ -377,7 +386,9 @@ def get_collection_model_from_datafile(datafile, working_directory):
         timemap = cm.getTimeMap(urit)
 
         for memento in timemap["mementos"]["list"]:
-            urims.append(memento["uri"])
+            if "wayback.archive-it.org" in memento["uri"]:
+                raw_urim = memento["uri"].replace('/http', 'id_/http')
+                urims.append(raw_urim)
 
     fetch_mementos(urims, cm)
 

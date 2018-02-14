@@ -29,6 +29,12 @@ def json_serial(obj):
 class CollectionModelException(Exception):
     pass
 
+class CollectionModelMementoErrorException(CollectionModelException):
+    pass
+
+class CollectionModelTimeMapErrorException(CollectionModelException):
+    pass
+
 class CollectionModel:
 
     # TODO: add functions for metadata, for setting a collection id, name, etc.
@@ -37,7 +43,10 @@ class CollectionModel:
 
         self.working_directory = working_directory
         self.timemap_directory = "{}/timemaps".format(working_directory)
+        self.timemap_errors_directory = "{}/timemap_errors".format(working_directory)
+
         self.memento_directory = "{}/mementos".format(working_directory)
+        self.memento_errors_directory = "{}/memento_errors".format(working_directory)
 
         self.collection_timemaps = {}
 
@@ -82,10 +91,15 @@ class CollectionModel:
             self.memento_directory
         ))
 
+        logger.debug("acquiring data using {}".format(timemap_metadatafile))
+
         timemap_reader = csv.reader(timemap_metadatafile)
         memento_reader = csv.reader(memento_metadatafile)
 
         for row in timemap_reader:
+
+            logger.debug("reading TimeMap data row {}".format(row))
+
             urit = row[0]
             filename_digest = row[1]
 
@@ -128,6 +142,9 @@ class CollectionModel:
             filename_digest = row[1]
 
             self.urimap["mementos"][urim] = filename_digest
+
+        timemap_metadatafile.close()
+        memento_metadatafile.close()
 
     def addTimeMap(self, urit, content, headers):
 
@@ -230,11 +247,9 @@ class CollectionModel:
 
     def getMementoContentWithoutBoilerplate(self, urim):
 
-        logger = logging.getLogger()
-
         content_without_boilerplate = None
 
-        logger.info("acquiring memento content without boilerplate for {}".format(urim))
+        logger.debug("acquiring memento content without boilerplate for {}".format(urim))
 
         try:
 
@@ -261,12 +276,16 @@ class CollectionModel:
                 content_without_boilerplate = bpfile.read()
                     
         except KeyError:
+
+            logger.debug("urimap['mementos']: {}".format(self.urimap["mementos"]))
+
             raise CollectionModelException(
                 "The URI-M [{}] is not saved in this collection model".format(
                     urim))
 
         return content_without_boilerplate
 
+    
 
     def getHeaders(self, objecttype, uri):
 

@@ -9,6 +9,7 @@ from nltk.corpus import stopwords
 from nltk.stem.porter import PorterStemmer
 from gensim import corpora, models, similarities
 from sklearn.metrics.pairwise import cosine_similarity
+from sklearn.feature_extraction.text import TfidfVectorizer
 
 from offtopic import CollectionModel
 
@@ -48,7 +49,13 @@ def compute_scores_against_first_memento_in_TimeMap(
     scoring["scorename"] = scorename
     scoring["timemaps"] = {}
 
+    logger.info("beginning TimeMap iteration")
+
+    logger.debug("timemap URI list: {}".format(collection_model.getTimeMapURIList()))
+
     for urit in collection_model.getTimeMapURIList():
+
+        logger.debug("processing memementos from TimeMap {}".format(urit))
 
         timemap = collection_model.getTimeMap(urit)
 
@@ -93,10 +100,20 @@ def compute_bytecount_score(tokens):
     return len(''.join(tokens))
 
 def compute_bytecount_distance(first_memento_bytecount, memento_bytecount):
-    
-    return 1 - (first_memento_bytecount / memento_bytecount)
+
+    if memento_bytecount == 0:
+
+        if first_memento_bytecount == 0:
+            return 0
+        else:
+            return 1 - (memento_bytecount / first_memento_bytecount)
+
+    else:
+        return 1 - (first_memento_bytecount / memento_bytecount)
 
 def calculate_bytecount_scores(collection_model):
+
+    logger.info("calculating bytecount scores for mementos")
 
     scoring = compute_scores_against_first_memento_in_TimeMap(
         compute_bytecount_score, compute_bytecount_distance, collection_model, 
@@ -111,9 +128,17 @@ def compute_wordcount_score(tokens):
 
 def compute_wordcount_distance(first_memento_wordcount, memento_wordcount):
 
-    return 1 - (first_memento_wordcount / memento_wordcount)
-
+    if memento_wordcount == 0:
+        if first_memento_wordcount == 0:
+            return 0
+        else:
+            return 1 - (memento_wordcount / first_memento_wordcount)
+    else:
+        return 1 - (first_memento_wordcount / memento_wordcount)
+    
 def calculate_wordcount_scores(collection_model):
+
+    logger.info("calculating wordcount scores for mementos")
 
     scoring = compute_scores_against_first_memento_in_TimeMap(
         compute_wordcount_score, compute_wordcount_distance, collection_model, 

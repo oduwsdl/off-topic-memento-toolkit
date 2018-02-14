@@ -176,6 +176,40 @@ class TestingCollectionModel(unittest.TestCase):
 
         shutil.rmtree(working_directory)
 
+    def test_memento_error_path(self):
+
+        working_directory="/tmp/collectionmodel_test/test_mementos"
+        memento_error_directory = "{}/memento_errors".format(working_directory)
+
+        uri = "testing-storage:bad-memento1"
+
+        cm = collectionmodel.CollectionModel(working_directory=working_directory)
+
+        headers = {
+            "key1": "value1",
+            "key2": "value2"
+        }
+
+        content = "<html><body>404 Not Found</body></html>"
+
+        errorinformation = 404
+
+        cm.addMementoError(uri, headers, content, errorinformation)
+
+        self.assertRaises( cm.CollectionModelMementoErrorException,
+            cm.getMementoContent, uri )
+
+        self.assertRaises( cm.CollectionModelMementoErrorException, 
+            cm.getMementoHeaders, uri )
+
+        self.assertEqual( cm.getMementoErrorInformation(uri), errorinformation )
+
+        uri = "testing-storage:good-memento1"
+        content = "<html><body>It works!</body></html>"
+
+        cm.addMemento(uri, content, headers)
+
+
     def test_string_not_bytes_memento(self):
 
 
