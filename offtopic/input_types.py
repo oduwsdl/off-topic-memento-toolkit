@@ -237,6 +237,8 @@ def get_collection_model_from_archiveit(archiveit_cid, working_directory):
 
                 http_status = response.status_code
 
+                # there are 404 mementos, check for the memento-datetime header...
+
                 # TODO: handle 301 and 302 - potentially re-request non-raw memento to get Location header URI
                 if http_status == 200:
 

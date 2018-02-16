@@ -35,9 +35,15 @@ class CollectionModelMementoErrorException(CollectionModelException):
 class CollectionModelTimeMapErrorException(CollectionModelException):
     pass
 
+class CollectionModelNoSuchMementoException(CollectionModelException):
+    pass
+
+class CollectionModelNoSuchTimeMapException(CollectionModelException):
+    pass
+
 class CollectionModel:
 
-    # TODO: add functions for metadata, for setting a collection id, name, etc.
+    # TODO: add functions for storing metadata, like for saving a collection id, name, etc.
 
     def __init__(self, working_directory):
 
@@ -52,13 +58,15 @@ class CollectionModel:
 
         self.urimap = {
             "timemaps": {},
-            "mementos": {}
+            "mementos": {},
+            "memento-errors": {}
         }
 
         if not os.path.exists(working_directory):
             os.makedirs(self.working_directory)
             os.makedirs(self.timemap_directory)
             os.makedirs(self.memento_directory)
+            os.makedirs(self.memento_errors_directory)
         else:
             self.load_data_from_directory()
 
@@ -74,10 +82,17 @@ class CollectionModel:
 
         self.memento_csvwriter = csv.writer(self.memento_metadatafile)
 
+        self.memento_errors_metadatafile = open("{}/metadata.csv".format(
+            self.memento_errors_directory
+        ), 'a')
+
+        self.memento_errors_csvwriter = csv.writer(self.memento_errors_metadatafile)
+
     def __del__(self):
 
         self.timemap_metadatafile.close()
         self.memento_metadatafile.close()
+        self.memento_errors_metadatafile.close()
 
     def load_data_from_directory(self):
 
@@ -91,10 +106,15 @@ class CollectionModel:
             self.memento_directory
         ))
 
+        memento_errors_metadatafile = open("{}/metadata.csv".format(
+            self.memento_errors_directory
+        ))
+
         logger.debug("acquiring data using {}".format(timemap_metadatafile))
 
         timemap_reader = csv.reader(timemap_metadatafile)
         memento_reader = csv.reader(memento_metadatafile)
+        memento_error_reader = csv.reader(memento_errors_metadatafile)
 
         for row in timemap_reader:
 
@@ -143,8 +163,15 @@ class CollectionModel:
 
             self.urimap["mementos"][urim] = filename_digest
 
+        for row in memento_error_reader:
+            urim = row[0]
+            filename_digest = row[1]
+
+            self.urimap["memento-errors"][urim] = filename_digest
+
         timemap_metadatafile.close()
         memento_metadatafile.close()
+        memento_errors_metadatafile.close()
 
     def addTimeMap(self, urit, content, headers):
 
@@ -228,7 +255,30 @@ class CollectionModel:
 
         self.memento_csvwriter.writerow([urim, filename_digest])
 
+    def addMementoError(self, urim, content, headers, errorinformation):
+
+        filename_digest = hashlib.sha3_256(bytes(urim, "utf8")).hexdigest()
+
+        with open("{}/{}_headers.json".format(
+            self.memento_errors_directory, filename_digest), 'w') as out:
+            json.dump(headers, out, default=json_serial)
+
+        with open("{}/{}.orig".format(
+            self.memento_errors_directory, filename_digest), 'wb') as out:
+            out.write(content)
+
+        with open("{}/{}_error_info.txt".format(
+            self.memento_errors_directory, filename_digest), 'wb') as out:
+            out.write(errorinformation)
+
+        self.urimap["memento-errors"][urim] = filename_digest
+
+        self.memento_errors_csvwriter.writerow([urim, filename_digest])
+
     def getMementoContent(self, urim):
+
+        if urim in self.urimap["memento-errors"]:
+            raise CollectionModelMementoErrorException
 
         try:
 
@@ -239,9 +289,36 @@ class CollectionModel:
                 data = fileinput.read()
 
         except KeyError:
-            raise CollectionModelException(
-                "The URI-M [{}] is not saved in this collection model".format(
-                    urim))
+            err_msg = "The URI-M [{}] is not saved in this " \
+                "collection model".format(urim)
+
+            logger.error(err_msg)
+
+            raise CollectionModelNoSuchMementoException(err_msg)
+
+        return data
+
+    def getMementoErrorInformation(self, urim):
+
+        if urim in self.urimap["memento-errors"]:
+
+            filename_digest = self.urimap["memento-errors"][urim]
+
+            with open("{}/{}_error_info.txt".format(
+                self.memento_errors_directory, filename_digest), 'rb') as fileinput:
+                data = fileinput.read()
+
+        else:
+
+            if urim in self.urimap["mementos"]:
+                return None
+            else:
+                err_msg = "The URI-M [{}] is not saved in this " \
+                    "collection model".format(urim)
+
+                logger.error(err_msg)
+
+                raise CollectionModelNoSuchMementoException(err_msg)
 
         return data
 
@@ -311,6 +388,9 @@ class CollectionModel:
         return data
 
     def getMementoHeaders(self, urim):
+
+        if urim in self.urimap["memento-errors"]:
+            raise CollectionModelMementoErrorException
 
         return self.getHeaders("mementos", urim)
 

@@ -13,8 +13,9 @@ from offtopic import collectionmodel
 # Ref: http://pylint-messages.wikidot.com/messages:e1101
 # pylint: disable=no-member
 
-# import logging
-# logging.basicConfig(level=logging.DEBUG)
+import logging
+logging.basicConfig(level=logging.DEBUG)
+logger = logging.getLogger(__name__)
 
 class TestingCollectionModel(unittest.TestCase):
 
@@ -178,10 +179,12 @@ class TestingCollectionModel(unittest.TestCase):
 
     def test_memento_error_path(self):
 
-        working_directory="/tmp/collectionmodel_test/test_mementos"
+        working_directory="/tmp/collectionmodel_test/test_memento_errors"
         memento_error_directory = "{}/memento_errors".format(working_directory)
 
         uri = "testing-storage:bad-memento1"
+
+        filename_digest = hashlib.sha3_256(bytes(uri, "utf8")).hexdigest()
 
         cm = collectionmodel.CollectionModel(working_directory=working_directory)
 
@@ -190,25 +193,39 @@ class TestingCollectionModel(unittest.TestCase):
             "key2": "value2"
         }
 
-        content = "<html><body>404 Not Found</body></html>"
+        content = b"<html><body>404 Not Found</body></html>"
 
-        errorinformation = 404
+        errorinformation = b"ERROR MESSAGE"
 
-        cm.addMementoError(uri, headers, content, errorinformation)
+        cm.addMementoError(uri, content, headers, errorinformation)
 
-        self.assertRaises( cm.CollectionModelMementoErrorException,
+        files_to_check = [
+            "{}/{}_error_info.txt".format( memento_error_directory, filename_digest ),
+            "{}/{}_headers.json".format( memento_error_directory, filename_digest ),
+            "{}/{}.orig".format( memento_error_directory, filename_digest )
+        ]
+
+        self.assertRaises( collectionmodel.CollectionModelMementoErrorException,
             cm.getMementoContent, uri )
 
-        self.assertRaises( cm.CollectionModelMementoErrorException, 
+        self.assertRaises( collectionmodel.CollectionModelMementoErrorException, 
             cm.getMementoHeaders, uri )
 
         self.assertEqual( cm.getMementoErrorInformation(uri), errorinformation )
 
+        # logger.debug("hi there...")
+        # logger.debug(cm.getMementoErrorInformation(uri))
+
         uri = "testing-storage:good-memento1"
-        content = "<html><body>It works!</body></html>"
+        content = b"<html><body>It works!</body></html>"
 
         cm.addMemento(uri, content, headers)
 
+        self.assertEquals( cm.getMementoErrorInformation(uri), None )
+
+        self.check_fileobjects_exist(files_to_check)
+
+        # shutil.rmtree(working_directory)
 
     def test_string_not_bytes_memento(self):
 
@@ -245,14 +262,13 @@ class TestingCollectionModel(unittest.TestCase):
 
         shutil.rmtree(working_directory)
 
-
     def test_missing_memento(self):
 
         working_directory="/tmp/collectionmodel_test/test_missing_memento"
        
         cm = collectionmodel.CollectionModel(working_directory=working_directory)
 
-        self.assertRaises( collectionmodel.CollectionModelException,
+        self.assertRaises( collectionmodel.CollectionModelNoSuchMementoException,
             cm.getMementoContent, "testing-storage:bad-memento" )
 
         shutil.rmtree(working_directory)
@@ -278,6 +294,17 @@ class TestingCollectionModel(unittest.TestCase):
         zipref = zipfile.ZipFile(testdatafile, 'r')
         zipref.extractall(test_directory)
         zipref.close()
+
+        badurim = "testing-storage:bad-memento1"
+
+        # badurim_headers = {
+        #     "key1": "value1",
+        #     "key2": "value2"
+        # }
+
+        # badurim_content = b"<html><body>404 Not Found</body></html>"
+
+        errorinformation = b"ERROR MESSAGE"
 
         testurim = "testing-storage:memento1"
 
@@ -347,5 +374,7 @@ class TestingCollectionModel(unittest.TestCase):
         self.assertEqual(testtimemapheaders, cm.getTimeMapHeaders(testurit))
 
         self.assertEqual([testurit], cm.getTimeMapURIList())
+
+        self.assertEqual( cm.getMementoErrorInformation(badurim), errorinformation )
 
         shutil.rmtree(test_directory)
