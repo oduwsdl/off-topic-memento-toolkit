@@ -5,11 +5,68 @@ import os
 
 from datetime import datetime
 
+from requests.exceptions import ConnectionError, TooManyRedirects
+
 from offtopic import CollectionModel
 from offtopic import get_collection_model
+from offtopic import fetch_mementos
 
-# import logging
-# logging.basicConfig(level=logging.DEBUG)
+import logging
+logging.basicConfig(level=logging.DEBUG)
+logger = logging.getLogger(__name__)
+
+futures_mementoinfo = {
+    "goodmemento": {
+        "headers": {
+            "key1": "value1",
+            "key2": "value2",
+            "memento-datetime": "some date"
+        },
+        "content": "<html><body>Good Memento</body></html>",
+        "errorinfo": None,
+        "status": 200
+    },
+    "connectionerror": {
+        "headers": None,
+        "content": None,
+        "errorinfo": b"ConnectionError('connectionerror',)",
+        "status": None
+    },
+    "toomanyredirects": {
+        "headers": None,
+        "content": None,
+        "errorinfo": b"TooManyRedirects('toomanyredirects',)",
+        "status": None
+    }
+}
+
+class MockResponse():
+
+    def __init__(self, uri):
+        self.uri = uri
+        self.status_code = futures_mementoinfo[self.uri]["status"]
+        self.text = futures_mementoinfo[self.uri]["content"]
+        self.headers = futures_mementoinfo[self.uri]["headers"]
+
+class MockFuture():
+
+    def __init__(self, uri):
+        self.uri = uri
+
+    def done(self):
+        return True
+
+    def result(self):
+
+        if self.uri == "connectionerror":
+            raise ConnectionError("connectionerror")
+
+        if self.uri == "toomanyredirects":
+            raise TooManyRedirects("toomanyredirects")
+
+        if self.uri == "goodmemento":
+            return MockResponse(self.uri)
+
 
 class InputTypeTest(unittest.TestCase):
 
@@ -117,5 +174,40 @@ class InputTypeTest(unittest.TestCase):
             testtmcontent,
             cm.getTimeMap("from-warc::timemap::http://crowdvoice.org/emergency-law-and-police-brutality-in-egypt/contents/4012/vote/down")
         )
+
+        shutil.rmtree(working_directory)
+
+    def test_fetch_mementos(self):
+
+        # raise Exception("what????")
+
+        working_directory = "/tmp/test-fetch-mementos"
+
+        # clean up from potential prior failed run
+        if os.path.exists(working_directory):
+            shutil.rmtree(working_directory)
+
+        mock_futures = {}
+
+        urimlist = list(futures_mementoinfo.keys())
+
+        for urim in urimlist:
+            mock_futures[urim] = MockFuture(urim)
+
+        cm = CollectionModel(working_directory=working_directory)
+
+        fetch_mementos(urimlist, cm, mock_futures)
+
+        for urim in futures_mementoinfo:
+
+            if urim != "goodmemento":
+                self.assertEqual(
+                    cm.getMementoErrorInformation(urim),
+                    futures_mementoinfo[urim]["errorinfo"]
+                )
+            else:
+                self.assertEqual( cm.getMementoContent(urim), 
+                    bytes(futures_mementoinfo[urim]["content"], "utf8") )
+
 
         shutil.rmtree(working_directory)

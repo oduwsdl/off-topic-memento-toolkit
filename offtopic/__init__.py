@@ -2,7 +2,8 @@ from .collectionmodel import CollectionModel, CollectionModelException, \
     CollectionModelMementoErrorException, CollectionModelTimeMapErrorException, \
     CollectionModelNoSuchMementoException, CollectionModelNoSuchTimeMapException
 from .archiveit_collection import ArchiveItCollection, ArchiveItCollectionException
-from .input_types import get_collection_model, supported_input_types
+from .input_types import get_collection_model, supported_input_types, \
+    fetch_mementos
 from .argument_processing import process_similarity_measure_inputs, \
     process_input_types, get_logger, calculate_loglevel
 from .topic_processor import supported_measures, evaluate_off_topic
@@ -21,7 +22,8 @@ __all__ = ["CollectionModel", "CollectionModelException",
     "process_input_types", "get_logger", "calculate_loglevel", 
     "supported_input_types", "supported_measures",
     "evaluate_off_topic", "supported_output_types",
-    "generate_raw_urim", "archive_mappings"]
+    "generate_raw_urim", "archive_mappings",
+    "fetch_mementos"]
 
 import logging
 try:  # Python 2.7+

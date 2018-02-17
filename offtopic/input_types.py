@@ -200,13 +200,6 @@ def get_collection_model_from_archiveit(archiveit_cid, working_directory):
         archiveit_cid
     ))
 
-    # logger.setLevel(logging.INFO)
-
-    logger.error("log level is set to {} == {}".format(logger.level, logging.INFO))
-    logger.debug("acquiring metadata about Archive-It colleciton {}".format(
-        archiveit_cid
-    ))
-
     aic = ArchiveItCollection(archiveit_cid, working_directory=working_directory,
         logger=logger)
 
@@ -255,7 +248,7 @@ def get_collection_model_from_archiveit(archiveit_cid, working_directory):
             
             except ConnectionError:
 
-                logger.error("There was a connection error while attempting "
+                logger.warning("There was a connection error while attempting "
                     "to download URI-T {}".format(urit))
 
                 # TODO: store connection errors in CollectionModel
@@ -263,7 +256,7 @@ def get_collection_model_from_archiveit(archiveit_cid, working_directory):
 
             except TooManyRedirects:
 
-                logger.error("There were too many redirects while attempting "
+                logger.warning("There were too many redirects while attempting "
                     "to download URI-T {}".format(urit))
 
                 # TODO: store connection errors in CollectionModel
@@ -282,10 +275,11 @@ def get_collection_model_from_archiveit(archiveit_cid, working_directory):
                 
     return cm
 
-def fetch_mementos(urimlist, collectionmodel):
+def fetch_mementos(urimlist, collectionmodel, futures=None):
 
-    with FuturesSession(max_workers=cpu_count) as session:
-        futures = get_uri_responses(session, urimlist)
+    if futures == None:
+        with FuturesSession(max_workers=cpu_count) as session:
+            futures = get_uri_responses(session, urimlist)
 
     working_uri_list = list(futures.keys())
 
@@ -315,24 +309,24 @@ def fetch_mementos(urimlist, collectionmodel):
 
                 else:
 
-                    error_msg = "No Memento-Datetime in Response Headers for " \
+                    warn_msg = "No Memento-Datetime in Response Headers for " \
                         "URI-M {}".format(urim)
 
-                    logger.error(error_msg)
+                    logger.warning(warn_msg)
                     collectionmodel.addMementoError(
-                        urim, memento_content, memento_headers, bytes(error_msg, 'utf8'))
+                        urim, memento_content, memento_headers, bytes(warn_msg, 'utf8'))
 
             except ConnectionError as e:
-                logger.error("While acquiring memento at {} there was a "
-                    " connection error, this event is being recorded")
-                collectionmodel.addMementoError(urim, None, None, 
+                logger.warning("While acquiring memento at {} there was an error of {}, "
+                    "this event is being recorded".format(urim, repr(e)))
+                collectionmodel.addMementoError(urim, b"", {}, 
                     bytes(repr(e), "utf8"))
 
             except TooManyRedirects as e:
-                logger.error("While acquiring memento at {} there were "
-                    "too many redirects, this event is being recorded")
+                logger.warning("While acquiring memento at {} there was an error of {},"
+                    "this event is being recorded".format(urim, repr(e)))
 
-                collectionmodel.addMementoError(urim, None, None, 
+                collectionmodel.addMementoError(urim, b"", {}, 
                     bytes(repr(e), "utf8"))
 
             finally:
