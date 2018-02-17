@@ -3,7 +3,8 @@ import sys
 import logging
 import logging.config
 
-import offtopic
+from .topic_processor import supported_measures
+from .input_types import supported_input_types
 
 def process_similarity_measure_inputs(input_argument):
     
@@ -17,7 +18,7 @@ def process_similarity_measure_inputs(input_argument):
             if '=' in measure:
                 measure_name, threshold = measure.split('=')
                 
-                if measure_name not in offtopic.supported_measures:
+                if measure_name not in supported_measures:
                     raise argparse.ArgumentTypeError(
                         "measure '{}' is not supported at this time".format(
                             measure_name)
@@ -27,7 +28,7 @@ def process_similarity_measure_inputs(input_argument):
 
             else:
                 measures_used[measure] = \
-                    offtopic.supported_measures[measure]['default_threshold']
+                    supported_measures[measure]['default_threshold']
         except KeyError:
             raise argparse.ArgumentTypeError(
                 "measure '{}' is not supported at this time".format(
@@ -54,10 +55,10 @@ def process_input_types(input_argument):
 
     input_type, argument = input_argument.split('=') 
 
-    if input_type not in offtopic.supported_input_types:
+    if input_type not in supported_input_types:
         raise argparse.ArgumentTypeError(
             "{} is not a supported input type, supported types are {}".format(
-                input_type, offtopic.supported_input_types)
+                input_type, supported_input_types)
             )
 
     if ',' in argument:

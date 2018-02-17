@@ -10,7 +10,7 @@ from datetime import date
 
 from justext import justext, get_stoplist
 
-from offtopic.timemap import convert_LinkTimeMap_to_dict
+from .timemap import convert_LinkTimeMap_to_dict
 
 logger = logging.getLogger(__name__)
 

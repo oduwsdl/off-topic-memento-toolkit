@@ -12,8 +12,13 @@ from requests_futures.sessions import FuturesSession
 from requests.exceptions import ConnectionError, TooManyRedirects
 from warcio.archiveiterator import ArchiveIterator
 
-from offtopic import CollectionModel
-from offtopic import ArchiveItCollection
+from .collectionmodel import CollectionModel
+from .archiveit_collection import ArchiveItCollection
+from .archive_information import generate_raw_urim
+
+# from offtopic import CollectionModel
+# from offtopic import ArchiveItCollection
+# from offtopic import generate_raw_urim
 
 logger = logging.getLogger(__name__)
 
@@ -226,20 +231,17 @@ def get_collection_model_from_archiveit(archiveit_cid, working_directory):
 
     for urit in list_generator(working_uri_list):
 
-        logging.debug("checking if URI {} is done downloading".format(urit))
+        logging.debug("checking if URI-T {} is done downloading".format(urit))
 
         if futures[urit].done():
 
-            logger.debug("URI {} is done, extracting content".format(urit))
+            logger.debug("URI-T {} is done, extracting content".format(urit))
 
             try:
                 response = futures[urit].result()
 
                 http_status = response.status_code
 
-                # there are 404 mementos, check for the memento-datetime header...
-
-                # TODO: handle 301 and 302 - potentially re-request non-raw memento to get Location header URI
                 if http_status == 200:
 
                     timemap_content = response.text
@@ -247,20 +249,23 @@ def get_collection_model_from_archiveit(archiveit_cid, working_directory):
                     timemap_headers["http-status"] = http_status
 
                     cm.addTimeMap(urit, timemap_content, timemap_headers)
-                
-                # else:
-
-
-
 
                 # TODO: else store connection errors in CollectionModel
                 working_uri_list.remove(urit)
             
             except ConnectionError:
+
+                logger.error("There was a connection error while attempting "
+                    "to download URI-T {}".format(urit))
+
                 # TODO: store connection errors in CollectionModel
                 working_uri_list.remove(urit)
 
             except TooManyRedirects:
+
+                logger.error("There were too many redirects while attempting "
+                    "to download URI-T {}".format(urit))
+
                 # TODO: store connection errors in CollectionModel
                 working_uri_list.remove(urit)
 
@@ -270,7 +275,7 @@ def get_collection_model_from_archiveit(archiveit_cid, working_directory):
 
         timemap = cm.getTimeMap(urit)
         for memento in timemap["mementos"]["list"]:
-            raw_urim = memento["uri"].replace('/http', 'id_/http')
+            raw_urim = generate_raw_urim(memento["uri"])
             urims.append(raw_urim)
 
     fetch_mementos(urims, cm)
@@ -288,29 +293,47 @@ def fetch_mementos(urimlist, collectionmodel):
 
         if futures[urim].done():
 
+            logger.debug("processing URI-M {}".format(urim))
+
             try:
                 response = futures[urim].result()
 
                 http_status = response.status_code
+                memento_content = bytes(response.text, 'utf8')
+                memento_headers = dict(response.headers)    
+                memento_headers["http-status"] = http_status
 
-                if http_status == 200:
-
-                    memento_content = bytes(response.text, 'utf8')
-                    memento_headers = dict(response.headers)
-                    memento_headers["http-status"] = http_status
+                # check for the memento-datetime header, no the http status
+                # TODO: support for archives that are not memento-compliant?
+                if "memento-datetime" in response.headers:
 
                     collectionmodel.addMemento(
                         urim, memento_content, memento_headers)
 
-                # TODO: else store connection errors in CollectionModel
-                working_uri_list.remove(urim)
-            
-            except ConnectionError:
-                # TODO: store connection errors in CollectionModel
-                working_uri_list.remove(urim)
+                    logger.debug("data from URI-M {} has been successfully " \
+                        "saved".format(urim))
 
-            except TooManyRedirects:
-                # TODO: store connection errors in CollectionModel
+                else:
+
+                    error_msg = "No Memento-Datetime in Response Headers for " \
+                        "URI-M {}".format(urim)
+
+                    logger.error(error_msg)
+                    collectionmodel.addMementoError(
+                        urim, memento_content, memento_headers, bytes(error_msg))
+
+            except ConnectionError as e:
+                logger.error("While acquiring memento at {} there was a "
+                    " connection error, this event is being recorded")
+                collectionmodel.addMementoError(urim, None, None, repr(e))
+
+            except TooManyRedirects as e:
+                logger.error("While acquiring memento at {} there were "
+                    "too many redirects, this event is being recorded")
+
+                collectionmodel.addMementoError(urim, None, None, repr(e))
+
+            finally:
                 working_uri_list.remove(urim)
 
 def get_collection_model_from_timemap(urit, working_directory):
@@ -322,6 +345,7 @@ def get_collection_model_from_timemap(urit, working_directory):
     http_status = r.status_code
 
     if http_status == 200:
+
         content = r.text
         headers = dict(r.headers)
         headers["http-status"] = http_status
@@ -359,8 +383,7 @@ def get_collection_model_from_datafile(datafile, working_directory):
             mdt = datetime.strptime(row["date"], "%Y%m%d%H%M%S")
             urim = row["URI"]
 
-            if "wayback.archive-it.org" in urim:
-                urim = urim.replace('/http', 'id_/http')
+            urim = generate_raw_urim(urim)
 
             # ontopic = row["label"]
             timemaps_data.setdefault(urir, []).append({
@@ -388,9 +411,8 @@ def get_collection_model_from_datafile(datafile, working_directory):
         timemap = cm.getTimeMap(urit)
 
         for memento in timemap["mementos"]["list"]:
-            if "wayback.archive-it.org" in memento["uri"]:
-                raw_urim = memento["uri"].replace('/http', 'id_/http')
-                urims.append(raw_urim)
+            raw_urim = generate_raw_urim(memento["uri"])
+            urims.append(raw_urim)
 
     fetch_mementos(urims, cm)
 

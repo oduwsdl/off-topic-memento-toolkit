@@ -10,7 +10,7 @@ class MalformedLinkFormatTimeMap(Exception):
     """
     pass
 
-class TimeMapException(Exception):
+class TimeMapError(Exception):
 
     pass
 
@@ -87,7 +87,7 @@ def convert_LinkTimeMap_to_dict(timemap_text, skipErrors=False):
 
     dict_timemap = {}
 
-    current_char = ""
+    # current_char = ""
     uri = ""
     key = ""
     value = ""
@@ -188,51 +188,51 @@ def convert_LinkTimeMap_to_dict(timemap_text, skipErrors=False):
     return dict_timemap
 
 
-class TimeMap:
-    """
-        A class for working with a Memento TimeMap.
-    """
+# class TimeMap:
+#     """
+#         A class for working with a Memento TimeMap.
+#     """
 
-    urit = None
-    memento_data = {}
-    raw_timemap_dict = None
+#     urit = None
+#     memento_data = {}
+#     raw_timemap_dict = None
 
-    def __init__(self, urit, urims=[], skipParseErrors=False,
-        requests_session=None):
+#     def __init__(self, urit, urims=[], skipParseErrors=False,
+#         requests_session=None):
 
-        self.urit = urit
+#         self.urit = urit
 
-        if not requests_session:
-            r = requests.get(urit)
-        else:
-            r = requests_session.get(urit)
+#         if not requests_session:
+#             r = requests.get(urit)
+#         else:
+#             r = requests_session.get(urit)
 
-        timemap_raw = r.text
+#         timemap_raw = r.text
 
-        if r.status_code == 200:
+#         if r.status_code == 200:
 
-            self.raw_timemap_dict = convert_LinkTimeMap_to_dict(timemap_raw,
-                skipErrors=skipParseErrors)
+#             self.raw_timemap_dict = convert_LinkTimeMap_to_dict(timemap_raw,
+#                 skipErrors=skipParseErrors)
 
-            for entry in self.raw_timemap_dict["mementos"]["list"]:
-                self.memento_data[entry["uri"]] = entry["datetime"]
+#             for entry in self.raw_timemap_dict["mementos"]["list"]:
+#                 self.memento_data[entry["uri"]] = entry["datetime"]
 
-        else:
-            raise TimeMapError("The archive has no TimeMap for {}"
-                .format(urit))
+#         else:
+#             raise TimeMapError("The archive has no TimeMap for {}"
+#                 .format(urit))
 
-    def get_URIT(self):
-        return self.urit
+#     def get_URIT(self):
+#         return self.urit
 
-    def get_memento_data(self):
-        return deepcopy(self.memento_data)
+#     def get_memento_data(self):
+#         return deepcopy(self.memento_data)
 
-    def add_memento(urim, memento_datetime):
+#     def add_memento(self, urim, memento_datetime):
         
-        timemap_dict[urim] = memento_datetime
+#         self.timemap_dict[urim] = memento_datetime
 
-    def get_original_URI(self):
-        return self.raw_timemap_dict["original_uri"]
+#     def get_original_URI(self):
+#         return self.raw_timemap_dict["original_uri"]
 
-    def get_TimeGate_URI(self):
-        return self.raw_timemap_dict["timegate_uri"]
+#     def get_TimeGate_URI(self):
+#         return self.raw_timemap_dict["timegate_uri"]
