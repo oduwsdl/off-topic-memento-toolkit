@@ -12,6 +12,7 @@ from sklearn.metrics.pairwise import cosine_similarity
 from sklearn.feature_extraction.text import TfidfVectorizer
 
 from .collectionmodel import CollectionModel
+from .archive_information import generate_raw_urim
 
 logger = logging.getLogger(__name__)
 
@@ -34,13 +35,6 @@ def tokenize(text):
     stems = stem_tokens(tokens)
 
     return [ i for i in stems if i not in stopset ]
-
-def convert_to_raw_uri(urim):
-
-    if "/wayback.archive-it.org/" in urim:
-        urim = urim.replace('/http', 'id_/http')
-
-    return urim
 
 def compute_scores_against_first_memento_in_TimeMap(
     scorefunction, distance_function, collection_model, scorename, scoredataname):
@@ -65,7 +59,7 @@ def compute_scores_against_first_memento_in_TimeMap(
         # e.g., http://wayback.archive-it.org/3936/timemap/link/http://www.peacecorps.gov/shutdown/?from=hpb
         if len(timemap["mementos"]["list"]) > 0:
 
-            first_urim = convert_to_raw_uri(timemap["mementos"]["first"]["uri"])
+            first_urim = generate_raw_urim(timemap["mementos"]["first"]["uri"])
 
             logger.info("extracting URI-M {} for calculations".format(first_urim))
 
@@ -76,7 +70,7 @@ def compute_scores_against_first_memento_in_TimeMap(
 
             for memento in timemap["mementos"]["list"]:
 
-                urim = convert_to_raw_uri(memento["uri"])
+                urim = generate_raw_urim(memento["uri"])
 
                 logger.info("extracting URI-M {} for calculations".format(urim))
 
@@ -173,7 +167,7 @@ def calculate_jaccard_scores(collection_model):
 
         if len(timemap["mementos"]["list"]) > 0:
 
-            first_urim = convert_to_raw_uri(timemap["mementos"]["first"]["uri"])
+            first_urim = generate_raw_urim(timemap["mementos"]["first"]["uri"])
 
             first_content = collection_model.getMementoContentWithoutBoilerplate(
                 first_urim
@@ -182,7 +176,7 @@ def calculate_jaccard_scores(collection_model):
             
             for memento in timemap["mementos"]["list"]:
 
-                urim = convert_to_raw_uri(memento["uri"])
+                urim = generate_raw_urim(memento["uri"])
 
                 memento_content = collection_model.getMementoContentWithoutBoilerplate(
                     urim
@@ -215,7 +209,7 @@ def calculate_cosinesimilarity_scores(collection_model):
             
             for memento in timemap["mementos"]["list"]:
 
-                urim = convert_to_raw_uri(memento["uri"])
+                urim = generate_raw_urim(memento["uri"])
 
                 memento_content = collection_model.getMementoContentWithoutBoilerplate(
                     urim

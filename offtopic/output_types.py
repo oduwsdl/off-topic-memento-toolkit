@@ -22,9 +22,6 @@ def output_datafile(outputfile, jsondata, collectionmodel):
 
                 outputrow = {}
 
-                # if 'id_/http' in urim:
-                #     urim = urim.replace('id_/http', '/http')
-
                 fronturim = urim[:urim.find('/http')]
 
                 if fronturim[-3:] == 'id_':
