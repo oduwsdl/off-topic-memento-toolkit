@@ -320,18 +320,20 @@ def fetch_mementos(urimlist, collectionmodel):
 
                     logger.error(error_msg)
                     collectionmodel.addMementoError(
-                        urim, memento_content, memento_headers, bytes(error_msg))
+                        urim, memento_content, memento_headers, bytes(error_msg, 'utf8'))
 
             except ConnectionError as e:
                 logger.error("While acquiring memento at {} there was a "
                     " connection error, this event is being recorded")
-                collectionmodel.addMementoError(urim, None, None, repr(e))
+                collectionmodel.addMementoError(urim, None, None, 
+                    bytes(repr(e), "utf8"))
 
             except TooManyRedirects as e:
                 logger.error("While acquiring memento at {} there were "
                     "too many redirects, this event is being recorded")
 
-                collectionmodel.addMementoError(urim, None, None, repr(e))
+                collectionmodel.addMementoError(urim, None, None, 
+                    bytes(repr(e), "utf8"))
 
             finally:
                 working_uri_list.remove(urim)
