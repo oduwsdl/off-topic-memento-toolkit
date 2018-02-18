@@ -3,7 +3,7 @@ from .collectionmodel import CollectionModel, CollectionModelException, \
     CollectionModelNoSuchMementoException, CollectionModelNoSuchTimeMapException
 from .archiveit_collection import ArchiveItCollection, ArchiveItCollectionException
 from .input_types import get_collection_model, supported_input_types, \
-    fetch_mementos
+    fetch_mementos, discover_raw_urims
 from .argument_processing import process_similarity_measure_inputs, \
     process_input_types, get_logger, calculate_loglevel
 from .topic_processor import supported_measures, evaluate_off_topic

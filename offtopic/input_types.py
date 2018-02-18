@@ -186,6 +186,30 @@ def get_uri_responses(session, uris):
 
     return futures
 
+def get_head_responses(session, uris):
+
+    futures = {}
+
+    for uri in uris:
+
+        logger.debug("fetching uri {}".format(uri))
+
+        futures[uri] = session.head(uri, allow_redirects=True)
+
+    return futures
+
+def get_raw_responses(session, raw_uris):
+
+    futures = {}
+
+    for uri in raw_uris:
+
+        logger.debug("fetching uri {}".format(uri))
+
+        futures[uri] = session.get(uri)
+
+    return futures
+
 def list_generator(input_list):
 
     while len(input_list) > 0:
@@ -268,20 +292,74 @@ def get_collection_model_from_archiveit(archiveit_cid, working_directory):
 
         timemap = cm.getTimeMap(urit)
         for memento in timemap["mementos"]["list"]:
-            raw_urim = generate_raw_urim(memento["uri"])
-            urims.append(raw_urim)
+            # raw_urim = generate_raw_urim(memento["uri"])
+            # urims.append(raw_urim)
+            urims.append(memento["uri"])
 
     fetch_mementos(urims, cm)
                 
     return cm
 
+def discover_raw_urims(urimlist, futures=None):
+
+    raw_urimdata = {}
+    errordata = {}
+
+    if futures == None:
+        with FuturesSession(max_workers=cpu_count) as session:
+            futures = get_head_responses(session, urimlist)
+
+    working_uri_list = list(futures.keys())
+
+    for urim in list_generator(working_uri_list):
+
+        if futures[urim].done():
+
+            logger.debug("processing URI-M {}".format(urim))
+
+            try:
+
+                response = futures[urim].result()
+
+                if "memento-datetime" in response.headers:
+
+                    if len(response.history) == 0:
+                        raw_urimdata[urim] = generate_raw_urim(urim)
+                    else:
+                        raw_urimdata[urim] = generate_raw_urim(response.url)
+
+                else:
+
+                    warn_msg = "No Memento-Datetime in Response Headers for " \
+                        "URI-M {}".format(urim)
+
+                    logger.warning(warn_msg)
+                    errordata[urim] = warn_msg
+
+            except ConnectionError as e:
+                logger.warning("While acquiring memento at {} there was an error of {}, "
+                    "this event is being recorded".format(urim, repr(e)))
+                errordata[urim] = repr(e)
+
+            except TooManyRedirects as e:
+                logger.warning("While acquiring memento at {} there was an error of {},"
+                    "this event is being recorded".format(urim, repr(e)))
+                errordata[urim] = repr(e)
+
+            finally:
+                working_uri_list.remove(urim)
+
+    return raw_urimdata, errordata
+
 def fetch_mementos(urimlist, collectionmodel, futures=None):
 
     if futures == None:
         with FuturesSession(max_workers=cpu_count) as session:
-            futures = get_uri_responses(session, urimlist)
+            futures = get_head_responses(session, urimlist)
 
     working_uri_list = list(futures.keys())
+
+    logger.debug("working_uri_list: {}".format(working_uri_list))
 
     for urim in list_generator(working_uri_list):
 
@@ -379,7 +457,7 @@ def get_collection_model_from_datafile(datafile, working_directory):
             mdt = datetime.strptime(row["date"], "%Y%m%d%H%M%S")
             urim = row["URI"]
 
-            urim = generate_raw_urim(urim)
+            # urim = generate_raw_urim(urim)
 
             # ontopic = row["label"]
             timemaps_data.setdefault(urir, []).append({
@@ -407,8 +485,9 @@ def get_collection_model_from_datafile(datafile, working_directory):
         timemap = cm.getTimeMap(urit)
 
         for memento in timemap["mementos"]["list"]:
-            raw_urim = generate_raw_urim(memento["uri"])
-            urims.append(raw_urim)
+            # raw_urim = generate_raw_urim(memento["uri"])
+            # urims.append(raw_urim)
+            urims.append(memento["uri"])
 
     fetch_mementos(urims, cm)
 

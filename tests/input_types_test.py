@@ -10,33 +10,71 @@ from requests.exceptions import ConnectionError, TooManyRedirects
 from offtopic import CollectionModel
 from offtopic import get_collection_model
 from offtopic import fetch_mementos
+from offtopic import discover_raw_urims
 
 import logging
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
 futures_mementoinfo = {
-    "goodmemento": {
+    "https://wayback.archive-it.org/web/19700101000000/http://goodmemento": {
         "headers": {
             "key1": "value1",
             "key2": "value2",
             "memento-datetime": "some date"
         },
-        "content": "<html><body>Good Memento</body></html>",
+        "content": "<html><body>Archive stuff<br />Good Memento</body></html>",
         "errorinfo": None,
-        "status": 200
+        "status": 200,
+        "history": [],
+        "url": "https://wayback.archive-it.org/web/19700101000000/http://goodmemento"
     },
-    "connectionerror": {
+    "https://wayback.archive-it.org/web/19700101000000/http://connectionerror": {
         "headers": None,
         "content": None,
-        "errorinfo": b"ConnectionError('connectionerror',)",
-        "status": None
+        "errorinfo": "ConnectionError('connectionerror',)",
+        "status": None,
+        "history": []
     },
-    "toomanyredirects": {
+    "https://wayback.archive-it.org/web/19700101000000/http://toomanyredirects": {
         "headers": None,
         "content": None,
-        "errorinfo": b"TooManyRedirects('toomanyredirects',)",
-        "status": None
+        "errorinfo": "TooManyRedirects('toomanyredirects',)",
+        "status": None,
+        "history": []
+    },
+    "https://wayback.archive-it.org/web/19700101000000/http://goodmementowithredirectstart": {
+        "headers": {
+            "key1": "value1",
+            "key2": "value2",
+            "memento-datetime": "some date"
+        },
+        "content": "<html><body>Archive stuff<br />Good Memento</body></html>",
+        "errorinfo": None,
+        "status": 200,
+        "history": [],
+        "url": "https://wayback.archive-it.org/web/19700101000000/http://goodmementowithredirectend"
+    },
+    "https://wayback.archive-it.org/web/19700101000000/http://goodmementowithredirectmid": {
+        "headers": {
+            "key1": "value1",
+            "key2": "value2"
+        },
+        "content": "",
+        "errorinfo": None,
+        "status": 302,
+        "history": []
+    },
+    "https://wayback.archive-it.org/web/19700101000000/http://goodmementowithredirectend": {
+        "headers": {
+            "key1": "value1",
+            "key2": "value2",
+            "memento-datetime": "some date"
+        },
+        "content": "",
+        "errorinfo": None,
+        "status": 302,
+        "history": []      
     }
 }
 
@@ -47,6 +85,8 @@ class MockResponse():
         self.status_code = futures_mementoinfo[self.uri]["status"]
         self.text = futures_mementoinfo[self.uri]["content"]
         self.headers = futures_mementoinfo[self.uri]["headers"]
+        self.history = futures_mementoinfo[self.uri]["history"]
+        self.url = ""
 
 class MockFuture():
 
@@ -58,14 +98,29 @@ class MockFuture():
 
     def result(self):
 
-        if self.uri == "connectionerror":
+        if self.uri == "https://wayback.archive-it.org/web/19700101000000/http://connectionerror":
             raise ConnectionError("connectionerror")
 
-        if self.uri == "toomanyredirects":
+        if self.uri == "https://wayback.archive-it.org/web/19700101000000/http://toomanyredirects":
             raise TooManyRedirects("toomanyredirects")
 
-        if self.uri == "goodmemento":
-            return MockResponse(self.uri)
+        if self.uri == "https://wayback.archive-it.org/web/19700101000000/http://goodmemento":
+            mr = MockResponse(self.uri)
+            mr.url = self.uri
+            return mr
+
+        if self.uri == "https://wayback.archive-it.org/web/19700101000000/http://goodmementowithredirectstart":
+
+            mr = MockResponse(self.uri)
+
+            mr.history = [
+                MockResponse("https://wayback.archive-it.org/web/19700101000000/http://goodmementowithredirectstart"),
+                MockResponse("https://wayback.archive-it.org/web/19700101000000/http://goodmementowithredirectend")
+            ]
+
+            mr.url = "https://wayback.archive-it.org/web/19700101000000/http://goodmementowithredirectend"
+
+            return mr
 
 
 class InputTypeTest(unittest.TestCase):
@@ -177,9 +232,7 @@ class InputTypeTest(unittest.TestCase):
 
         shutil.rmtree(working_directory)
 
-    def test_fetch_mementos(self):
-
-        # raise Exception("what????")
+    def test_discover_raw_urims(self):
 
         working_directory = "/tmp/test-fetch-mementos"
 
@@ -189,25 +242,40 @@ class InputTypeTest(unittest.TestCase):
 
         mock_futures = {}
 
-        urimlist = list(futures_mementoinfo.keys())
+        urimlist = [
+            "https://wayback.archive-it.org/web/19700101000000/http://goodmemento",
+            "https://wayback.archive-it.org/web/19700101000000/http://connectionerror",
+            "https://wayback.archive-it.org/web/19700101000000/http://goodmementowithredirectstart",
+            "https://wayback.archive-it.org/web/19700101000000/http://toomanyredirects"
+        ]
 
         for urim in urimlist:
             mock_futures[urim] = MockFuture(urim)
 
-        cm = CollectionModel(working_directory=working_directory)
+        raw_urimdata, errordata = discover_raw_urims(urimlist, futures=mock_futures)
 
-        fetch_mementos(urimlist, cm, mock_futures)
+        self.assertEqual( len(raw_urimdata), 2 )
 
-        for urim in futures_mementoinfo:
+        self.assertEqual(
+            raw_urimdata["https://wayback.archive-it.org/web/19700101000000/http://goodmemento"],
+            "https://wayback.archive-it.org/web/19700101000000id_/http://goodmemento"
+        )
 
-            if urim != "goodmemento":
-                self.assertEqual(
-                    cm.getMementoErrorInformation(urim),
-                    futures_mementoinfo[urim]["errorinfo"]
-                )
-            else:
-                self.assertEqual( cm.getMementoContent(urim), 
-                    bytes(futures_mementoinfo[urim]["content"], "utf8") )
+        self.assertEqual(
+            raw_urimdata["https://wayback.archive-it.org/web/19700101000000/http://goodmementowithredirectstart"],
+            "https://wayback.archive-it.org/web/19700101000000id_/http://goodmementowithredirectend"
+        )
 
+        self.assertEqual( len(errordata), 2 )
 
-        shutil.rmtree(working_directory)
+        self.assertEqual(
+            errordata["https://wayback.archive-it.org/web/19700101000000/http://connectionerror"],
+            "ConnectionError('connectionerror',)"
+        )
+
+        self.assertEqual(
+            errordata["https://wayback.archive-it.org/web/19700101000000/http://toomanyredirects"],
+            "TooManyRedirects('toomanyredirects',)"
+        )
+
+        
