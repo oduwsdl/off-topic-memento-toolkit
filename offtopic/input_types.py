@@ -4,6 +4,7 @@ import json
 import multiprocessing
 import requests
 import csv
+import copy
 
 from datetime import datetime
 from datetime import date
@@ -204,7 +205,7 @@ def get_raw_responses(session, raw_uris):
 
     for uri in raw_uris:
 
-        logger.debug("fetching uri {}".format(uri))
+        logger.debug("fetching raw uri {}".format(uri))
 
         futures[uri] = session.get(uri)
 
@@ -296,7 +297,7 @@ def get_collection_model_from_archiveit(archiveit_cid, working_directory):
             # urims.append(raw_urim)
             urims.append(memento["uri"])
 
-    fetch_mementos(urims, cm)
+    fetch_and_save_memento_content(urims, cm)
                 
     return cm
 
@@ -351,6 +352,50 @@ def discover_raw_urims(urimlist, futures=None):
 
     return raw_urimdata, errordata
 
+def fetch_and_save_memento_content(urimlist, collectionmodel):
+
+    raw_urimdata, errordata = discover_raw_urims(urimlist)
+
+    for urim in errordata:
+        errormsg = errordata[urim]
+        collectionmodel.addMementoError(
+            urim, b"", {}, bytes(errormsg, "utf8")
+        )
+
+    invert_raw_urimdata_mapping = {}
+    raw_urims = []
+
+    for urim in raw_urimdata:
+        raw_urim = raw_urimdata[urim]
+        invert_raw_urimdata_mapping[raw_urim] = urim
+        raw_urims.append(raw_urim)
+
+    with FuturesSession(max_workers=cpu_count) as session:
+        futures = get_raw_responses(session, raw_urims)
+
+    raw_urims_copy = copy.deepcopy(raw_urims)
+
+    for raw_urim in list_generator(raw_urims_copy):
+
+        if futures[raw_urim].done():
+
+            logger.debug("processing raw URI-M {}".format(raw_urim))
+
+            response = futures[raw_urim].result()
+
+            http_status = response.status_code
+            memento_content = bytes(response.text, 'utf8')
+            memento_headers = dict(response.headers)    
+            memento_headers["http-status"] = http_status
+
+            urim = invert_raw_urimdata_mapping[raw_urim]
+
+            collectionmodel.addMemento(urim, memento_content, memento_headers)
+
+            raw_urims_copy.remove(raw_urim)
+
+    return collectionmodel
+
 def fetch_mementos(urimlist, collectionmodel, futures=None):
 
     if futures == None:
@@ -403,7 +448,6 @@ def fetch_mementos(urimlist, collectionmodel, futures=None):
             except TooManyRedirects as e:
                 logger.warning("While acquiring memento at {} there was an error of {},"
                     "this event is being recorded".format(urim, repr(e)))
-
                 collectionmodel.addMementoError(urim, b"", {}, 
                     bytes(repr(e), "utf8"))
 
@@ -432,7 +476,7 @@ def get_collection_model_from_timemap(urit, working_directory):
         for memento in timemap["mementos"]["list"]:
             urims.append(memento["uri"])
 
-        fetch_mementos(urims, cm)
+        fetch_and_save_memento_content(urims, cm)
 
     else:
         # TODO: Make an exception specific to this module for this case
@@ -489,7 +533,7 @@ def get_collection_model_from_datafile(datafile, working_directory):
             # urims.append(raw_urim)
             urims.append(memento["uri"])
 
-    fetch_mementos(urims, cm)
+    fetch_and_save_memento_content(urims, cm)
 
     return cm
 
