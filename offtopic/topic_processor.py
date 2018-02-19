@@ -11,7 +11,7 @@ from gensim import corpora, models, similarities
 from sklearn.metrics.pairwise import cosine_similarity
 from sklearn.feature_extraction.text import TfidfVectorizer
 
-from .collectionmodel import CollectionModel
+from .collectionmodel import CollectionModel, CollectionModelMementoErrorException
 from .archive_information import generate_raw_urim
 
 logger = logging.getLogger(__name__)
@@ -47,8 +47,15 @@ def compute_scores_against_first_memento_in_TimeMap(
 
     # logger.debug("timemap URI list: {}".format(collection_model.getTimeMapURIList()))
 
-    for urit in collection_model.getTimeMapURIList():
+    urits = collection_model.getTimeMapURIList()
+    urittotal = len(urits)
 
+    logger.info("There are {} TimeMaps in this collection".format(urittotal))
+    uritcounter = 1
+
+    for urit in urits:
+
+        logger.info("Processing TimeMap {} of {}".format(uritcounter, urittotal))
         logger.debug("processing memementos from TimeMap {}".format(urit))
 
         timemap = collection_model.getTimeMap(urit)
@@ -62,32 +69,49 @@ def compute_scores_against_first_memento_in_TimeMap(
             # first_urim = generate_raw_urim(timemap["mementos"]["first"]["uri"])
             first_urim = timemap["mementos"]["first"]["uri"]
 
-            logger.info("extracting first URI-M {} for calculations".format(first_urim))
+            logger.debug("Accessing content of first URI-M {} for calculations".format(first_urim))
 
             first_content = collection_model.getMementoContentWithoutBoilerplate(first_urim)
             first_tokens = tokenize(first_content)
 
             first_memento_score = scorefunction(first_tokens)
 
-            for memento in timemap["mementos"]["list"]:
+            mementos = timemap["mementos"]["list"]
+            mementototal = len(mementos)
+
+            logger.info("There are {} mementos in this TimeMap".format(mementototal))
+            mementocounter = 1
+
+            for memento in mementos:
+
+                logger.info("Processing Memento {} of {}".format(mementocounter, mementototal))
 
                 # urim = generate_raw_urim(memento["uri"])
                 urim = memento["uri"]
 
-                logger.info("extracting URI-M {} for calculations".format(urim))
+                logger.debug("Accessing content of URI-M {} for calculations".format(urim))
 
-                memento_content = collection_model.getMementoContentWithoutBoilerplate(urim)
-                memento_tokens = tokenize(memento_content)
+                try:
+                    memento_content = collection_model.getMementoContentWithoutBoilerplate(urim)
+                    memento_tokens = tokenize(memento_content)
 
-                memento_score = scorefunction(memento_tokens)
+                    memento_score = scorefunction(memento_tokens)
 
-                scoring["timemaps"][urit].setdefault(urim, {})
-                scoring["timemaps"][urit][urim].setdefault(scoredataname, {})
-                scoring["timemaps"][urit][urim].setdefault("score", {})
-                scoring["timemaps"][urit][urim][scoredataname] = memento_score
-                scoring["timemaps"][urit][urim]["score"] = distance_function(
-                    first_memento_score, memento_score
-                )
+                    scoring["timemaps"][urit].setdefault(urim, {})
+                    scoring["timemaps"][urit][urim].setdefault(scoredataname, {})
+                    scoring["timemaps"][urit][urim].setdefault("score", {})
+                    scoring["timemaps"][urit][urim][scoredataname] = memento_score
+                    scoring["timemaps"][urit][urim]["score"] = distance_function(
+                        first_memento_score, memento_score
+                    )
+                except CollectionModelMementoErrorException:
+                    logger.warning("Errors were recorded while attempting to "
+                        "access URI-M {}, skipping calcualtions for this "
+                        "URI-M".format(urim))
+
+                mementocounter += 1
+            
+            uritcounter += 1
 
     return scoring    
 
