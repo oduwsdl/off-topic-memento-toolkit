@@ -5,6 +5,7 @@ import multiprocessing
 import requests
 import csv
 import copy
+import random
 
 from datetime import datetime
 from datetime import date
@@ -24,6 +25,8 @@ from .archive_information import generate_raw_urim
 logger = logging.getLogger(__name__)
 
 cpu_count = multiprocessing.cpu_count()
+
+working_directory_default = "/tmp/otmt-working"
 
 def json_serial(obj):
     """JSON serializer for objects not serializable by default json code"""
@@ -175,17 +178,17 @@ def generate_archiveit_urits(cid, seed_uris):
 
     return urit_list
 
-def get_uri_responses(session, uris):
+# def get_uri_responses(session, uris):
 
-    futures = {}
+#     futures = {}
 
-    for uri in uris:
+#     for uri in uris:
 
-        logger.debug("fetching uri {}".format(uri))
+#         logger.debug("fetching uri {}".format(uri))
 
-        futures[uri] = session.get(uri)
+#         futures[uri] = session.get(uri)
 
-    return futures
+#     return futures
 
 def get_head_responses(session, uris):
 
@@ -193,7 +196,7 @@ def get_head_responses(session, uris):
 
     for uri in uris:
 
-        logger.debug("fetching uri {}".format(uri))
+        logger.debug("issuing HEAD on uri {}".format(uri))
 
         futures[uri] = session.head(uri, allow_redirects=True)
 
@@ -205,7 +208,7 @@ def get_raw_responses(session, raw_uris):
 
     for uri in raw_uris:
 
-        logger.debug("fetching raw uri {}".format(uri))
+        logger.debug("issuing GET on raw urim {}".format(uri))
 
         futures[uri] = session.get(uri)
 
@@ -213,10 +216,15 @@ def get_raw_responses(session, raw_uris):
 
 def list_generator(input_list):
 
+    logger.debug("list generator called")
+
     while len(input_list) > 0:
         for item in input_list:
+            logger.debug("list now has {} items".format(len(input_list)))
+            logger.debug("yielding {}".format(item))
             yield item
 
+# TODO: fix this function to use the new discover_raw_urims, etc. functions
 def get_collection_model_from_archiveit(archiveit_cid, working_directory):
 
     archiveit_cid = archiveit_cid[0]
@@ -243,7 +251,7 @@ def get_collection_model_from_archiveit(archiveit_cid, working_directory):
     urits = generate_archiveit_urits(archiveit_cid, seed_uris)
 
     with FuturesSession(max_workers=cpu_count) as session:
-        futures = get_uri_responses(session, urits)
+        futures = get_head_responses(session, urits)
 
     working_uri_list = list(futures.keys())
 
@@ -312,11 +320,20 @@ def discover_raw_urims(urimlist, futures=None):
 
     working_uri_list = list(futures.keys())
 
-    for urim in list_generator(working_uri_list):
+    completed_urims = []
+
+    # for urim in list_generator(working_uri_list):
+    while len(completed_urims) < len(list(working_uri_list)):
+
+        urim = random.choice(
+            list(set(working_uri_list) - set(completed_urims))
+        )
+
+        logger.debug("checking if URI-M {} is done downloading".format(urim))
 
         if futures[urim].done():
 
-            logger.debug("processing URI-M {}".format(urim))
+            logger.debug("searching for raw version of URI-M {}".format(urim))
 
             try:
 
@@ -328,6 +345,9 @@ def discover_raw_urims(urimlist, futures=None):
                         raw_urimdata[urim] = generate_raw_urim(urim)
                     else:
                         raw_urimdata[urim] = generate_raw_urim(response.url)
+
+                    logger.debug("added raw URI-M {} associated with URI-M {}"
+                        " to the list to be downloaded".format(raw_urimdata[urim], urim))
 
                 else:
 
@@ -348,14 +368,17 @@ def discover_raw_urims(urimlist, futures=None):
                 errordata[urim] = repr(e)
 
             finally:
-                working_uri_list.remove(urim)
+                logger.debug("Removing URI-M {} from the processing list".format(urim))
+                completed_urims.append(urim)
 
     return raw_urimdata, errordata
 
 def fetch_and_save_memento_content(urimlist, collectionmodel):
 
+    logger.info("Discovering raw mementos")
     raw_urimdata, errordata = discover_raw_urims(urimlist)
 
+    logger.debug("Storing error data in collection model")
     for urim in errordata:
         errormsg = errordata[urim]
         collectionmodel.addMementoError(
@@ -367,19 +390,28 @@ def fetch_and_save_memento_content(urimlist, collectionmodel):
 
     for urim in raw_urimdata:
         raw_urim = raw_urimdata[urim]
-        invert_raw_urimdata_mapping[raw_urim] = urim
+        invert_raw_urimdata_mapping.setdefault(raw_urim, []).append( urim )
         raw_urims.append(raw_urim)
 
+    logger.info("Issuing requests for {} raw mementos".format(len(raw_urims)))
+    logger.info("Really issuing requests for {} raw mementos".format(len(set(raw_urims))))
     with FuturesSession(max_workers=cpu_count) as session:
         futures = get_raw_responses(session, raw_urims)
 
-    raw_urims_copy = copy.deepcopy(raw_urims)
+    completed_raw_urims = []
+    leftovers = list(set(raw_urims) - set(completed_raw_urims))
 
-    for raw_urim in list_generator(raw_urims_copy):
+    # for raw_urim in list_generator(raw_urims_copy):
+    while len(leftovers) > 0:
+
+        raw_urim = random.choice(leftovers)
+
+        logger.debug("Processing raw URI-M {} associated with URI-M {}".format(
+            raw_urim, invert_raw_urimdata_mapping[raw_urim]))
 
         if futures[raw_urim].done():
 
-            logger.debug("processing raw URI-M {}".format(raw_urim))
+            logger.debug("Raw URI-M {} is done".format(raw_urim))
 
             response = futures[raw_urim].result()
 
@@ -388,71 +420,21 @@ def fetch_and_save_memento_content(urimlist, collectionmodel):
             memento_headers = dict(response.headers)    
             memento_headers["http-status"] = http_status
 
-            urim = invert_raw_urimdata_mapping[raw_urim]
+            # sometimes, via redirects, the different URI-Ms end up at the 
+            # same raw URI-M
+            logger.debug("There are {} URI-Ms leading to raw URI-M {}".format(
+                len(invert_raw_urimdata_mapping[raw_urim]), raw_urim
+            ))
+            for urim in invert_raw_urimdata_mapping[raw_urim]:
+                collectionmodel.addMemento(urim, memento_content, memento_headers)
 
-            collectionmodel.addMemento(urim, memento_content, memento_headers)
+            logger.debug("Removing raw URI-M {} from processing list".format(raw_urim))
 
-            raw_urims_copy.remove(raw_urim)
+            completed_raw_urims.append(raw_urim)
+
+        leftovers = list(set(raw_urims) - set(completed_raw_urims))
 
     return collectionmodel
-
-def fetch_mementos(urimlist, collectionmodel, futures=None):
-
-    if futures == None:
-        with FuturesSession(max_workers=cpu_count) as session:
-            futures = get_head_responses(session, urimlist)
-
-    working_uri_list = list(futures.keys())
-
-    logger.debug("working_uri_list: {}".format(working_uri_list))
-
-    for urim in list_generator(working_uri_list):
-
-        if futures[urim].done():
-
-            logger.debug("processing URI-M {}".format(urim))
-
-            try:
-                response = futures[urim].result()
-
-                http_status = response.status_code
-                memento_content = bytes(response.text, 'utf8')
-                memento_headers = dict(response.headers)    
-                memento_headers["http-status"] = http_status
-
-                # check for the memento-datetime header, no the http status
-                # TODO: support for archives that are not memento-compliant?
-                if "memento-datetime" in response.headers:
-
-                    collectionmodel.addMemento(
-                        urim, memento_content, memento_headers)
-
-                    logger.debug("data from URI-M {} has been successfully " \
-                        "saved".format(urim))
-
-                else:
-
-                    warn_msg = "No Memento-Datetime in Response Headers for " \
-                        "URI-M {}".format(urim)
-
-                    logger.warning(warn_msg)
-                    collectionmodel.addMementoError(
-                        urim, memento_content, memento_headers, bytes(warn_msg, 'utf8'))
-
-            except ConnectionError as e:
-                logger.warning("While acquiring memento at {} there was an error of {}, "
-                    "this event is being recorded".format(urim, repr(e)))
-                collectionmodel.addMementoError(urim, b"", {}, 
-                    bytes(repr(e), "utf8"))
-
-            except TooManyRedirects as e:
-                logger.warning("While acquiring memento at {} there was an error of {},"
-                    "this event is being recorded".format(urim, repr(e)))
-                collectionmodel.addMementoError(urim, b"", {}, 
-                    bytes(repr(e), "utf8"))
-
-            finally:
-                working_uri_list.remove(urim)
 
 def get_collection_model_from_timemap(urit, working_directory):
     
@@ -537,7 +519,6 @@ def get_collection_model_from_datafile(datafile, working_directory):
 
     return cm
 
-
 def get_collection_model_from_directory(working_directory):
     
     cm = CollectionModel(working_directory)
@@ -552,7 +533,7 @@ supported_input_types = {
     'dir': get_collection_model_from_directory
 }
 
-def get_collection_model(input_type, arguments, directory):
+def get_collection_model(input_type, arguments, working_directory):
 
     logger.info("Using input type {}".format(input_type))
     logger.debug("input type arguments: {}".format(arguments))
@@ -560,6 +541,14 @@ def get_collection_model(input_type, arguments, directory):
         supported_input_types[input_type]))
 
     if input_type == "dir":
-        return supported_input_types[input_type](directory)
+
+        input_dir = arguments[0]
+
+        logger.info("Input directory {} has been chosen, using it instead of the "
+            "working directory value of {}".format(input_dir, working_directory))
+
+        return supported_input_types[input_type](input_dir)
     else:
-        return supported_input_types[input_type](arguments, directory)
+        logger.info("Working directory {} will be used".format(working_directory))
+
+        return supported_input_types[input_type](arguments, working_directory)

@@ -324,9 +324,13 @@ class CollectionModel:
 
     def getMementoContentWithoutBoilerplate(self, urim):
 
+        if urim in self.urimap["memento-errors"]:
+            raise CollectionModelMementoErrorException(
+                "Errors were recorded for URI-M {}".format(urim))
+
         content_without_boilerplate = None
 
-        logger.debug("acquiring memento content without boilerplate for {}".format(urim))
+        logger.debug("Acquiring memento content without boilerplate for {}".format(urim))
 
         try:
 
@@ -336,6 +340,9 @@ class CollectionModel:
                 self.memento_directory, filename_digest)
 
             if not os.path.exists(boilerplate_filename):
+
+                logger.debug("Boilerplate content has not yet been "
+                    "generated, generating...")
 
                 with open("{}/{}.orig".format(
                     self.memento_directory, filename_digest), 'rb') as fileinput:
@@ -349,20 +356,20 @@ class CollectionModel:
                         bpfile.write(bytes("{}\n".format(paragraph.text), "utf8"))
 
             with open(boilerplate_filename, 'rb') as bpfile:
-
                 content_without_boilerplate = bpfile.read()
                     
         except KeyError:
 
-            logger.debug("urimap['mementos']: {}".format(self.urimap["mementos"]))
+            # logger.debug("urimap['mementos']: {}".format(self.urimap["mementos"]))
 
-            raise CollectionModelException(
+            logger.error("The URI-M [{}] is not saved in this collection model".format(
+                    urim))
+
+            raise CollectionModelNoSuchMementoException(
                 "The URI-M [{}] is not saved in this collection model".format(
                     urim))
 
         return content_without_boilerplate
-
-    
 
     def getHeaders(self, objecttype, uri):
 

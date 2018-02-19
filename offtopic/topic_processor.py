@@ -45,7 +45,7 @@ def compute_scores_against_first_memento_in_TimeMap(
 
     logger.info("beginning TimeMap iteration")
 
-    logger.debug("timemap URI list: {}".format(collection_model.getTimeMapURIList()))
+    # logger.debug("timemap URI list: {}".format(collection_model.getTimeMapURIList()))
 
     for urit in collection_model.getTimeMapURIList():
 
@@ -59,9 +59,10 @@ def compute_scores_against_first_memento_in_TimeMap(
         # e.g., http://wayback.archive-it.org/3936/timemap/link/http://www.peacecorps.gov/shutdown/?from=hpb
         if len(timemap["mementos"]["list"]) > 0:
 
-            first_urim = generate_raw_urim(timemap["mementos"]["first"]["uri"])
+            # first_urim = generate_raw_urim(timemap["mementos"]["first"]["uri"])
+            first_urim = timemap["mementos"]["first"]["uri"]
 
-            logger.info("extracting URI-M {} for calculations".format(first_urim))
+            logger.info("extracting first URI-M {} for calculations".format(first_urim))
 
             first_content = collection_model.getMementoContentWithoutBoilerplate(first_urim)
             first_tokens = tokenize(first_content)
@@ -70,7 +71,8 @@ def compute_scores_against_first_memento_in_TimeMap(
 
             for memento in timemap["mementos"]["list"]:
 
-                urim = generate_raw_urim(memento["uri"])
+                # urim = generate_raw_urim(memento["uri"])
+                urim = memento["uri"]
 
                 logger.info("extracting URI-M {} for calculations".format(urim))
 
