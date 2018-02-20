@@ -436,33 +436,39 @@ def fetch_and_save_memento_content(urimlist, collectionmodel):
 
     return collectionmodel
 
-def get_collection_model_from_timemap(urit, working_directory):
-    
+def get_collection_model_from_timemap(urits, working_directory):
+
     cm = CollectionModel(working_directory=working_directory)
 
-    r = requests.get(urit)
+    for urit in urits:
 
-    http_status = r.status_code
+        logger.info("Acquiring collection model from TimeMap at [{}]".format(urit))
 
-    if http_status == 200:
+        r = requests.get(urit)
 
-        content = r.text
-        headers = dict(r.headers)
-        headers["http-status"] = http_status
-        cm.addTimeMap(urit, content, headers)
+        http_status = r.status_code
 
-        timemap = cm.getTimeMap(urit)
+        if http_status == 200:
 
-        urims = []
+            content = r.text
+            headers = dict(r.headers)
+            headers["http-status"] = http_status
+            cm.addTimeMap(urit, content, headers)
 
-        for memento in timemap["mementos"]["list"]:
-            urims.append(memento["uri"])
+            timemap = cm.getTimeMap(urit)
 
-        fetch_and_save_memento_content(urims, cm)
+            urims = []
 
-    else:
-        # TODO: Make an exception specific to this module for this case
-        raise Exception("No TimeMap was acquired from URI-T {}".format(urit))
+            for memento in timemap["mementos"]["list"]:
+                urims.append(memento["uri"])
+
+            fetch_and_save_memento_content(urims, cm)
+
+        else:
+            # TODO: Make an exception specific to this module for this case
+            raise Exception("No TimeMap was acquired from URI-T {}".format(urit))
+
+    return cm
 
 def get_collection_model_from_datafile(datafile, working_directory):
 
