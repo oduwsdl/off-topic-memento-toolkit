@@ -106,12 +106,12 @@ def compute_scores_against_first_memento_in_TimeMap(
                     )
                 except CollectionModelMementoErrorException:
                     logger.warning("Errors were recorded while attempting to "
-                        "access URI-M {}, skipping calcualtions for this "
-                        "URI-M".format(urim))
+                        "access URI-M {}, skipping {} calcualtions for this "
+                        "URI-M".format(urim, scorename))
 
                 mementocounter += 1
             
-            uritcounter += 1
+        uritcounter += 1
 
     return scoring    
 
@@ -185,7 +185,16 @@ def calculate_jaccard_scores(collection_model):
     scoring = {}
     scoring["timemaps"] = {}
 
-    for urit in collection_model.getTimeMapURIList():
+    urits = collection_model.getTimeMapURIList()
+    urittotal = len(urits)
+
+    logger.info("There are {} TimeMaps in this collection".format(urittotal))
+    uritcounter = 1
+
+    for urit in urits:
+
+        logger.info("Processing TimeMap {} of {}".format(uritcounter, urittotal))
+        logger.debug("processing memementos from TimeMap {}".format(urit))
 
         timemap = collection_model.getTimeMap(urit)
 
@@ -193,26 +202,60 @@ def calculate_jaccard_scores(collection_model):
 
         if len(timemap["mementos"]["list"]) > 0:
 
-            first_urim = generate_raw_urim(timemap["mementos"]["first"]["uri"])
+            first_urim = timemap["mementos"]["first"]["uri"]
+
+            logger.debug("Accessing content of first URI-M {} for calculations".format(first_urim))
 
             first_content = collection_model.getMementoContentWithoutBoilerplate(
                 first_urim
             )
-            first_tokens = tokenize(first_content)
+            # first_tokens = tokenize(first_content)
+            first_tokens = first_content
+
+            mementos = timemap["mementos"]["list"]
+            mementototal = len(mementos)
+
+            logger.info("There are {} mementos in this TimeMap".format(mementototal))
+            mementocounter = 1
             
             for memento in timemap["mementos"]["list"]:
 
-                urim = generate_raw_urim(memento["uri"])
+                logger.info("Processing Memento {} of {}".format(mementocounter, mementototal))
 
-                memento_content = collection_model.getMementoContentWithoutBoilerplate(
-                    urim
-                )
-                memento_tokens = tokenize(memento_content)
-                
-                scoring["timemaps"][urit].setdefault(urim, {})
-                scoring["timemaps"][urit][urim]["score"] = distance.jaccard(
-                    first_tokens, memento_tokens
-                )
+                urim = memento["uri"]
+
+                logger.debug("Accessing content of URI-M {} for calculations".format(urim))
+
+                try:
+
+                    memento_content = collection_model.getMementoContentWithoutBoilerplate(
+                        urim
+                    )
+                    # memento_tokens = tokenize(memento_content)
+                    memento_tokens = memento_content
+                    
+                    scoring["timemaps"][urit].setdefault(urim, {})
+
+                    try:
+                        scoring["timemaps"][urit][urim]["score"] = distance.jaccard(
+                            first_tokens, memento_tokens
+                        )
+                    except ZeroDivisionError:
+                        # we only get a ZeroDivisionError if the union of the
+                        # sets of words in each document has zero length
+                        # if they both of zero length, do they have the same topic?
+                        # this could also indicate a problem with tokenizing 
+                        # or boilerplate removal
+                        scoring["timemaps"][urit][urim]["score"] = 0
+
+                except CollectionModelMementoErrorException:
+                    logger.warning("Errors were recorded while attempting to "
+                        "dereference URI-M {}, skipping Jaccard calcualtions "
+                        "for this URI-M".format(urim))
+
+                mementocounter += 1
+
+        uritcounter += 1
 
     return scoring
 
@@ -235,14 +278,20 @@ def calculate_cosinesimilarity_scores(collection_model):
             
             for memento in timemap["mementos"]["list"]:
 
-                urim = generate_raw_urim(memento["uri"])
+                urim = memento["uri"]
 
-                memento_content = collection_model.getMementoContentWithoutBoilerplate(
-                    urim
-                )
+                try:
+                    memento_content = collection_model.getMementoContentWithoutBoilerplate(
+                        urim
+                    )
 
-                documents.append(memento_content)
-                urims.append(urim)
+                    documents.append(memento_content)
+                    urims.append(urim)
+
+                except CollectionModelMementoErrorException:
+                    logger.warning("Errors were recorded while attempting to "
+                        "dereference URI-M {}, skipping Cosine calculations "
+                        "for this URI-M".format(urim))
 
             tfidf_matrix = tfidf_vectorizer.fit_transform(documents)
             cscores = cosine_similarity(tfidf_matrix[0:1], tfidf_matrix)
