@@ -300,10 +300,16 @@ def get_collection_model_from_archiveit(archiveit_cid, working_directory):
     for urit in cm.getTimeMapURIList():
 
         timemap = cm.getTimeMap(urit)
-        for memento in timemap["mementos"]["list"]:
-            # raw_urim = generate_raw_urim(memento["uri"])
-            # urims.append(raw_urim)
-            urims.append(memento["uri"])
+
+        try:
+            for memento in timemap["mementos"]["list"]:
+                # raw_urim = generate_raw_urim(memento["uri"])
+                # urims.append(raw_urim)
+                urims.append(memento["uri"])
+        except Exception as e:
+            logger.error("Error encountered processing TimeMap at {}".format(urit))
+            logger.error("TimeMap Object: {}".format(timemap))
+            raise e
 
     fetch_and_save_memento_content(urims, cm)
                 

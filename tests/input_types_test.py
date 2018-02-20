@@ -9,7 +9,6 @@ from requests.exceptions import ConnectionError, TooManyRedirects
 
 from offtopic import CollectionModel
 from offtopic import get_collection_model
-from offtopic import fetch_mementos
 from offtopic import discover_raw_urims
 
 import logging
@@ -142,7 +141,7 @@ class InputTypeTest(unittest.TestCase):
         zipref.extractall(test_directory)
         zipref.close()
 
-        cm = get_collection_model("dir", None, working_directory)
+        cm = get_collection_model("dir", [working_directory], working_directory)
 
         testurim = "testing-storage:memento1"
         testurit = "testing-storage:timemap2"

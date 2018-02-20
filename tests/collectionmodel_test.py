@@ -378,3 +378,64 @@ class TestingCollectionModel(unittest.TestCase):
         self.assertEqual( cm.getMementoErrorInformation(badurim), errorinformation )
 
         shutil.rmtree(test_directory)
+
+    def test_problematic_timemap(self):
+
+        timemapcontent="""<http://digitalinnovations.ucla.edu/>; rel="original",
+<http://wayback.archive-it.org/7877/timemap/link/http://digitalinnovations.ucla.edu/>; rel="self"; type="application/link-format"; from="Tue, 21 Mar 2017 15:45:06 GMT"; until="Tue, 21 Mar 2017 15:45:12 GMT",
+<http://wayback.archive-it.org/7877/http://digitalinnovations.ucla.edu/>; rel="timegate",
+<http://wayback.archive-it.org/7877/20170321154506/http://digitalinnovations.ucla.edu/>; rel="first memento"; datetime="Tue, 21 Mar 2017 15:45:06 GMT",
+<http://wayback.archive-it.org/7877/20170321154512/http://digitalinnovations.ucla.edu/>; rel="last memento"; datetime="Tue, 21 Mar 2017 15:45:12 GMT"
+"""
+
+        expectedtimemapdict = {
+            "original_uri": "http://digitalinnovations.ucla.edu/",
+            "timegate_uri": "http://wayback.archive-it.org/7877/http://digitalinnovations.ucla.edu/",
+            "timemap_uri": {
+                "link_format": "http://wayback.archive-it.org/7877/timemap/link/http://digitalinnovations.ucla.edu/"
+            },
+            "mementos": {
+                "first": {
+                    "datetime": datetime(2017, 3, 21, 15, 45, 6),
+                    "uri": "http://wayback.archive-it.org/7877/20170321154506/http://digitalinnovations.ucla.edu/"
+                },
+                "last": {
+                    "datetime": datetime(2017, 3, 21, 15, 45, 12),
+                    "uri": "http://wayback.archive-it.org/7877/20170321154512/http://digitalinnovations.ucla.edu/"
+                },
+                "list": [
+                    {
+                        "datetime": datetime(2017, 3, 21, 15, 45, 6),
+                        "uri": "http://wayback.archive-it.org/7877/20170321154506/http://digitalinnovations.ucla.edu/"
+                    },
+                    {
+                        "datetime": datetime(2017, 3, 21, 15, 45, 12),
+                        "uri": "http://wayback.archive-it.org/7877/20170321154512/http://digitalinnovations.ucla.edu/"
+                    }
+                ]
+            }
+        }
+
+        test_directory = "/tmp/collectionmodel_test"
+
+        if not os.path.exists(test_directory):
+            os.makedirs(test_directory)
+
+        working_directory = "{}/test_problematic_timemap".format(test_directory)
+
+        cm = collectionmodel.CollectionModel(working_directory=working_directory)
+
+        urit = "testing1"
+
+        testtimemapheaders = {
+            "header1": "value1",
+            "header2": "value2"
+        }
+
+        cm.addTimeMap(urit, timemapcontent, testtimemapheaders)
+
+        self.assertEqual(
+            expectedtimemapdict,
+            cm.getTimeMap(urit)
+        )
+
