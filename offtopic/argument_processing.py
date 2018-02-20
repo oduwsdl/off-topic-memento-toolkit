@@ -5,6 +5,7 @@ import logging.config
 
 from .topic_processor import supported_measures
 from .input_types import supported_input_types
+from .output_types import supported_output_types
 
 def process_similarity_measure_inputs(input_argument):
     
@@ -38,6 +39,18 @@ def process_similarity_measure_inputs(input_argument):
 
     return measures_used
 
+def process_output_types(input_argument):
+
+    output_type = input_argument
+
+    if output_type in supported_output_types:
+        return output_type
+    else:
+        raise argparse.ArgumentTypeError(
+            "{} is not a supported output type, supported output types are "
+            "{}".format(output_type, list(supported_output_types.keys()))
+        )
+
 def process_input_types(input_argument):
 
     if '=' not in input_argument:
@@ -58,7 +71,8 @@ def process_input_types(input_argument):
     if input_type not in supported_input_types:
         raise argparse.ArgumentTypeError(
             "{} is not a supported input type, supported types are {}".format(
-                input_type, supported_input_types)
+                input_type, list(supported_input_types.keys())
+                )
             )
 
     if ',' in argument:

@@ -26,14 +26,15 @@ def process_arguments(args):
         required=True, help="file name in which to store the scores")
 
     parser.add_argument('-d', '--directory', dest='working_directory',
-        default='/tmp/working',
+        default=offtopic.working_directory_default,
         help='The working directory holding the data being downloaded'
         ' and processed.')
 
     parser.add_argument('-t', '--output-type', dest='output_type',
-        default='json', help="output type for off-topic analysis:\n"
+        default='json', type=offtopic.process_output_types,
+        help="output type for off-topic analysis:\n"
         "* JSON - a JSON file containing the memento offtopic status(default)\n"
-        "* goldtest - a TSV file in the same format as the gold standard data"
+        "* golddatafile - a TSV file in the same format as the gold standard data"
         )
 
     measurehelp = ""
@@ -76,7 +77,9 @@ if __name__ == '__main__':
     input_type = args.input_type[0]
     input_type_arguments = args.input_type[1]
 
-    logger.debug("measures: {}".format(args.measures))
+    logger.info("Acquiring memento colleciton using input type {}".format(input_type))
+
+    logger.debug("measures chosen: {}".format(args.measures))
 
     cm = offtopic.get_collection_model(
         input_type, input_type_arguments, args.working_directory

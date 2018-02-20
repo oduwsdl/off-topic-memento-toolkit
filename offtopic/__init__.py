@@ -5,7 +5,7 @@ from .archiveit_collection import ArchiveItCollection, ArchiveItCollectionExcept
 from .input_types import get_collection_model, supported_input_types, \
     discover_raw_urims, working_directory_default
 from .argument_processing import process_similarity_measure_inputs, \
-    process_input_types, get_logger, calculate_loglevel
+    process_input_types, get_logger, calculate_loglevel, process_output_types
 from .topic_processor import supported_measures, evaluate_off_topic
 from .output_types import supported_output_types
 from .archive_information import generate_raw_urim, archive_mappings
@@ -23,7 +23,7 @@ __all__ = ["CollectionModel", "CollectionModelException",
     "supported_input_types", "supported_measures",
     "evaluate_off_topic", "supported_output_types",
     "generate_raw_urim", "archive_mappings",
-    "working_directory_default"]
+    "working_directory_default", "process_output_types"]
 
 import logging
 try:  # Python 2.7+
