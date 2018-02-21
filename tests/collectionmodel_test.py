@@ -5,6 +5,10 @@ import hashlib
 import shutil
 import zipfile
 
+import pprint
+
+pp = pprint.PrettyPrinter(indent=4)
+
 from datetime import datetime
 
 from offtopic import collectionmodel
@@ -225,7 +229,7 @@ class TestingCollectionModel(unittest.TestCase):
 
         self.check_fileobjects_exist(files_to_check)
 
-        # shutil.rmtree(working_directory)
+        shutil.rmtree(working_directory)
 
     def test_string_not_bytes_memento(self):
 
@@ -272,6 +276,46 @@ class TestingCollectionModel(unittest.TestCase):
             cm.getMementoContent, "testing-storage:bad-memento" )
 
         shutil.rmtree(working_directory)
+
+    def test_single_memento(self):
+
+        working_directory="/tmp/collectionmodel_test/test_single_memento"
+
+        if os.path.exists(working_directory):
+            shutil.rmtree(working_directory)
+
+        cm = collectionmodel.CollectionModel(working_directory=working_directory)
+
+        headers = {
+            "key1": "value1",
+            "key2": "value2"
+        }
+
+        timemap_content ="""<original1>; rel="original",
+<timemap1>; rel="self"; type="application/link-format"; from="Tue, 21 Mar 2016 15:45:06 GMT"; until="Tue, 21 Mar 2018 15:45:12 GMT",
+<timegate1>; rel="timegate",
+<memento11>; rel="first last memento"; datetime="Tue, 21 Jan 2016 15:45:06 GMT"
+"""
+
+        cm.addTimeMap("timemap1", timemap_content, headers)
+
+        pp.pprint(cm.getTimeMapURIList())
+
+        self.assertEqual( len(cm.getTimeMapURIList()), 1)
+
+        self.assertTrue( "timemap1" in cm.getTimeMapURIList() )
+
+        timemap = cm.getTimeMap("timemap1")
+
+        self.assertEqual( "memento11", timemap["mementos"]["first"]["uri"] )
+        self.assertEqual( "memento11", timemap["mementos"]["last"]["uri"] )
+
+        self.assertEqual( len(timemap["mementos"]["list"]), 1)
+
+        self.assertEqual( timemap["mementos"]["list"][0]["uri"], "memento11" )
+
+        shutil.rmtree(working_directory)
+
 
     #def test_missing_timemap
     def test_data_load(self):
@@ -439,3 +483,4 @@ class TestingCollectionModel(unittest.TestCase):
             cm.getTimeMap(urit)
         )
 
+        shutil.rmtree(test_directory)

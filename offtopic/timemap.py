@@ -55,7 +55,7 @@ def convert_LinkTimeMap_to_dict(timemap_text, skipErrors=False):
                     working_dict["mementos"]["first"]["uri"] = uri
                     first = True
 
-                elif "last" in relation:
+                if "last" in relation:
                     working_dict["mementos"]["last"] = {}
                     working_dict["mementos"]["last"]["uri"] = uri
                     last = True
