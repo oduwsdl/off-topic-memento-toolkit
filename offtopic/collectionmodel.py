@@ -216,7 +216,7 @@ class CollectionModel:
 
             with open("{}/{}_headers.json".format(
                 self.timemap_directory, filename_digest), 'w') as out:
-                json.dump(headers, out, default=json_serial)
+                json.dump(headers, out, default=json_serial, indent=4)
                 
             with open("{}/{}.json".format(
                 self.timemap_directory, filename_digest), 'w') as out:
@@ -261,7 +261,7 @@ class CollectionModel:
 
         with open("{}/{}_headers.json".format(
             self.memento_errors_directory, filename_digest), 'w') as out:
-            json.dump(headers, out, default=json_serial)
+            json.dump(headers, out, default=json_serial, indent=4)
 
         with open("{}/{}.orig".format(
             self.memento_errors_directory, filename_digest), 'wb') as out:

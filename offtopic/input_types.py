@@ -6,6 +6,7 @@ import requests
 import csv
 import copy
 import random
+import pprint
 
 from datetime import datetime
 from datetime import date
@@ -178,18 +179,6 @@ def generate_archiveit_urits(cid, seed_uris):
 
     return urit_list
 
-# def get_uri_responses(session, uris):
-
-#     futures = {}
-
-#     for uri in uris:
-
-#         logger.debug("fetching uri {}".format(uri))
-
-#         futures[uri] = session.get(uri)
-
-#     return futures
-
 def get_head_responses(session, uris):
 
     futures = {}
@@ -273,6 +262,12 @@ def get_collection_model_from_archiveit(archiveit_cid, working_directory):
                     timemap_content = response.text
                     timemap_headers = dict(response.headers)
                     timemap_headers["http-status"] = http_status
+
+                    logger.debug("adding TimeMap content for URI-T {}".format(urit))
+                    logger.debug("Content: {}".format(timemap_content))
+                    logger.debug("Headers: {}".format(
+                        pprint.pformat(timemap_headers)
+                        ))
 
                     cm.addTimeMap(urit, timemap_content, timemap_headers)
 
