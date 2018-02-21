@@ -191,13 +191,13 @@ def get_head_responses(session, uris):
 
     return futures
 
-def get_raw_responses(session, raw_uris):
+def get_uri_responses(session, raw_uris):
 
     futures = {}
 
     for uri in raw_uris:
 
-        logger.debug("issuing GET on raw urim {}".format(uri))
+        logger.debug("issuing GET on uri {}".format(uri))
 
         futures[uri] = session.get(uri)
 
@@ -240,7 +240,7 @@ def get_collection_model_from_archiveit(archiveit_cid, working_directory):
     urits = generate_archiveit_urits(archiveit_cid, seed_uris)
 
     with FuturesSession(max_workers=cpu_count) as session:
-        futures = get_head_responses(session, urits)
+        futures = get_uri_responses(session, urits)
 
     working_uri_list = list(futures.keys())
 
@@ -397,7 +397,7 @@ def fetch_and_save_memento_content(urimlist, collectionmodel):
     logger.info("Issuing requests for {} raw mementos".format(len(raw_urims)))
     logger.info("Really issuing requests for {} raw mementos".format(len(set(raw_urims))))
     with FuturesSession(max_workers=cpu_count) as session:
-        futures = get_raw_responses(session, raw_urims)
+        futures = get_uri_responses(session, raw_urims)
 
     completed_raw_urims = []
     leftovers = list(set(raw_urims) - set(completed_raw_urims))
