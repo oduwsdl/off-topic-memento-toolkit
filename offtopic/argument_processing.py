@@ -25,7 +25,7 @@ def process_similarity_measure_inputs(input_argument):
                             measure_name)
                             )
 
-                measures_used[measure_name] = threshold
+                measures_used[measure_name] = float(threshold)
 
             else:
                 measures_used[measure] = \
