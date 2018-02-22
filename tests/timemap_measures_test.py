@@ -273,36 +273,50 @@ class TestingTimeMapMeasures(unittest.TestCase):
 
         urits = cm.getTimeMapURIList()
 
+        # see: https://en.wikipedia.org/wiki/Pangram
+        full_sentence = ['The', 'quick', 'brown', 'fox', 'jumps', 'over', 
+            'the', 'lazy', 'dog', 'etaoin', 'shrdlu', 'Now','is', 'the', 
+            'time', 'for', 'all', 'good', 'men', 'to', 'come', 'to', 'the', 
+            'aid', 'of', 'their', 'country',
+            'Jived', 'fox', 'nymph', 'grabs', 'quick', 'waltz',
+            'Glib', 'jocks', 'quiz', 'nymph', 'to', 'vex', 'dwarf',
+            'Sphinx', 'of', 'black', 'quartz,', 'judge', 'my', 'vow',
+            'How', 'vexingly', 'quick', 'daft', 'zebras', 'jump',
+            'The', 'five', 'boxing', 'wizards', 'jump', 'quickly',
+            'Pack', 'my', 'box', 'with', 'five', 'dozen', 'liquor', 'jugs'
+            ]
+
         for i in range(0, 2):
 
             timemap = cm.getTimeMap(urits[i])
-            randindex = i + 1
+            index = i + 1
 
             for memento in timemap["mementos"]["list"]:
 
-                randindex += 1
+                index += 1
             
                 urim = memento["uri"]
                 mdt = memento["datetime"]
 
-                innercontent = ""
+                innercontent = urim
 
-                for j in range(0, randindex):
-                    innercontent += " " + (
-                        urim + " " +
-                        (string.printable[(randindex * 2):(randindex**2) + 1] * randindex) +
-                        " " + str(mdt)
-                    )
+                for j in range(0, index):
+                    innercontent += "\n" + " ".join(full_sentence[(i + j + index):]) + " "
+
+                innercontent += "\n" + str(mdt)
+
+                pp.pprint(innercontent)
+
+                print("\n")
+
+                # for j in range(0, randindex):
+                #     innercontent += " " + (
+                #         urim + " " +
+                #         (string.printable[(randindex * 2):(randindex**2) + 1] * randindex) +
+                #         " " + str(mdt)
+                #     )
 
                 content = "<html><body>{}</body></html>".format(innercontent)
-
-                # content = "<html><body>{}</body></html>".format(
-                #     urim + (string.printable[(randindex * 2):(randindex**2) + 1] * randindex) + str(mdt)
-                # )
-
-                # content = "".join(
-                #     [ random.choice(string.printable) for i in range(10 * randindex) ]
-                # )
 
                 cm.addMemento(urim, bytes(content, "utf8"), headers)
 
@@ -358,6 +372,55 @@ class TestingTimeMapMeasures(unittest.TestCase):
                 self.assertTrue( "levenshtein" in scores["timemaps"][urit][urim] )
                 self.assertTrue( "nlevenshtein" in scores["timemaps"][urit][urim] )
 
+        expected_scores = {   'timemaps': {   'timemap1': {   'memento11': {   'bytecount': {   'comparison score': 0.0,
+                                                                      'individual score': 723},
+                                                     'jaccard': {   'comparison score': 0.0},
+                                                     'levenshtein': {   'comparison score': 0},
+                                                     'nlevenshtein': {   'comparison score': 0.0},
+                                                     'sorensen': {   'comparison score': 0.0},
+                                                     'wordcount': {   'comparison score': 0.0,
+                                                                      'individual score': 94}},
+                                    'memento12': {   'bytecount': {   'comparison score': -0.43015214384508993,
+                                                                      'individual score': 1034},
+                                                     'jaccard': {   'comparison score': 0.11363636363636365},
+                                                     'levenshtein': {   'comparison score': 324},
+                                                     'nlevenshtein': {   'comparison score': 0.3220675944333996},
+                                                     'sorensen': {   'comparison score': 0.011235955056179803},
+                                                     'wordcount': {   'comparison score': -0.43617021276595747,
+                                                                      'individual score': 135}},
+                                    'memento13': {   'bytecount': {   'comparison score': -0.8409405255878284,
+                                                                      'individual score': 1331},
+                                                     'jaccard': {   'comparison score': 0.15555555555555556},
+                                                     'levenshtein': {   'comparison score': 612},
+                                                     'nlevenshtein': {   'comparison score': 0.4700460829493088},
+                                                     'sorensen': {   'comparison score': 0.0337078651685393},
+                                                     'wordcount': {   'comparison score': -0.8723404255319149,
+                                                                      'individual score': 176}}},
+                    'timemap2': {   'memento21': {   'bytecount': {   'comparison score': 0.0,
+                                                                      'individual score': 1019},
+                                                     'jaccard': {   'comparison score': 0.0},
+                                                     'levenshtein': {   'comparison score': 0},
+                                                     'nlevenshtein': {   'comparison score': 0.0},
+                                                     'sorensen': {   'comparison score': 0.0},
+                                                     'wordcount': {   'comparison score': 0.0,
+                                                                      'individual score': 133}},
+                                    'memento22': {   'bytecount': {   'comparison score': -0.28655544651619236,
+                                                                      'individual score': 1311},
+                                                     'jaccard': {   'comparison score': 0.09302325581395354},
+                                                     'levenshtein': {   'comparison score': 315},
+                                                     'nlevenshtein': {   'comparison score': 0.24570982839313574},
+                                                     'sorensen': {   'comparison score': 0.01098901098901095},
+                                                     'wordcount': {   'comparison score': -0.30827067669172936,
+                                                                      'individual score': 174}},
+                                    'memento23': {   'bytecount': {   'comparison score': -0.5593719332679097,
+                                                                      'individual score': 1589},
+                                                     'jaccard': {   'comparison score': 0.13636363636363635},
+                                                     'levenshtein': {   'comparison score': 594},
+                                                     'nlevenshtein': {   'comparison score': 0.38101347017318793},
+                                                     'sorensen': {   'comparison score': 0.022222222222222254},
+                                                     'wordcount': {   'comparison score': -0.593984962406015,
+                                                                      'individual score': 212}}}}}
+
         for measure in same_scores:
 
             for urit in scores["timemaps"]:
@@ -380,5 +443,11 @@ class TestingTimeMapMeasures(unittest.TestCase):
                             "for document differentness for URI-M {}".format(
                                 measure, urim)
                         )
+
+                    # for regression
+                    self.assertAlmostEqual(
+                            scores["timemaps"][urit][urim][measure]["comparison score"],
+                            expected_scores["timemaps"][urit][urim][measure]["comparison score"]
+                    )
 
         shutil.rmtree(working_directory)
