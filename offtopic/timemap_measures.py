@@ -456,6 +456,9 @@ def evaluate_off_topic(scoring, threshold, measurename, comparison_direction):
             elif comparison_direction == "<":
                 if scoring["timemaps"][urit][urim]["timemap measures"][measurename]["comparison score"] < threshold:
                     scoring["timemaps"][urit][urim]["timemap measures"][measurename]["topic status"] = "off-topic"
+            elif comparison_direction == "!=":
+                if scoring["timemaps"][urit][urim]["timemap measures"][measurename]["comparison score"] != threshold:
+                    scoring["timemaps"][urit][urim]["timemap measures"][measurename]["topic status"] = "off-topic"
 
     return scoring
 
@@ -474,15 +477,15 @@ supported_timemap_measures = {
     },
     "wordcount": {
         "name": "Word Count",
-        "function": compute_bytecount_across_TimeMap,
+        "function": compute_wordcount_across_TimeMap,
         "comparison direction": "<",
         "default threshold": -0.85
     },
     "tfintersection": {
         "name": "TF-Intersection",
         "function": compute_tfintersection_across_TimeMap,
-        "comparison direction": "==",
-        "default threshold": -0.65
+        "comparison direction": "!=",
+        "default threshold": 0.0
     },
     "jaccard": {
         "name": "Jaccard Distance",

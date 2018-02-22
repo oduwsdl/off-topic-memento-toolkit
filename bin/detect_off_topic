@@ -114,10 +114,10 @@ if __name__ == '__main__':
         scoring = offtopic.supported_timemap_measures[measure]["function"](
             cm, scores=scoring)
 
+        threshold = args.timemap_measures[measure]
+
         scoring = offtopic.evaluate_off_topic(
-            scoring, 
-            offtopic.supported_timemap_measures[measure]["default threshold"],
-            measure,
+            scoring, threshold, measure,
             offtopic.supported_timemap_measures[measure]["comparison direction"]
             )
 

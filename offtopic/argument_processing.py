@@ -3,7 +3,7 @@ import sys
 import logging
 import logging.config
 
-from .topic_processor import supported_measures
+from .timemap_measures import supported_timemap_measures
 from .input_types import supported_input_types
 from .output_types import supported_output_types
 
@@ -19,7 +19,7 @@ def process_similarity_measure_inputs(input_argument):
             if '=' in measure:
                 measure_name, threshold = measure.split('=')
                 
-                if measure_name not in supported_measures:
+                if measure_name not in supported_timemap_measures:
                     raise argparse.ArgumentTypeError(
                         "measure '{}' is not supported at this time".format(
                             measure_name)
@@ -29,7 +29,8 @@ def process_similarity_measure_inputs(input_argument):
 
             else:
                 measures_used[measure] = \
-                    supported_measures[measure]['default_threshold']
+                    supported_timemap_measures[measure]['default threshold']
+
         except KeyError:
             raise argparse.ArgumentTypeError(
                 "measure '{}' is not supported at this time".format(
