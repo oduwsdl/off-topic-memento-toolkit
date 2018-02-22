@@ -28,7 +28,10 @@ def full_tokenize(text, stemming=True):
 
     stopset = stopwords.words("english") + list(string.punctuation)
 
-    tokens = word_tokenize(text.decode("utf8"))
+    if type(text) == bytes:
+        tokens = word_tokenize(text.decode("utf8"))
+    else:
+        tokens = word_tokenize(text)
 
     if stemming:
         stems = stem_tokens(tokens)
@@ -329,7 +332,99 @@ def compute_tfintersection_across_TimeMap(collectionmodel, scores=None, tokenize
 
     return scores
 
-def compute_cosine_across_TimeMap(collectionmodel, scores=None, stemming=True):
-    scores = {}
+def compute_cosine_across_TimeMap(collectionmodel, scores=None, tokenize=None, stemming=None):
+    
+    # TODO: alter compute_score_across_TimeMap so that much of this function can be replaced
+    if scores == None:
+        scores = {}
+        scores["timemaps"] = {}
+    
+    measurename = "cosine"
+
+    tokenize = True
+    # remove_boilerplate = True
+
+    logger.info("Computing score across TimeMap, beginning TimeMap iteration...")
+
+    urits = collectionmodel.getTimeMapURIList()
+    urittotal = len(urits)
+    uritcounter = 1
+
+    for urit in urits:
+
+        logger.info("Processing TimeMap {} of {}".format(uritcounter, urittotal))
+        logger.debug("Processing mementos from TimeMap at {}".format(urit))
+
+        timemap = collectionmodel.getTimeMap(urit)
+
+        scores["timemaps"].setdefault(urit, {})
+
+        memento_list = timemap["mementos"]["list"]
+
+        # some TimeMaps have no mementos
+        # e.g., http://wayback.archive-it.org/3936/timemap/link/http://www.peacecorps.gov/shutdown/?from=hpb
+        if len(memento_list) > 0:
+
+            first_urim = timemap["mementos"]["first"]["uri"]
+
+            logger.debug("Accessing content of first URI-M {} for calculations".format(first_urim))
+
+            # first_data = get_memento_data_for_measure(
+            #     first_urim, collectionmodel, tokenize=tokenize, stemming=stemming, 
+            #     remove_boilerplate=remove_boilerplate)
+            first_data = collectionmodel.getMementoContentWithoutBoilerplate(first_urim)
+
+            mementos = timemap["mementos"]["list"]
+
+            mementototal = len(mementos)
+            logger.info("There are {} mementos in this TimeMap".format(mementototal))
+
+            mementocounter = 1
+
+            processed_urims = []
+            documents = []
+
+            processed_urims.append(first_urim)
+            documents.append(first_data)
+
+            for memento in mementos:
+
+                logger.info("Processing Memento {} of {}".format(mementocounter, mementototal))
+
+                urim = memento["uri"]
+
+                logger.debug("Accessing content of URI-M {} for calculations".format(urim))
+
+                scores["timemaps"][urit].setdefault(urim, {})
+
+                try:
+                    # memento_data = get_memento_data_for_measure(
+                    #     urim, collectionmodel, tokenize=tokenize, 
+                    #     stemming=stemming, 
+                    #     remove_boilerplate=remove_boilerplate)
+                    memento_data = collectionmodel.getMementoContentWithoutBoilerplate(urim)
+                        
+                    processed_urims.append(urim)
+                    documents.append(memento_data)
+
+                except CollectionModelMementoErrorException:
+                    logger.warning("Errors were recorded while attempting to "
+                        "access URI-M {}, skipping {} calcualtions for this "
+                        "URI-M".format(urim, measurename))
+                
+                mementocounter += 1
+
+            # our full_tokenize function handles stop words
+            tfidf_vectorizer = TfidfVectorizer(tokenizer=full_tokenize, stop_words=None)
+            tfidf_matrix = tfidf_vectorizer.fit_transform(documents)
+            cscores = cosine_similarity(tfidf_matrix[0:1], tfidf_matrix)
+
+            for i in range(0, len(cscores[0])):
+                urim = processed_urims[i]
+                logger.debug("saving cosine scores for URI-M {}".format(urim))
+                scores["timemaps"][urit][urim].setdefault(measurename, {})
+                scores["timemaps"][urit][urim][measurename]["comparison score"] = cscores[0][i]
+
+            uritcounter += 1
 
     return scores

@@ -18,7 +18,7 @@ logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
 same_scores = {
-    # "cosine": 1,
+    "cosine": 1.0,
     "bytecount": 0,
     "wordcount": 0,
     "tfintersection": 0,
@@ -92,9 +92,9 @@ class TestingTimeMapMeasures(unittest.TestCase):
             cm, scores=scores, tokenize=True, stemming=True
         )
 
-        # scores = compute_cosine_across_TimeMap(
-        #     cm, scores=scores, tokenize=True, stemming=True
-        # )
+        scores = compute_cosine_across_TimeMap(
+            cm, scores=scores, tokenize=True, stemming=True
+        )
 
         scores = compute_sorensen_across_TimeMap(
             cm, scores=scores, tokenize=True, stemming=True
@@ -136,6 +136,7 @@ class TestingTimeMapMeasures(unittest.TestCase):
                 self.assertTrue( "levenshtein" in scores["timemaps"][urit][urim] )
                 self.assertTrue( "nlevenshtein" in scores["timemaps"][urit][urim] )
                 self.assertTrue( "tfintersection" in scores["timemaps"][urit][urim] )
+                self.assertTrue( "cosine" in scores["timemaps"][urit][urim] )
 
         for measure in same_scores:
 
@@ -143,11 +144,11 @@ class TestingTimeMapMeasures(unittest.TestCase):
 
                 for urim in scores["timemaps"][urit]:
 
-                    self.assertEqual(
+                    self.assertAlmostEqual(
                         scores["timemaps"][urit][urim][measure]["comparison score"],
                         same_scores[measure],
-                        "measure {} does not compute the correct score "
-                        "for document sameness"
+                        msg="measure {} does not compute the correct score "
+                        "for document sameness with URI-M {}".format(measure, urim)
                     )
 
         shutil.rmtree(working_directory)
@@ -198,9 +199,9 @@ class TestingTimeMapMeasures(unittest.TestCase):
             cm, scores=scores, tokenize=True, stemming=True
         )
 
-        # scores = compute_cosine_across_TimeMap(
-        #     cm, scores=scores, stemming=True
-        # )
+        scores = compute_cosine_across_TimeMap(
+            cm, scores=scores, stemming=True
+        )
 
         scores = compute_sorensen_across_TimeMap(
             cm, scores=scores, tokenize=True, stemming=True
@@ -232,6 +233,8 @@ class TestingTimeMapMeasures(unittest.TestCase):
             self.assertTrue( "sorensen" in scores["timemaps"]["timemap1"][urim] )
             self.assertTrue( "levenshtein" in scores["timemaps"]["timemap1"][urim] )
             self.assertTrue( "nlevenshtein" in scores["timemaps"]["timemap1"][urim] )
+            self.assertTrue( "tfintersection" in scores["timemaps"]["timemap1"][urim] )
+            self.assertTrue( "cosine" in scores["timemaps"]["timemap1"][urim] )
 
         for measure in same_scores:
 
@@ -239,11 +242,11 @@ class TestingTimeMapMeasures(unittest.TestCase):
 
                 for urim in scores["timemaps"][urit]:
 
-                    self.assertEqual(
+                    self.assertAlmostEqual(
                         scores["timemaps"][urit][urim][measure]["comparison score"],
                         same_scores[measure],
-                        "measure {} does not compute the correct score "
-                        "for document sameness".format(measure)
+                        msg="measure {} does not compute the correct score "
+                        "for document sameness for URI-M {}".format(measure, urim)
                     )
 
         shutil.rmtree(working_directory)
@@ -527,6 +530,70 @@ class TestingTimeMapMeasures(unittest.TestCase):
         self.assertAlmostEqual(
             expected_scores['timemaps']['timemap1']['memento12']['tfintersection']['comparison score'],
             scores['timemaps']['timemap1']['memento12']['tfintersection']['comparison score']
+        )
+
+        shutil.rmtree(working_directory)
+
+    def test_cosine(self):
+
+        working_directory = "/tmp/test_tf_intersection"
+
+        if os.path.exists(working_directory):
+            shutil.rmtree(working_directory)
+
+        cm = collectionmodel.CollectionModel(working_directory=working_directory)
+
+        headers = {
+            "key1": "value1",
+            "key2": "value2"
+        }
+
+        full_sentence = ['The', 'quick', 'brown', 'fox', 'jumps', 'over', 
+            'the', 'lazy', 'dog', 'etaoin', 'shrdlu', 'Now','is', 'the', 
+            'time', 'for', 'all', 'good', 'men', 'to', 'come', 'to', 'the', 
+            'aid', 'of', 'their', 'country',
+            'Jived', 'fox', 'nymph', 'grabs', 'quick', 'waltz',
+            'Glib', 'jocks', 'quiz', 'nymph', 'to', 'vex', 'dwarf',
+            'Sphinx', 'of', 'black', 'quartz,', 'judge', 'my', 'vow',
+            'How', 'vexingly', 'quick', 'daft', 'zebras', 'jump',
+            'The', 'five', 'boxing', 'wizards', 'jump', 'quickly',
+            'Pack', 'my', 'box', 'with', 'five', 'dozen', 'liquor', 'jugs'
+            ]
+
+        memcontent1 = bytes("<html><body>{}</body></html>".format(" ".join(full_sentence[0:20])), "utf8")
+        memcontent2 = bytes("<html><body>{}</body></html>".format(" ".join(full_sentence[20:-1])), "utf8")
+
+        timemap_content ="""<original1>; rel="original",
+<timemap1>; rel="self"; type="application/link-format"; from="Tue, 21 Mar 2016 15:45:06 GMT"; until="Tue, 21 Mar 2018 15:45:12 GMT",
+<timegate1>; rel="timegate",
+<memento11>; rel="first memento"; datetime="Tue, 21 Jan 2016 15:45:06 GMT",
+<memento12>; rel="last memento"; datetime="Tue, 21 Jan 2018 15:45:12 GMT"
+"""
+
+        cm.addTimeMap("timemap1", timemap_content, headers)
+        cm.addMemento("memento11", memcontent1, headers)
+        cm.addMemento("memento12", memcontent2, headers)
+
+        scores = compute_cosine_across_TimeMap(cm, scores=None, tokenize=None, stemming=True)
+
+        pp.pprint(scores)
+
+        self.assertNotEqual(
+            same_scores['cosine'],
+            scores['timemaps']['timemap1']['memento12']['cosine']['comparison score']
+        )
+
+        # after removing stop words, the first document consists of 11 words
+        # the comparison document consists of more than 20 words
+        # the terms 'quick' and 'jump' overlap, giving 2 overlapping terms
+        # 11 - 2 = 9, hence the comparison score of 9
+        expected_scores = {   'timemaps': {   'timemap1': {   'memento11': {   'cosine': {   'comparison score': 1.0000000000000002}},
+                                    'memento12': {   'cosine': {   'comparison score': 0.117041776804418}}}}}
+
+        # for regression
+        self.assertAlmostEqual(
+            expected_scores['timemaps']['timemap1']['memento12']['cosine']['comparison score'],
+            scores['timemaps']['timemap1']['memento12']['cosine']['comparison score']
         )
 
         shutil.rmtree(working_directory)
