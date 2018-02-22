@@ -1,4 +1,6 @@
 import os
+import string
+import random
 import unittest
 import shutil
 import pprint
@@ -231,10 +233,152 @@ class TestingTimeMapMeasures(unittest.TestCase):
                         scores["timemaps"][urit][urim][measure]["comparison score"],
                         same_scores[measure],
                         "measure {} does not compute the correct score "
-                        "for document sameness"
+                        "for document sameness".format(measure)
                     )
 
         shutil.rmtree(working_directory)
 
     def test_all_mementos_different(self):
-        pass
+
+        working_directory = "/tmp/test_all_mementos_same"
+
+        if os.path.exists(working_directory):
+            shutil.rmtree(working_directory)
+
+        cm = collectionmodel.CollectionModel(working_directory=working_directory)
+
+        headers = {
+            "key1": "value1",
+            "key2": "value2"
+        }
+
+        timemap1_content ="""<original1>; rel="original",
+<timemap1>; rel="self"; type="application/link-format"; from="Tue, 21 Mar 2016 15:45:06 GMT"; until="Tue, 21 Mar 2018 15:45:12 GMT",
+<timegate1>; rel="timegate",
+<memento11>; rel="first memento"; datetime="Tue, 21 Jan 2016 15:45:06 GMT",
+<memento12>; rel="memento"; datetime="Tue, 21 Jan 2017 15:45:06 GMT",
+<memento13>; rel="last memento"; datetime="Tue, 21 Jan 2018 15:45:12 GMT"
+"""
+
+        timemap2_content ="""<original1>; rel="original",
+<timemap2>; rel="self"; type="application/link-format"; from="Tue, 21 Mar 2016 15:45:06 GMT"; until="Tue, 21 Mar 2018 15:45:12 GMT",
+<timegate1>; rel="timegate",
+<memento21>; rel="first memento"; datetime="Tue, 21 Mar 2016 15:45:06 GMT",
+<memento22>; rel="memento"; datetime="Tue, 21 Mar 2017 15:45:06 GMT",
+<memento23>; rel="last memento"; datetime="Tue, 21 Mar 2018 15:45:12 GMT"
+"""
+
+        cm.addTimeMap("timemap1", timemap1_content, headers)
+        cm.addTimeMap("timemap2", timemap2_content, headers)
+
+        urits = cm.getTimeMapURIList()
+
+        for i in range(0, 2):
+
+            timemap = cm.getTimeMap(urits[i])
+            randindex = i + 1
+
+            for memento in timemap["mementos"]["list"]:
+
+                randindex += 1
+            
+                urim = memento["uri"]
+                mdt = memento["datetime"]
+
+                innercontent = ""
+
+                for j in range(0, randindex):
+                    innercontent += " " + (
+                        urim + " " +
+                        (string.printable[(randindex * 2):(randindex**2) + 1] * randindex) +
+                        " " + str(mdt)
+                    )
+
+                content = "<html><body>{}</body></html>".format(innercontent)
+
+                # content = "<html><body>{}</body></html>".format(
+                #     urim + (string.printable[(randindex * 2):(randindex**2) + 1] * randindex) + str(mdt)
+                # )
+
+                # content = "".join(
+                #     [ random.choice(string.printable) for i in range(10 * randindex) ]
+                # )
+
+                cm.addMemento(urim, bytes(content, "utf8"), headers)
+
+        scores = compute_bytecount_across_TimeMap(
+            cm, scores=None, tokenize=False, stemming=False
+        )
+
+        scores = compute_wordcount_across_TimeMap(
+            cm, scores=scores, stemming=True
+        )
+
+        scores = compute_jaccard_across_TimeMap(
+            cm, scores=scores, tokenize=True, stemming=True
+        )
+
+        # scores = compute_cosine_across_TimeMap(
+        #     cm, scores=scores, stemming=True
+        # )
+
+        scores = compute_sorensen_across_TimeMap(
+            cm, scores=scores, tokenize=False, stemming=False
+        )
+
+        scores = compute_levenshtein_across_TimeMap(
+            cm, scores=scores, tokenize=False, stemming=False
+        )
+
+        scores = compute_nlevenshtein_across_TimeMap(
+            cm, scores=scores, tokenize=False, stemming=False
+        )
+
+        pp.pprint(scores)
+
+        self.assertTrue( "timemap1" in scores["timemaps"] )
+        self.assertTrue( "timemap2" in scores["timemaps"] )
+
+        self.assertTrue( "memento11" in scores["timemaps"]["timemap1"] )
+        self.assertTrue( "memento12" in scores["timemaps"]["timemap1"] )
+        self.assertTrue( "memento13" in scores["timemaps"]["timemap1"] )
+
+        self.assertTrue( "memento21" in scores["timemaps"]["timemap2"] )
+        self.assertTrue( "memento22" in scores["timemaps"]["timemap2"] )
+        self.assertTrue( "memento23" in scores["timemaps"]["timemap2"] )
+
+        for urit in scores["timemaps"]:
+
+            for urim in scores["timemaps"][urit]:
+
+                self.assertTrue( "bytecount" in scores["timemaps"][urit][urim] )
+                self.assertTrue( "wordcount" in scores["timemaps"][urit][urim] )
+                self.assertTrue( "jaccard" in scores["timemaps"][urit][urim] )
+                self.assertTrue( "sorensen" in scores["timemaps"][urit][urim] )
+                self.assertTrue( "levenshtein" in scores["timemaps"][urit][urim] )
+                self.assertTrue( "nlevenshtein" in scores["timemaps"][urit][urim] )
+
+        for measure in same_scores:
+
+            for urit in scores["timemaps"]:
+
+                for urim in scores["timemaps"][urit]:
+
+                    # comparisons with themselves should match
+                    if urim == "memento11" or urim == "memento21":
+                        self.assertEqual(
+                            scores["timemaps"][urit][urim][measure]["comparison score"],
+                            same_scores[measure],
+                            "measure {} does not compute the correct score "
+                            "for document sameness".format(measure)
+                        )
+                    else:
+                        self.assertNotEqual(
+                            scores["timemaps"][urit][urim][measure]["comparison score"],
+                            same_scores[measure],
+                            "measure {} does not compute the correct score "
+                            "for document differentness for URI-M {}".format(
+                                measure, urim)
+                        )
+
+        shutil.rmtree(working_directory)
