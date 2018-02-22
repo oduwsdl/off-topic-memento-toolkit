@@ -10,7 +10,8 @@ pp = pprint.PrettyPrinter(indent=4)
 from offtopic import collectionmodel, compute_bytecount_across_TimeMap, \
     compute_wordcount_across_TimeMap, compute_jaccard_across_TimeMap, \
     compute_cosine_across_TimeMap, compute_sorensen_across_TimeMap, \
-    compute_levenshtein_across_TimeMap, compute_nlevenshtein_across_TimeMap
+    compute_levenshtein_across_TimeMap, compute_nlevenshtein_across_TimeMap, \
+    compute_tfintersection_across_TimeMap
 
 import logging
 logging.basicConfig(level=logging.DEBUG)
@@ -20,7 +21,7 @@ same_scores = {
     # "cosine": 1,
     "bytecount": 0,
     "wordcount": 0,
-    # "tfintersection": 0,
+    "tfintersection": 0,
     "jaccard": 0,
     "sorensen": 0,
     "levenshtein": 0,
@@ -84,7 +85,7 @@ class TestingTimeMapMeasures(unittest.TestCase):
         )
 
         scores = compute_wordcount_across_TimeMap(
-            cm, scores=scores, stemming=True
+            cm, scores=scores, tokenize=True, stemming=True
         )
 
         scores = compute_jaccard_across_TimeMap(
@@ -92,19 +93,23 @@ class TestingTimeMapMeasures(unittest.TestCase):
         )
 
         # scores = compute_cosine_across_TimeMap(
-        #     cm, scores=scores, stemming=True
+        #     cm, scores=scores, tokenize=True, stemming=True
         # )
 
         scores = compute_sorensen_across_TimeMap(
-            cm, scores=scores, tokenize=False, stemming=False
+            cm, scores=scores, tokenize=True, stemming=True
         )
 
         scores = compute_levenshtein_across_TimeMap(
-            cm, scores=scores, tokenize=False, stemming=False
+            cm, scores=scores, tokenize=True, stemming=True
         )
 
         scores = compute_nlevenshtein_across_TimeMap(
-            cm, scores=scores, tokenize=False, stemming=False
+            cm, scores=scores, tokenize=True, stemming=True
+        )
+
+        scores = compute_tfintersection_across_TimeMap(
+            cm, scores=scores, tokenize=True, stemming=True
         )
 
         pp.pprint(scores)
@@ -130,6 +135,7 @@ class TestingTimeMapMeasures(unittest.TestCase):
                 self.assertTrue( "sorensen" in scores["timemaps"][urit][urim] )
                 self.assertTrue( "levenshtein" in scores["timemaps"][urit][urim] )
                 self.assertTrue( "nlevenshtein" in scores["timemaps"][urit][urim] )
+                self.assertTrue( "tfintersection" in scores["timemaps"][urit][urim] )
 
         for measure in same_scores:
 
@@ -185,7 +191,7 @@ class TestingTimeMapMeasures(unittest.TestCase):
         )
 
         scores = compute_wordcount_across_TimeMap(
-            cm, scores=scores, stemming=True
+            cm, scores=scores, tokenize=True, stemming=True
         )
 
         scores = compute_jaccard_across_TimeMap(
@@ -197,15 +203,19 @@ class TestingTimeMapMeasures(unittest.TestCase):
         # )
 
         scores = compute_sorensen_across_TimeMap(
-            cm, scores=scores, tokenize=False, stemming=False
+            cm, scores=scores, tokenize=True, stemming=True
         )
 
         scores = compute_levenshtein_across_TimeMap(
-            cm, scores=scores, tokenize=False, stemming=False
+            cm, scores=scores, tokenize=True, stemming=True
         )
 
         scores = compute_nlevenshtein_across_TimeMap(
-            cm, scores=scores, tokenize=False, stemming=False
+            cm, scores=scores, tokenize=True, stemming=True
+        )
+
+        scores = compute_tfintersection_across_TimeMap(
+            cm, scores=scores, tokenize=True, stemming=True
         )
 
         pp.pprint(scores)
@@ -240,7 +250,7 @@ class TestingTimeMapMeasures(unittest.TestCase):
 
     def test_all_mementos_different(self):
 
-        working_directory = "/tmp/test_all_mementos_same"
+        working_directory = "/tmp/test_all_mementos_different"
 
         if os.path.exists(working_directory):
             shutil.rmtree(working_directory)
@@ -305,17 +315,6 @@ class TestingTimeMapMeasures(unittest.TestCase):
 
                 innercontent += "\n" + str(mdt)
 
-                pp.pprint(innercontent)
-
-                print("\n")
-
-                # for j in range(0, randindex):
-                #     innercontent += " " + (
-                #         urim + " " +
-                #         (string.printable[(randindex * 2):(randindex**2) + 1] * randindex) +
-                #         " " + str(mdt)
-                #     )
-
                 content = "<html><body>{}</body></html>".format(innercontent)
 
                 cm.addMemento(urim, bytes(content, "utf8"), headers)
@@ -325,7 +324,7 @@ class TestingTimeMapMeasures(unittest.TestCase):
         )
 
         scores = compute_wordcount_across_TimeMap(
-            cm, scores=scores, stemming=True
+            cm, scores=scores, tokenize=True, stemming=True
         )
 
         scores = compute_jaccard_across_TimeMap(
@@ -337,16 +336,20 @@ class TestingTimeMapMeasures(unittest.TestCase):
         # )
 
         scores = compute_sorensen_across_TimeMap(
-            cm, scores=scores, tokenize=False, stemming=False
+            cm, scores=scores, tokenize=True, stemming=True
         )
 
         scores = compute_levenshtein_across_TimeMap(
-            cm, scores=scores, tokenize=False, stemming=False
+            cm, scores=scores, tokenize=True, stemming=True
         )
 
         scores = compute_nlevenshtein_across_TimeMap(
-            cm, scores=scores, tokenize=False, stemming=False
+            cm, scores=scores, tokenize=True, stemming=True
         )
+
+        # scores = compute_tfintersection_across_TimeMap(
+        #     cm, scores=scores, tokenize=True, stemming=True
+        # )
 
         pp.pprint(scores)
 
@@ -378,22 +381,25 @@ class TestingTimeMapMeasures(unittest.TestCase):
                                                      'levenshtein': {   'comparison score': 0},
                                                      'nlevenshtein': {   'comparison score': 0.0},
                                                      'sorensen': {   'comparison score': 0.0},
+                                                     'tfintersection': {   'comparison score': 0},
                                                      'wordcount': {   'comparison score': 0.0,
                                                                       'individual score': 94}},
                                     'memento12': {   'bytecount': {   'comparison score': -0.43015214384508993,
                                                                       'individual score': 1034},
                                                      'jaccard': {   'comparison score': 0.11363636363636365},
-                                                     'levenshtein': {   'comparison score': 324},
-                                                     'nlevenshtein': {   'comparison score': 0.3220675944333996},
-                                                     'sorensen': {   'comparison score': 0.011235955056179803},
+                                                     'levenshtein': {   'comparison score': 45},
+                                                     'nlevenshtein': {   'comparison score': 0.3333333333333333},
+                                                     'sorensen': {   'comparison score': 0.06024096385542166},
+                                                     'tfintersection': {   'comparison score': 0},
                                                      'wordcount': {   'comparison score': -0.43617021276595747,
                                                                       'individual score': 135}},
                                     'memento13': {   'bytecount': {   'comparison score': -0.8409405255878284,
                                                                       'individual score': 1331},
                                                      'jaccard': {   'comparison score': 0.15555555555555556},
-                                                     'levenshtein': {   'comparison score': 612},
-                                                     'nlevenshtein': {   'comparison score': 0.4700460829493088},
-                                                     'sorensen': {   'comparison score': 0.0337078651685393},
+                                                     'levenshtein': {   'comparison score': 86},
+                                                     'nlevenshtein': {   'comparison score': 0.48863636363636365},
+                                                     'sorensen': {   'comparison score': 0.08433734939759041},
+                                                     'tfintersection': {   'comparison score': 1},
                                                      'wordcount': {   'comparison score': -0.8723404255319149,
                                                                       'individual score': 176}}},
                     'timemap2': {   'memento21': {   'bytecount': {   'comparison score': 0.0,
@@ -402,26 +408,35 @@ class TestingTimeMapMeasures(unittest.TestCase):
                                                      'levenshtein': {   'comparison score': 0},
                                                      'nlevenshtein': {   'comparison score': 0.0},
                                                      'sorensen': {   'comparison score': 0.0},
+                                                     'tfintersection': {   'comparison score': 0},
                                                      'wordcount': {   'comparison score': 0.0,
                                                                       'individual score': 133}},
                                     'memento22': {   'bytecount': {   'comparison score': -0.28655544651619236,
                                                                       'individual score': 1311},
                                                      'jaccard': {   'comparison score': 0.09302325581395354},
-                                                     'levenshtein': {   'comparison score': 315},
-                                                     'nlevenshtein': {   'comparison score': 0.24570982839313574},
-                                                     'sorensen': {   'comparison score': 0.01098901098901095},
+                                                     'levenshtein': {   'comparison score': 45},
+                                                     'nlevenshtein': {   'comparison score': 0.25862068965517243},
+                                                     'sorensen': {   'comparison score': 0.04878048780487809},
+                                                     'tfintersection': {   'comparison score': 0},
                                                      'wordcount': {   'comparison score': -0.30827067669172936,
                                                                       'individual score': 174}},
                                     'memento23': {   'bytecount': {   'comparison score': -0.5593719332679097,
                                                                       'individual score': 1589},
                                                      'jaccard': {   'comparison score': 0.13636363636363635},
-                                                     'levenshtein': {   'comparison score': 594},
-                                                     'nlevenshtein': {   'comparison score': 0.38101347017318793},
-                                                     'sorensen': {   'comparison score': 0.022222222222222254},
+                                                     'levenshtein': {   'comparison score': 86},
+                                                     'nlevenshtein': {   'comparison score': 0.4056603773584906},
+                                                     'sorensen': {   'comparison score': 0.07317073170731703},
+                                                     'tfintersection': {   'comparison score': 0},
                                                      'wordcount': {   'comparison score': -0.593984962406015,
                                                                       'individual score': 212}}}}}
 
         for measure in same_scores:
+
+            # we'll have to test TF intersection separately,
+            # the way that I build the sentences does not
+            # have enough different words
+            if measure == "tfintersection" or measure == "cosine":
+                continue
 
             for urit in scores["timemaps"]:
 
@@ -447,7 +462,71 @@ class TestingTimeMapMeasures(unittest.TestCase):
                     # for regression
                     self.assertAlmostEqual(
                             scores["timemaps"][urit][urim][measure]["comparison score"],
-                            expected_scores["timemaps"][urit][urim][measure]["comparison score"]
+                            expected_scores["timemaps"][urit][urim][measure]["comparison score"],
+                            msg="measure {} does not compute the expected score "
+                            "for URI-M {}".format(measure, urim)
                     )
+
+        shutil.rmtree(working_directory)
+
+    def test_tf_intersection(self):
+
+        working_directory = "/tmp/test_tf_intersection"
+
+        if os.path.exists(working_directory):
+            shutil.rmtree(working_directory)
+
+        cm = collectionmodel.CollectionModel(working_directory=working_directory)
+
+        headers = {
+            "key1": "value1",
+            "key2": "value2"
+        }
+
+        full_sentence = ['The', 'quick', 'brown', 'fox', 'jumps', 'over', 
+            'the', 'lazy', 'dog', 'etaoin', 'shrdlu', 'Now','is', 'the', 
+            'time', 'for', 'all', 'good', 'men', 'to', 'come', 'to', 'the', 
+            'aid', 'of', 'their', 'country',
+            'Jived', 'fox', 'nymph', 'grabs', 'quick', 'waltz',
+            'Glib', 'jocks', 'quiz', 'nymph', 'to', 'vex', 'dwarf',
+            'Sphinx', 'of', 'black', 'quartz,', 'judge', 'my', 'vow',
+            'How', 'vexingly', 'quick', 'daft', 'zebras', 'jump',
+            'The', 'five', 'boxing', 'wizards', 'jump', 'quickly',
+            'Pack', 'my', 'box', 'with', 'five', 'dozen', 'liquor', 'jugs'
+            ]
+
+        memcontent1 = bytes("<html><body>{}</body></html>".format(" ".join(full_sentence[0:20])), "utf8")
+        memcontent2 = bytes("<html><body>{}</body></html>".format(" ".join(full_sentence[20:-1])), "utf8")
+
+        timemap_content ="""<original1>; rel="original",
+<timemap1>; rel="self"; type="application/link-format"; from="Tue, 21 Mar 2016 15:45:06 GMT"; until="Tue, 21 Mar 2018 15:45:12 GMT",
+<timegate1>; rel="timegate",
+<memento11>; rel="first memento"; datetime="Tue, 21 Jan 2016 15:45:06 GMT",
+<memento12>; rel="last memento"; datetime="Tue, 21 Jan 2018 15:45:12 GMT"
+"""
+
+        cm.addTimeMap("timemap1", timemap_content, headers)
+        cm.addMemento("memento11", memcontent1, headers)
+        cm.addMemento("memento12", memcontent2, headers)
+
+        scores = compute_tfintersection_across_TimeMap(cm, scores=None, tokenize=None, stemming=True)
+
+        self.assertNotEqual(
+            same_scores['tfintersection'],
+            scores['timemaps']['timemap1']['memento12']['tfintersection']['comparison score']
+        )
+
+        # after removing stop words, the first document consists of 11 words
+        # the comparison document consists of more than 20 words
+        # the terms 'quick' and 'jump' overlap, giving 2 overlapping terms
+        # 11 - 2 = 9, hence the comparison score of 9
+        expected_scores = {   'timemaps': {   'timemap1': {   'memento11': {   'tfintersection': {   'comparison score': 0}},
+                                    'memento12': {   'tfintersection': {   'comparison score': 9}}}}}
+
+        # for regression
+        self.assertAlmostEqual(
+            expected_scores['timemaps']['timemap1']['memento12']['tfintersection']['comparison score'],
+            scores['timemaps']['timemap1']['memento12']['tfintersection']['comparison score']
+        )
 
         shutil.rmtree(working_directory)

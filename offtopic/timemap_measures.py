@@ -6,6 +6,9 @@ from nltk import word_tokenize
 from nltk.corpus import stopwords
 from nltk.stem.porter import PorterStemmer
 
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.metrics.pairwise import cosine_similarity
+
 from .collectionmodel import CollectionModelMementoErrorException
 
 logger = logging.getLogger(__name__)
@@ -47,11 +50,12 @@ def get_memento_data_for_measure(urim, collection_model,
 
     return data
 
-
 def compute_score_across_TimeMap(collectionmodel, measurename,
     scoredistance_function=None, 
     scores=None, tokenize=True, stemming=True,
     remove_boilerplate=True):
+
+    # TODO: raise an exception if the scoredistance_function is not set
 
     if scores == None:
         scores = {}
@@ -185,7 +189,7 @@ def wordcount_scoredistance(first_data, memento_data, scorecache=None):
 
     return scoredata
 
-def compute_wordcount_across_TimeMap(collectionmodel, scores=None, stemming=True):
+def compute_wordcount_across_TimeMap(collectionmodel, scores=None, tokenize=True, stemming=True):
     
     scores = compute_score_across_TimeMap(collectionmodel, "wordcount", 
         wordcount_scoredistance, scores=scores, tokenize=True, stemming=stemming,
@@ -219,7 +223,7 @@ def sorensen_scoredistance(first_data, memento_data, scorecache=None):
 
     return scoredata
 
-def compute_sorensen_across_TimeMap(collectionmodel, scores=None, tokenize=False, stemming=False):
+def compute_sorensen_across_TimeMap(collectionmodel, scores=None, tokenize=True, stemming=True):
     
     scores = compute_score_across_TimeMap(collectionmodel, "sorensen", 
         sorensen_scoredistance, scores=scores, tokenize=tokenize, stemming=stemming,
@@ -236,7 +240,7 @@ def levenshtein_scoredistance(first_data, memento_data, scorecache=None):
 
     return scoredata
 
-def compute_levenshtein_across_TimeMap(collectionmodel, scores=None, tokenize=False, stemming=False):
+def compute_levenshtein_across_TimeMap(collectionmodel, scores=None, tokenize=True, stemming=True):
     
     scores = compute_score_across_TimeMap(collectionmodel, "levenshtein", 
         levenshtein_scoredistance, scores=scores, tokenize=tokenize, stemming=stemming,
@@ -253,10 +257,73 @@ def nlevenshtein_scoredistance(first_data, memento_data, scorecache=None):
 
     return scoredata
 
-def compute_nlevenshtein_across_TimeMap(collectionmodel, scores=None, tokenize=False, stemming=False):
+def compute_nlevenshtein_across_TimeMap(collectionmodel, scores=None, tokenize=True, stemming=True):
 
     scores = compute_score_across_TimeMap(collectionmodel, "nlevenshtein", 
         nlevenshtein_scoredistance, scores=scores, tokenize=tokenize, stemming=stemming,
+        remove_boilerplate=True
+    )
+
+    return scores
+
+def calculate_term_frequencies(tokens):
+
+    frequency_dict = {}
+
+    for token in tokens:
+
+        frequency_dict.setdefault(token, 0)
+        frequency_dict[token] += 1
+
+    tf = []
+
+    for token, count in frequency_dict.items():
+        tf.append( (count, token) )
+
+    return sorted(tf, reverse=True)
+
+def tfintersection_scoredistance(first_data, memento_data, scorecache=None):
+
+    scoredata = {}
+
+    tf_first = calculate_term_frequencies(first_data)
+    tf_memento = calculate_term_frequencies(memento_data)
+
+    first_token_count = 20 if len(tf_first) > 20 else len(tf_first)
+    memento_token_count = 20 if len(tf_memento) > 20 else len(tf_memento)
+
+    top_20ish_first_tokens = []
+    top_20ish_memento_tokens = []
+
+    logger.debug("size of first memento data: {}".format(first_token_count))
+    logger.debug("size of comparison memento data: {}".format(first_token_count))
+
+    for i in range(0, first_token_count):
+        top_20ish_first_tokens.append(tf_first[i][1])
+
+    for i in range(0, memento_token_count):
+        top_20ish_memento_tokens.append(tf_memento[i][1])
+
+    logger.debug("top 20ish tokens in first memento data: {}".format(top_20ish_first_tokens))
+    logger.debug("top 20ish tokens in comparison memento data: {}".format(top_20ish_memento_tokens))
+
+    number_of_intersecting_terms = 0
+
+    for token in top_20ish_first_tokens:
+        
+        if token in top_20ish_memento_tokens:
+            number_of_intersecting_terms += 1
+
+    logger.debug("number of intersecting terms: {}".format(number_of_intersecting_terms))
+
+    scoredata["comparison score"] = len(top_20ish_first_tokens) - number_of_intersecting_terms
+
+    return scoredata
+
+def compute_tfintersection_across_TimeMap(collectionmodel, scores=None, tokenize=None, stemming=True):
+
+    scores = compute_score_across_TimeMap(collectionmodel, "tfintersection",
+        tfintersection_scoredistance, scores=scores, tokenize=True, stemming=stemming,
         remove_boilerplate=True
     )
 
