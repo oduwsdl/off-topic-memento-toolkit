@@ -129,14 +129,14 @@ class TestingTimeMapMeasures(unittest.TestCase):
 
             for urim in scores["timemaps"][urit]:
 
-                self.assertTrue( "bytecount" in scores["timemaps"][urit][urim] )
-                self.assertTrue( "wordcount" in scores["timemaps"][urit][urim] )
-                self.assertTrue( "jaccard" in scores["timemaps"][urit][urim] )
-                self.assertTrue( "sorensen" in scores["timemaps"][urit][urim] )
-                self.assertTrue( "levenshtein" in scores["timemaps"][urit][urim] )
-                self.assertTrue( "nlevenshtein" in scores["timemaps"][urit][urim] )
-                self.assertTrue( "tfintersection" in scores["timemaps"][urit][urim] )
-                self.assertTrue( "cosine" in scores["timemaps"][urit][urim] )
+                self.assertTrue( "bytecount" in scores["timemaps"][urit][urim]["timemap measures"] )
+                self.assertTrue( "wordcount" in scores["timemaps"][urit][urim]["timemap measures"] )
+                self.assertTrue( "jaccard" in scores["timemaps"][urit][urim]["timemap measures"] )
+                self.assertTrue( "sorensen" in scores["timemaps"][urit][urim]["timemap measures"] )
+                self.assertTrue( "levenshtein" in scores["timemaps"][urit][urim]["timemap measures"] )
+                self.assertTrue( "nlevenshtein" in scores["timemaps"][urit][urim]["timemap measures"] )
+                self.assertTrue( "tfintersection" in scores["timemaps"][urit][urim]["timemap measures"] )
+                self.assertTrue( "cosine" in scores["timemaps"][urit][urim]["timemap measures"] )
 
         for measure in same_scores:
 
@@ -145,7 +145,7 @@ class TestingTimeMapMeasures(unittest.TestCase):
                 for urim in scores["timemaps"][urit]:
 
                     self.assertAlmostEqual(
-                        scores["timemaps"][urit][urim][measure]["comparison score"],
+                        scores["timemaps"][urit][urim]["timemap measures"][measure]["comparison score"],
                         same_scores[measure],
                         msg="measure {} does not compute the correct score "
                         "for document sameness with URI-M {}".format(measure, urim)
@@ -225,16 +225,18 @@ class TestingTimeMapMeasures(unittest.TestCase):
 
         self.assertTrue( "memento11" in scores["timemaps"]["timemap1"] )
 
+        urit = "timemap1"
+
         for urim in scores["timemaps"]["timemap1"]:
 
-            self.assertTrue( "bytecount" in scores["timemaps"]["timemap1"][urim] )
-            self.assertTrue( "wordcount" in scores["timemaps"]["timemap1"][urim] )
-            self.assertTrue( "jaccard" in scores["timemaps"]["timemap1"][urim] )
-            self.assertTrue( "sorensen" in scores["timemaps"]["timemap1"][urim] )
-            self.assertTrue( "levenshtein" in scores["timemaps"]["timemap1"][urim] )
-            self.assertTrue( "nlevenshtein" in scores["timemaps"]["timemap1"][urim] )
-            self.assertTrue( "tfintersection" in scores["timemaps"]["timemap1"][urim] )
-            self.assertTrue( "cosine" in scores["timemaps"]["timemap1"][urim] )
+            self.assertTrue( "bytecount" in scores["timemaps"][urit][urim]["timemap measures"] )
+            self.assertTrue( "wordcount" in scores["timemaps"][urit][urim]["timemap measures"] )
+            self.assertTrue( "jaccard" in scores["timemaps"][urit][urim]["timemap measures"] )
+            self.assertTrue( "sorensen" in scores["timemaps"][urit][urim]["timemap measures"] )
+            self.assertTrue( "levenshtein" in scores["timemaps"][urit][urim]["timemap measures"] )
+            self.assertTrue( "nlevenshtein" in scores["timemaps"][urit][urim]["timemap measures"] )
+            self.assertTrue( "tfintersection" in scores["timemaps"][urit][urim]["timemap measures"] )
+            self.assertTrue( "cosine" in scores["timemaps"][urit][urim]["timemap measures"] )
 
         for measure in same_scores:
 
@@ -243,7 +245,7 @@ class TestingTimeMapMeasures(unittest.TestCase):
                 for urim in scores["timemaps"][urit]:
 
                     self.assertAlmostEqual(
-                        scores["timemaps"][urit][urim][measure]["comparison score"],
+                        scores["timemaps"][urit][urim]["timemap measures"][measure]["comparison score"],
                         same_scores[measure],
                         msg="measure {} does not compute the correct score "
                         "for document sameness for URI-M {}".format(measure, urim)
@@ -371,67 +373,61 @@ class TestingTimeMapMeasures(unittest.TestCase):
 
             for urim in scores["timemaps"][urit]:
 
-                self.assertTrue( "bytecount" in scores["timemaps"][urit][urim] )
-                self.assertTrue( "wordcount" in scores["timemaps"][urit][urim] )
-                self.assertTrue( "jaccard" in scores["timemaps"][urit][urim] )
-                self.assertTrue( "sorensen" in scores["timemaps"][urit][urim] )
-                self.assertTrue( "levenshtein" in scores["timemaps"][urit][urim] )
-                self.assertTrue( "nlevenshtein" in scores["timemaps"][urit][urim] )
+                self.assertTrue( "bytecount" in scores["timemaps"][urit][urim]["timemap measures"] )
+                self.assertTrue( "wordcount" in scores["timemaps"][urit][urim]["timemap measures"] )
+                self.assertTrue( "jaccard" in scores["timemaps"][urit][urim]["timemap measures"] )
+                self.assertTrue( "sorensen" in scores["timemaps"][urit][urim]["timemap measures"] )
+                self.assertTrue( "levenshtein" in scores["timemaps"][urit][urim]["timemap measures"] )
+                self.assertTrue( "nlevenshtein" in scores["timemaps"][urit][urim]["timemap measures"] )
 
-        expected_scores = {   'timemaps': {   'timemap1': {   'memento11': {   'bytecount': {   'comparison score': 0.0,
-                                                                      'individual score': 723},
-                                                     'jaccard': {   'comparison score': 0.0},
-                                                     'levenshtein': {   'comparison score': 0},
-                                                     'nlevenshtein': {   'comparison score': 0.0},
-                                                     'sorensen': {   'comparison score': 0.0},
-                                                     'tfintersection': {   'comparison score': 0},
-                                                     'wordcount': {   'comparison score': 0.0,
-                                                                      'individual score': 94}},
-                                    'memento12': {   'bytecount': {   'comparison score': -0.43015214384508993,
-                                                                      'individual score': 1034},
-                                                     'jaccard': {   'comparison score': 0.11363636363636365},
-                                                     'levenshtein': {   'comparison score': 45},
-                                                     'nlevenshtein': {   'comparison score': 0.3333333333333333},
-                                                     'sorensen': {   'comparison score': 0.06024096385542166},
-                                                     'tfintersection': {   'comparison score': 0},
-                                                     'wordcount': {   'comparison score': -0.43617021276595747,
-                                                                      'individual score': 135}},
-                                    'memento13': {   'bytecount': {   'comparison score': -0.8409405255878284,
-                                                                      'individual score': 1331},
-                                                     'jaccard': {   'comparison score': 0.15555555555555556},
-                                                     'levenshtein': {   'comparison score': 86},
-                                                     'nlevenshtein': {   'comparison score': 0.48863636363636365},
-                                                     'sorensen': {   'comparison score': 0.08433734939759041},
-                                                     'tfintersection': {   'comparison score': 1},
-                                                     'wordcount': {   'comparison score': -0.8723404255319149,
-                                                                      'individual score': 176}}},
-                    'timemap2': {   'memento21': {   'bytecount': {   'comparison score': 0.0,
-                                                                      'individual score': 1019},
-                                                     'jaccard': {   'comparison score': 0.0},
-                                                     'levenshtein': {   'comparison score': 0},
-                                                     'nlevenshtein': {   'comparison score': 0.0},
-                                                     'sorensen': {   'comparison score': 0.0},
-                                                     'tfintersection': {   'comparison score': 0},
-                                                     'wordcount': {   'comparison score': 0.0,
-                                                                      'individual score': 133}},
-                                    'memento22': {   'bytecount': {   'comparison score': -0.28655544651619236,
-                                                                      'individual score': 1311},
-                                                     'jaccard': {   'comparison score': 0.09302325581395354},
-                                                     'levenshtein': {   'comparison score': 45},
-                                                     'nlevenshtein': {   'comparison score': 0.25862068965517243},
-                                                     'sorensen': {   'comparison score': 0.04878048780487809},
-                                                     'tfintersection': {   'comparison score': 0},
-                                                     'wordcount': {   'comparison score': -0.30827067669172936,
-                                                                      'individual score': 174}},
-                                    'memento23': {   'bytecount': {   'comparison score': -0.5593719332679097,
-                                                                      'individual score': 1589},
-                                                     'jaccard': {   'comparison score': 0.13636363636363635},
-                                                     'levenshtein': {   'comparison score': 86},
-                                                     'nlevenshtein': {   'comparison score': 0.4056603773584906},
-                                                     'sorensen': {   'comparison score': 0.07317073170731703},
-                                                     'tfintersection': {   'comparison score': 0},
-                                                     'wordcount': {   'comparison score': -0.593984962406015,
-                                                                      'individual score': 212}}}}}
+        expected_scores = {   'timemaps': {   'timemap1': {   'memento11': {   'timemap measures': {   'bytecount': {   'comparison score': 0.0,
+                                                                                              'individual score': 723},
+                                                                             'jaccard': {   'comparison score': 0.0},
+                                                                             'levenshtein': {   'comparison score': 0},
+                                                                             'nlevenshtein': {   'comparison score': 0.0},
+                                                                             'sorensen': {   'comparison score': 0.0},
+                                                                             'wordcount': {   'comparison score': 0.0,
+                                                                                              'individual score': 94}}},
+                                    'memento12': {   'timemap measures': {   'bytecount': {   'comparison score': -0.43015214384508993,
+                                                                                              'individual score': 1034},
+                                                                             'jaccard': {   'comparison score': 0.11363636363636365},
+                                                                             'levenshtein': {   'comparison score': 45},
+                                                                             'nlevenshtein': {   'comparison score': 0.3333333333333333},
+                                                                             'sorensen': {   'comparison score': 0.06024096385542166},
+                                                                             'wordcount': {   'comparison score': -0.43617021276595747,
+                                                                                              'individual score': 135}}},
+                                    'memento13': {   'timemap measures': {   'bytecount': {   'comparison score': -0.8409405255878284,
+                                                                                              'individual score': 1331},
+                                                                             'jaccard': {   'comparison score': 0.15555555555555556},
+                                                                             'levenshtein': {   'comparison score': 86},
+                                                                             'nlevenshtein': {   'comparison score': 0.48863636363636365},
+                                                                             'sorensen': {   'comparison score': 0.08433734939759041},
+                                                                             'wordcount': {   'comparison score': -0.8723404255319149,
+                                                                                              'individual score': 176}}}},
+                    'timemap2': {   'memento21': {   'timemap measures': {   'bytecount': {   'comparison score': 0.0,
+                                                                                              'individual score': 1019},
+                                                                             'jaccard': {   'comparison score': 0.0},
+                                                                             'levenshtein': {   'comparison score': 0},
+                                                                             'nlevenshtein': {   'comparison score': 0.0},
+                                                                             'sorensen': {   'comparison score': 0.0},
+                                                                             'wordcount': {   'comparison score': 0.0,
+                                                                                              'individual score': 133}}},
+                                    'memento22': {   'timemap measures': {   'bytecount': {   'comparison score': -0.28655544651619236,
+                                                                                              'individual score': 1311},
+                                                                             'jaccard': {   'comparison score': 0.09302325581395354},
+                                                                             'levenshtein': {   'comparison score': 45},
+                                                                             'nlevenshtein': {   'comparison score': 0.25862068965517243},
+                                                                             'sorensen': {   'comparison score': 0.04878048780487809},
+                                                                             'wordcount': {   'comparison score': -0.30827067669172936,
+                                                                                              'individual score': 174}}},
+                                    'memento23': {   'timemap measures': {   'bytecount': {   'comparison score': -0.5593719332679097,
+                                                                                              'individual score': 1589},
+                                                                             'jaccard': {   'comparison score': 0.13636363636363635},
+                                                                             'levenshtein': {   'comparison score': 86},
+                                                                             'nlevenshtein': {   'comparison score': 0.4056603773584906},
+                                                                             'sorensen': {   'comparison score': 0.07317073170731703},
+                                                                             'wordcount': {   'comparison score': -0.593984962406015,
+                                                                                              'individual score': 212}}}}}}
 
         for measure in same_scores:
 
@@ -448,14 +444,14 @@ class TestingTimeMapMeasures(unittest.TestCase):
                     # comparisons with themselves should match
                     if urim == "memento11" or urim == "memento21":
                         self.assertEqual(
-                            scores["timemaps"][urit][urim][measure]["comparison score"],
+                            scores["timemaps"][urit][urim]["timemap measures"][measure]["comparison score"],
                             same_scores[measure],
                             "measure {} does not compute the correct score "
                             "for document sameness".format(measure)
                         )
                     else:
                         self.assertNotEqual(
-                            scores["timemaps"][urit][urim][measure]["comparison score"],
+                            scores["timemaps"][urit][urim]["timemap measures"][measure]["comparison score"],
                             same_scores[measure],
                             "measure {} does not compute the correct score "
                             "for document differentness for URI-M {}".format(
@@ -464,8 +460,8 @@ class TestingTimeMapMeasures(unittest.TestCase):
 
                     # for regression
                     self.assertAlmostEqual(
-                            scores["timemaps"][urit][urim][measure]["comparison score"],
-                            expected_scores["timemaps"][urit][urim][measure]["comparison score"],
+                            scores["timemaps"][urit][urim]["timemap measures"][measure]["comparison score"],
+                            expected_scores["timemaps"][urit][urim]["timemap measures"][measure]["comparison score"],
                             msg="measure {} does not compute the expected score "
                             "for URI-M {}".format(measure, urim)
                     )
@@ -514,22 +510,24 @@ class TestingTimeMapMeasures(unittest.TestCase):
 
         scores = compute_tfintersection_across_TimeMap(cm, scores=None, tokenize=None, stemming=True)
 
+        pp.pprint(scores)
+
         self.assertNotEqual(
             same_scores['tfintersection'],
-            scores['timemaps']['timemap1']['memento12']['tfintersection']['comparison score']
+            scores['timemaps']['timemap1']['memento12']['timemap measures']['tfintersection']['comparison score']
         )
 
         # after removing stop words, the first document consists of 11 words
         # the comparison document consists of more than 20 words
         # the terms 'quick' and 'jump' overlap, giving 2 overlapping terms
         # 11 - 2 = 9, hence the comparison score of 9
-        expected_scores = {   'timemaps': {   'timemap1': {   'memento11': {   'tfintersection': {   'comparison score': 0}},
-                                    'memento12': {   'tfintersection': {   'comparison score': 9}}}}}
+        expected_scores = {   'timemaps': {   'timemap1': {   'memento11': {   'timemap measures': {   'tfintersection': {   'comparison score': 0}}},
+                                    'memento12': {   'timemap measures': {   'tfintersection': {   'comparison score': 9}}}}}}
 
         # for regression
         self.assertAlmostEqual(
-            expected_scores['timemaps']['timemap1']['memento12']['tfintersection']['comparison score'],
-            scores['timemaps']['timemap1']['memento12']['tfintersection']['comparison score']
+            expected_scores['timemaps']['timemap1']['memento12']['timemap measures']['tfintersection']['comparison score'],
+            scores['timemaps']['timemap1']['memento12']['timemap measures']['tfintersection']['comparison score']
         )
 
         shutil.rmtree(working_directory)
@@ -580,20 +578,20 @@ class TestingTimeMapMeasures(unittest.TestCase):
 
         self.assertNotEqual(
             same_scores['cosine'],
-            scores['timemaps']['timemap1']['memento12']['cosine']['comparison score']
+            scores['timemaps']['timemap1']['memento12']['timemap measures']['cosine']['comparison score']
         )
 
         # after removing stop words, the first document consists of 11 words
         # the comparison document consists of more than 20 words
         # the terms 'quick' and 'jump' overlap, giving 2 overlapping terms
         # 11 - 2 = 9, hence the comparison score of 9
-        expected_scores = {   'timemaps': {   'timemap1': {   'memento11': {   'cosine': {   'comparison score': 1.0000000000000002}},
-                                    'memento12': {   'cosine': {   'comparison score': 0.117041776804418}}}}}
+        expected_scores = {   'timemaps': {   'timemap1': {   'memento11': {   'timemap measures': {   'cosine': {   'comparison score': 1.0000000000000002}}},
+                                    'memento12': {   'timemap measures': {   'cosine': {   'comparison score': 0.117041776804418}}}}}}
 
         # for regression
         self.assertAlmostEqual(
-            expected_scores['timemaps']['timemap1']['memento12']['cosine']['comparison score'],
-            scores['timemaps']['timemap1']['memento12']['cosine']['comparison score']
+            expected_scores['timemaps']['timemap1']['memento12']['timemap measures']['cosine']['comparison score'],
+            scores['timemaps']['timemap1']['memento12']['timemap measures']['cosine']['comparison score']
         )
 
         shutil.rmtree(working_directory)

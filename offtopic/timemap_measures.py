@@ -116,7 +116,8 @@ def compute_score_across_TimeMap(collectionmodel, measurename,
                         stemming=stemming, 
                         remove_boilerplate=remove_boilerplate)
                         
-                    scores["timemaps"][urit][urim][measurename] = \
+                    scores["timemaps"][urit][urim].setdefault("timemap measures", {})
+                    scores["timemaps"][urit][urim]["timemap measures"][measurename] = \
                         scoredistance_function(first_data, memento_data)
 
                 except CollectionModelMementoErrorException:
@@ -422,8 +423,9 @@ def compute_cosine_across_TimeMap(collectionmodel, scores=None, tokenize=None, s
             for i in range(0, len(cscores[0])):
                 urim = processed_urims[i]
                 logger.debug("saving cosine scores for URI-M {}".format(urim))
-                scores["timemaps"][urit][urim].setdefault(measurename, {})
-                scores["timemaps"][urit][urim][measurename]["comparison score"] = cscores[0][i]
+                scores["timemaps"][urit][urim].setdefault("timemap measures", {})
+                scores["timemaps"][urit][urim]["timemap measures"].setdefault(measurename, {})
+                scores["timemaps"][urit][urim]["timemap measures"][measurename]["comparison score"] = cscores[0][i]
 
             uritcounter += 1
 
