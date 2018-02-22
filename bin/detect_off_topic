@@ -9,26 +9,27 @@ import offtopic
 def process_arguments(args):
 
     parser = argparse.ArgumentParser(prog="python {}".format(args[0]),
-        description='Detecting off-topic webpages.',
+        description='Detects off-topic webpages in a collection.',
         formatter_class=argparse.RawTextHelpFormatter)
 
     parser.add_argument('-i', '--input', dest='input_type',
         required=True, type=offtopic.process_input_types,
-        help="input data to use with one of the following:\n"
+        help="The source of the input data. The following options are available:\n"
         "* warc=[warc-filenames separated by commas with no spaces] - EXPERIMENTAL\n"
         "* archiveit=[collection identifier or collection URI]\n"
         "* timemap=[URI of TimeMap]\n"
         "* goldtest=[tab-separated gold standard data file]\n"
-        "* dir=[existing input directory from prior run]"
+        # "* dir=[existing input directory from prior run]"
         )
 
     parser.add_argument('-o', '--output', dest='output_filename', 
-        required=True, help="file name in which to store the scores")
+        required=True, help="The file name in which to store the results.")
 
     parser.add_argument('-d', '--directory', dest='working_directory',
         default=offtopic.working_directory_default,
         help='The working directory holding the data being downloaded'
-        ' and processed.')
+        ' and processed. If data is already here, it will be used in'
+        ' lieu of any supplied input option.')
 
     parser.add_argument('-t', '--output-type', dest='output_type',
         default='json', type=offtopic.process_output_types,
@@ -37,28 +38,46 @@ def process_arguments(args):
         "* golddatafile - a TSV file in the same format as the gold standard data"
         )
 
-    measurehelp = ""
-    for measure in offtopic.supported_measures:
-        measurehelp += "* {} - {}, default threshold {}\n".format(
-            measure, offtopic.supported_measures[measure]['name'],
-            offtopic.supported_measures[measure]['default_threshold'])
+    tmmeasurehelp = ""
+    for measure in offtopic.supported_timemap_measures:
+        tmmeasurehelp += "* {} - {}, default threshold {}\n".format(
+            measure, offtopic.supported_timemap_measures[measure]['name'],
+            offtopic.supported_timemap_measures[measure]['default threshold'])
 
-    parser.add_argument('-m', '--measures', dest='measures',
+    parser.add_argument('-tm', '--timemap-measures', dest='timemap_measures',
         default="cosine=0.15,wordcount=-0.85",
         type=offtopic.process_similarity_measure_inputs,
-        help="similarity measures to use, separated by commas with no spaces\n"
-        "with thresholds after (e.g., jaccard=0.10,cosine=0.15,wcount);\n"
-        "leave thresholds off to use default thresholds;\n"
-        "accepted values:\n{}".format(measurehelp)
+        help="The TimeMap-based similarity measures specified will be used. \n"
+        "For each of these measures, the first memento in a TimeMap\n"
+        "is compared with each subsequent memento to measure topic drift.\n"
+        "Specify measure with optional threshold separated by equals.\n"
+        "Multiple measures can be specified.\n"
+        "(e.g., jaccard=0.10,cosine=0.15,wcount);\n"
+        "Leave thresholds off to use default thresholds.\n"
+        "Accepted values:\n{}".format(tmmeasurehelp)
         )
+
+    # parser.add_argument('-cm', '--collection-measures', dest='collection_measures',
+    #     default="cosine=0.15,wordcount=-0.85",
+    #     type=offtopic.process_similarity_measure_inputs,
+    #     help="NOT YET IMPLEMENTED\n"
+    #     "The Collection-Wide similarity measures specified will be used. \n"
+    #     "For each of these measures, content from all mementos in the \n"
+    #     "collection will be taken into account to detect which mementos \n"
+    #     "are off-topic."
+    #     )
 
     parser.add_argument('-l', '--logfile', dest='logfile',
         default=sys.stdout,
-        help="path to logging file")
+        help="The path to a logging file. The log is printed to screen by default.")
 
     parser.add_argument('-v', '--verbose', dest='verbose',
         action='store_true',
-        help="raise the logging level to debug for more verbose output")
+        help="This will raise the logging level to debug for more verbose output")
+
+    parser.add_argument('-q', '--quiet', dest='quiet',
+        action='store_true',
+        help="This will lower the logging level to only show warnings or errors")
 
     return parser.parse_args()
 
@@ -68,7 +87,8 @@ if __name__ == '__main__':
 
     # set up logging for the rest of the system
     logger = offtopic.get_logger(
-        __name__, offtopic.calculate_loglevel(args.verbose), 
+        __name__, offtopic.calculate_loglevel(
+            verbose=args.verbose, quiet=args.quiet), 
         args.logfile)
 
     logger.info('Starting topic analysis run.')
@@ -79,22 +99,50 @@ if __name__ == '__main__':
 
     logger.info("Acquiring memento colleciton using input type {}".format(input_type))
 
-    logger.debug("measures chosen: {}".format(args.measures))
+    logger.debug("timemap measures chosen: {}".format(args.timemap_measures))
 
     cm = offtopic.get_collection_model(
         input_type, input_type_arguments, args.working_directory
     )
 
-    scoring = {}
+    scoring = None
 
-    for measure in args.measures:
+    for measure in args.timemap_measures:
 
-        logger.info("Processing mementos using measure {}".format(measure))
-        threshold = args.measures[measure]
-        scoring[measure] = offtopic.supported_measures[measure]["function"](cm)
-        scoring[measure] = offtopic.evaluate_off_topic(
-            scoring[measure], 
-            offtopic.supported_measures[measure]["default_threshold"])
+        logger.info("Processing mementos using TimeMap measure {}".format(measure))
+
+        scoring = offtopic.supported_timemap_measures[measure]["function"](
+            cm, scores=scoring)
+
+        scoring = offtopic.evaluate_off_topic(
+            scoring, 
+            offtopic.supported_timemap_measures[measure]["default threshold"],
+            measure,
+            offtopic.supported_timemap_measures[measure]["comparison direction"]
+            )
+
+    # for measure in args.collection_measures:
+
+    #     logger.info("Processing mementos using collection measure {}".format(measure))
+    #     threshold = args.measures[measure]
+    #     scoring[measure] = offtopic.supported_timemap_measures[measure]["function"](cm)
+    #     scoring[measure] = offtopic.evaluate_off_topic(
+    #         scoring[measure], 
+    #         offtopic.supported_timemap_measures[measure]["default threshold"])
+
+    for urit in scoring["timemaps"]:
+
+        for urim in scoring["timemaps"][urit]:
+
+            memento_data = scoring["timemaps"][urit][urim]
+
+            for measurename in memento_data["timemap measures"]:
+
+                measure_data = memento_data["timemap measures"][measurename]
+
+                if measure_data["topic status"] == "off-topic":
+                    scoring["timemaps"][urit][urim]["overall topic status"] == \
+                        "off-topic"
 
     with open(args.output_filename, "w") as outputfile:
         offtopic.supported_output_types[args.output_type](outputfile, scoring, cm)

@@ -98,9 +98,13 @@ def get_logger(appname, loglevel, logfile):
 
     return logger
 
-def calculate_loglevel(verbose):
+def calculate_loglevel(verbose=False, quiet=False):
   
+    # verbose trumps quiet
     if verbose:
         return logging.DEBUG
-    else:
-        return logging.INFO
+
+    if quiet:
+        return logging.WARNING
+
+    return logging.INFO

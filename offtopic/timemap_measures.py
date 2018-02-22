@@ -433,7 +433,79 @@ def compute_cosine_across_TimeMap(collectionmodel, scores=None, tokenize=None, s
                 scores["timemaps"][urit][urim]["timemap measures"][measurename]["stemmed"] = stemming
                 scores["timemaps"][urit][urim]["timemap measures"][measurename]["boilerplate removal"] = remove_boilerplate
 
-
             uritcounter += 1
 
     return scores
+
+def evaluate_off_topic(scoring, threshold, measurename, comparison_direction):
+
+    for urit in scoring["timemaps"]:
+
+        for urim in scoring["timemaps"][urit]:
+
+            scoring["timemaps"][urit][urim]["timemap measures"][measurename]["topic status"] = "on-topic"
+
+            # TODO: fix this if/elif block
+            # I know I can use eval, but also know its use has security implications
+            if comparison_direction == ">":
+                if scoring["timemaps"][urit][urim]["timemap measures"][measurename]["comparison score"] > threshold:
+                    scoring["timemaps"][urit][urim]["timemap measures"][measurename]["topic status"] = "off-topic"
+            elif comparison_direction == "==":
+                if scoring["timemaps"][urit][urim]["timemap measures"][measurename]["comparison score"] == threshold:
+                    scoring["timemaps"][urit][urim]["timemap measures"][measurename]["topic status"] = "off-topic"
+            elif comparison_direction == "<":
+                if scoring["timemaps"][urit][urim]["timemap measures"][measurename]["comparison score"] < threshold:
+                    scoring["timemaps"][urit][urim]["timemap measures"][measurename]["topic status"] = "off-topic"
+
+    return scoring
+
+supported_timemap_measures = {
+    "cosine": {
+        "name": "Cosine Similarity",
+        "function": compute_cosine_across_TimeMap,
+        "comparison direction": "<",
+        "default threshold": 0.15
+    },
+    "bytecount": {
+        "name": "Byte Count",
+        "function": compute_bytecount_across_TimeMap,
+        "comparison direction": "<",
+        "default threshold": -0.65
+    },
+    "wordcount": {
+        "name": "Word Count",
+        "function": compute_bytecount_across_TimeMap,
+        "comparison direction": "<",
+        "default threshold": -0.85
+    },
+    "tfintersection": {
+        "name": "TF-Intersection",
+        "function": compute_tfintersection_across_TimeMap,
+        "comparison direction": "==",
+        "default threshold": -0.65
+    },
+    "jaccard": {
+        "name": "Jaccard Distance",
+        "function": compute_jaccard_across_TimeMap,
+        "comparison direction": ">",
+        "default threshold": 0.05
+    },
+    "sorensen": {
+        "name": "Sørensen-Dice Distance",
+        "function": compute_sorensen_across_TimeMap,
+        "comparison direction": ">",
+        "default threshold": 0.05
+    },
+    "levenshtein": {
+        "name": "Levenshtein Distance",
+        "function": compute_levenshtein_across_TimeMap,
+        "comparison direction": ">",
+        "default threshold": 0.05
+    },
+    "nlevenshtein": {
+        "name": "Normalized Levenshtein Distance",
+        "function": compute_nlevenshtein_across_TimeMap,
+        "comparison direction": ">",
+        "default threshold": 0.05
+    }
+}
