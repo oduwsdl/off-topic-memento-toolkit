@@ -119,6 +119,9 @@ def compute_score_across_TimeMap(collectionmodel, measurename,
                     scores["timemaps"][urit][urim].setdefault("timemap measures", {})
                     scores["timemaps"][urit][urim]["timemap measures"][measurename] = \
                         scoredistance_function(first_data, memento_data)
+                    scores["timemaps"][urit][urim]["timemap measures"][measurename]["tokenized"] = tokenize
+                    scores["timemaps"][urit][urim]["timemap measures"][measurename]["stemmed"] = stemming
+                    scores["timemaps"][urit][urim]["timemap measures"][measurename]["boilerplate removal"] = remove_boilerplate
 
                 except CollectionModelMementoErrorException:
                     logger.warning("Errors were recorded while attempting to "
@@ -343,7 +346,7 @@ def compute_cosine_across_TimeMap(collectionmodel, scores=None, tokenize=None, s
     measurename = "cosine"
 
     tokenize = True
-    # remove_boilerplate = True
+    remove_boilerplate = True
 
     logger.info("Computing score across TimeMap, beginning TimeMap iteration...")
 
@@ -426,6 +429,10 @@ def compute_cosine_across_TimeMap(collectionmodel, scores=None, tokenize=None, s
                 scores["timemaps"][urit][urim].setdefault("timemap measures", {})
                 scores["timemaps"][urit][urim]["timemap measures"].setdefault(measurename, {})
                 scores["timemaps"][urit][urim]["timemap measures"][measurename]["comparison score"] = cscores[0][i]
+                scores["timemaps"][urit][urim]["timemap measures"][measurename]["tokenized"] = tokenize
+                scores["timemaps"][urit][urim]["timemap measures"][measurename]["stemmed"] = stemming
+                scores["timemaps"][urit][urim]["timemap measures"][measurename]["boilerplate removal"] = remove_boilerplate
+
 
             uritcounter += 1
 
