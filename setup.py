@@ -1,13 +1,22 @@
 from setuptools import setup
+from setuptools.command.install import install as _install
 
 # Python packaging info: http://python-packaging.readthedocs.io/en/latest/index.html
 # More Python packaging info: http://python-packaging-user-guide.readthedocs.io/tutorials/distributing-packages/
 # Python version info: https://www.python.org/dev/peps/pep-0440/
 
-# TODO: automate download of nltk data
+# Thanks https://stackoverflow.com/questions/26799894/installing-nltk-data-in-setup-py-script
+# for detailing how to install nltk data as part of setup.py
+class Install(_install):
+    def run(self):
+        _install.do_egg_install(self)
+        import nltk
+        nltk.download("stopwords")
+        nltk.download("punkt")
 
 setup(name='offtopic2',
-    version='2.0.0a0',
+    cmdclass={'install': Install},
+    version='0.9.0a0',
     description='Tools for determinine if web archive collecions are Off-Topic',
     url='http://github.com/shawnmjones/offtopic2',
     author='Shawn M. Jones',
@@ -18,9 +27,17 @@ setup(name='offtopic2',
     install_requires=[
         'requests_futures',
         'bs4',
-        'justext'
+        'html5lib',
+        'justext',
+        'nltk',
+        'scikit-learn',
+        'distance',
+        'warcio',
+        'requests',
+        'numpy',
+        'scipy'
     ],
-    # test_suite='setup.offtopic_test_suite',
+    setup_requires=['nltk'],
     test_suite="tests"
     # zip_safe=False
     )
