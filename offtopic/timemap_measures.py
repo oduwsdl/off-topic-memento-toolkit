@@ -64,7 +64,8 @@ def compute_score_across_TimeMap(collectionmodel, measurename,
         scores = {}
         scores["timemaps"] = {}
 
-    logger.info("Computing score across TimeMap, beginning TimeMap iteration...")
+    logger.info("Computing {} score across TimeMap, "
+        "beginning TimeMap iteration...".format(measurename))
 
     urits = collectionmodel.getTimeMapURIList()
     urittotal = len(urits)
@@ -227,7 +228,7 @@ def jaccard_scoredistance(first_data, memento_data, scorecache=None):
 
     scoredata = {}
 
-    scoredata["comparison score"] = compute_scores_on_distance_measure(
+    scoredata = compute_scores_on_distance_measure(
         first_data, memento_data, distance.jaccard)
 
     return scoredata
@@ -245,7 +246,7 @@ def sorensen_scoredistance(first_data, memento_data, scorecache=None):
 
     scoredata = {}
 
-    scoredata["comparison score"] = compute_scores_on_distance_measure(
+    scoredata = compute_scores_on_distance_measure(
         first_data, memento_data, distance.sorensen)
 
     return scoredata
@@ -263,7 +264,7 @@ def levenshtein_scoredistance(first_data, memento_data, scorecache=None):
 
     scoredata = {}
 
-    scoredata["comparison score"] = compute_scores_on_distance_measure(
+    scoredata = compute_scores_on_distance_measure(
         first_data, memento_data, distance.levenshtein)
 
     return scoredata
@@ -281,7 +282,7 @@ def nlevenshtein_scoredistance(first_data, memento_data, scorecache=None):
 
     scoredata = {}
 
-    scoredata["comparison score"] = compute_scores_on_distance_measure(
+    scoredata = compute_scores_on_distance_measure(
         first_data, memento_data, distance.nlevenshtein)
 
     return scoredata
@@ -370,7 +371,7 @@ def compute_cosine_across_TimeMap(collectionmodel, scores=None, tokenize=None, s
     tokenize = True
     remove_boilerplate = True
 
-    logger.info("Computing score across TimeMap, beginning TimeMap iteration...")
+    logger.info("Computing cosine score across TimeMap, beginning TimeMap iteration...")
 
     urits = collectionmodel.getTimeMapURIList()
     urittotal = len(urits)
@@ -446,8 +447,20 @@ def compute_cosine_across_TimeMap(collectionmodel, scores=None, tokenize=None, s
             # TODO: when does this happen:
             # ValueError: empty vocabulary; perhaps the documents only contain stop words
             logger.info("number of documents: {}".format(documents))
-            tfidf_matrix = tfidf_vectorizer.fit_transform(documents)
-            cscores = cosine_similarity(tfidf_matrix[0:1], tfidf_matrix)
+
+            errormsg = None
+
+            try:
+                tfidf_matrix = tfidf_vectorizer.fit_transform(documents)
+                cscores = cosine_similarity(tfidf_matrix[0:1], tfidf_matrix)
+            except ValueError as e:
+                errormsg = repr(e)
+                cscores = [[]]
+
+                for i in range(0, len(documents)):
+                    if len(documents[0]) == 0:
+                        if len(documents[i]) == 0:
+                            cscores[0].append(1.0)
 
             for i in range(0, len(cscores[0])):
                 urim = processed_urims[i]
@@ -458,6 +471,10 @@ def compute_cosine_across_TimeMap(collectionmodel, scores=None, tokenize=None, s
                 scores["timemaps"][urit][urim]["timemap measures"][measurename]["tokenized"] = tokenize
                 scores["timemaps"][urit][urim]["timemap measures"][measurename]["stemmed"] = stemming
                 scores["timemaps"][urit][urim]["timemap measures"][measurename]["boilerplate removal"] = remove_boilerplate
+
+                if errormsg:
+                    scores["timemaps"][urit][urim]["timemap measures"][measurename]["error"] = \
+                        errormsg
 
             uritcounter += 1
 

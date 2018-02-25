@@ -22,7 +22,7 @@ same_scores = {
     "bytecount": 0,
     "wordcount": 0,
     "tfintersection": 0,
-    "jaccard": 0,
+    "jaccard": 0.0,
     "sorensen": 0,
     "levenshtein": 0,
     "nlevenshtein": 0
@@ -139,6 +139,8 @@ class TestingTimeMapMeasures(unittest.TestCase):
                 self.assertTrue( "cosine" in scores["timemaps"][urit][urim]["timemap measures"] )
 
         for measure in same_scores:
+
+            print("evaluating measure {}".format(measure))
 
             for urit in scores["timemaps"]:
 
@@ -595,3 +597,89 @@ class TestingTimeMapMeasures(unittest.TestCase):
         )
 
         shutil.rmtree(working_directory)
+
+    def test_empty_documents(self):
+
+        working_directory = "/tmp/test_empty_documents"
+
+        if os.path.exists(working_directory):
+            shutil.rmtree(working_directory)
+
+        cm = collectionmodel.CollectionModel(working_directory=working_directory)
+
+        headers = {
+            "key1": "value1",
+            "key2": "value2"
+        }
+
+        timemap_content ="""<original1>; rel="original",
+<timemap1>; rel="self"; type="application/link-format"; from="Tue, 21 Mar 2016 15:45:06 GMT"; until="Tue, 21 Mar 2018 15:45:12 GMT",
+<timegate1>; rel="timegate",
+<memento11>; rel="first memento"; datetime="Tue, 21 Jan 2016 15:45:06 GMT",
+<memento12>; rel="memento"; datetime="Tue, 21 Jan 2017 15:45:06 GMT",
+<memento13>; rel="last memento"; datetime="Tue, 21 Jan 2018 15:45:12 GMT"
+"""
+
+        empty_html_document = b"<html><body></body></html>"
+
+        cm.addTimeMap("timemap1", timemap_content, headers)
+        cm.addMemento("memento11", empty_html_document, headers)
+        cm.addMemento("memento12", empty_html_document, headers)
+        cm.addMemento("memento13", empty_html_document, headers)
+
+        scores = compute_jaccard_across_TimeMap(
+            cm, scores=None, tokenize=None, stemming=True)
+
+        pp.pprint(scores)
+
+        # Rather than dealing with empty documents, this throws
+        # ValueError: empty vocabulary; perhaps the documents only contain stop words
+        # it should handle the error gracefully
+        scores = compute_cosine_across_TimeMap(
+            cm, scores=None, tokenize=None, stemming=True)
+
+        pp.pprint(scores)
+
+        expected_scores = {   'timemaps': {   'timemap1': {   'memento11': {   'timemap measures': {   'cosine': {   'boilerplate removal': True,
+                                                                                           'comparison score': 1.0,
+                                                                                           'error': "ValueError('empty "
+                                                                                                    'vocabulary; '
+                                                                                                    'perhaps '
+                                                                                                    'the '
+                                                                                                    'documents '
+                                                                                                    'only '
+                                                                                                    'contain '
+                                                                                                    'stop '
+                                                                                                    "words',)",
+                                                                                           'stemmed': True,
+                                                                                           'tokenized': True}}},
+                                    'memento12': {   'timemap measures': {   'cosine': {   'boilerplate removal': True,
+                                                                                           'comparison score': 1.0,
+                                                                                           'error': "ValueError('empty "
+                                                                                                    'vocabulary; '
+                                                                                                    'perhaps '
+                                                                                                    'the '
+                                                                                                    'documents '
+                                                                                                    'only '
+                                                                                                    'contain '
+                                                                                                    'stop '
+                                                                                                    "words',)",
+                                                                                           'stemmed': True,
+                                                                                           'tokenized': True}}},
+                                    'memento13': {   'timemap measures': {   'cosine': {   'boilerplate removal': True,
+                                                                                           'comparison score': 1.0,
+                                                                                           'error': "ValueError('empty "
+                                                                                                    'vocabulary; '
+                                                                                                    'perhaps '
+                                                                                                    'the '
+                                                                                                    'documents '
+                                                                                                    'only '
+                                                                                                    'contain '
+                                                                                                    'stop '
+                                                                                                    "words',)",
+                                                                                           'stemmed': True,
+                                                                                           'tokenized': True}}}}}}
+
+        
+        self.assertEqual(expected_scores, scores)
+
