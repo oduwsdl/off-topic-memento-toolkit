@@ -3,41 +3,41 @@ import csv
 import logging
 # import warcio
 
-def output_json(outputfile, jsondata, collectionmodel):
-    json.dump(jsondata, outputfile, indent=4)
+def output_json(outputfile, scoredata, collectionmodel):
+    json.dump(scoredata, outputfile, indent=4)
 
-def output_datafile(outputfile, jsondata, collectionmodel):
+def output_datafile(outputfile, scoredata, collectionmodel):
     
     outputdata = []
 
     seedid = 0
 
-    for measure in jsondata:
+    for urit in scoredata["timemaps"]:
 
-        for urit in jsondata[measure]["timemaps"]:
+        seedid += 1
 
-            seedid += 1
+        for urim in scoredata["timemaps"][urit]:
 
-            for urim in jsondata[measure]["timemaps"][urit]:
+            outputrow = {}
 
-                outputrow = {}
+            if scoredata["timemaps"][urit][urim]["overall topic status"] == \
+                "off-topic":
+                label = 0
 
-                fronturim = urim[:urim.find('/http')]
+            else:
+                label = 1
 
-                if fronturim[-3:] == 'id_':
-                    fronturim = fronturim[:-3]
+            fronturim = urim[:urim.find('/http')]
 
-                outputrow["date"] = fronturim[fronturim.rfind('/') + 1:]
+            if fronturim[-3:] == 'id_':
+                fronturim = fronturim[:-3]
 
-                if jsondata[measure]["timemaps"][urit][urim]["on-topic"] == True:
-                    outputrow["label"] = 1
-                else:
-                    outputrow["label"] = 0
+            outputrow["date"] = fronturim[fronturim.rfind('/') + 1:]
+            outputrow["id"] = seedid
+            outputrow["URI"] = urim
+            outputrow["label"] = label
 
-                outputrow["id"] = seedid
-                outputrow["URI"] = urim
-
-                outputdata.append(outputrow)    
+            outputdata.append(outputrow)
 
     fieldnames = [ 'id', 'date', 'URI', 'label' ]
 

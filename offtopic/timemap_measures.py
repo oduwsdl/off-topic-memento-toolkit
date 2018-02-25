@@ -205,11 +205,30 @@ def compute_wordcount_across_TimeMap(collectionmodel, scores=None, tokenize=True
 
     return scores
 
+def compute_scores_on_distance_measure(first_data, memento_data, distance_function):
+
+    scoredata = {}
+
+    if len(memento_data) == 0:
+
+        if len(first_data) == 0:
+            scoredata["comparison score"] = 0
+
+        else:
+            scoredata["comparison score"] = distance_function(first_data, memento_data)
+
+    else:
+        scoredata["comparison score"] = distance_function(first_data, memento_data)
+
+    return scoredata
+
+
 def jaccard_scoredistance(first_data, memento_data, scorecache=None):
 
     scoredata = {}
 
-    scoredata["comparison score"] = distance.jaccard(first_data, memento_data)
+    scoredata["comparison score"] = compute_scores_on_distance_measure(
+        first_data, memento_data, distance.jaccard)
 
     return scoredata
 
@@ -226,7 +245,8 @@ def sorensen_scoredistance(first_data, memento_data, scorecache=None):
 
     scoredata = {}
 
-    scoredata["comparison score"] = distance.sorensen(first_data, memento_data)
+    scoredata["comparison score"] = compute_scores_on_distance_measure(
+        first_data, memento_data, distance.sorensen)
 
     return scoredata
 
@@ -243,7 +263,8 @@ def levenshtein_scoredistance(first_data, memento_data, scorecache=None):
 
     scoredata = {}
 
-    scoredata["comparison score"] = distance.levenshtein(first_data, memento_data)
+    scoredata["comparison score"] = compute_scores_on_distance_measure(
+        first_data, memento_data, distance.levenshtein)
 
     return scoredata
 
@@ -260,7 +281,8 @@ def nlevenshtein_scoredistance(first_data, memento_data, scorecache=None):
 
     scoredata = {}
 
-    scoredata["comparison score"] = distance.nlevenshtein(first_data, memento_data)
+    scoredata["comparison score"] = compute_scores_on_distance_measure(
+        first_data, memento_data, distance.nlevenshtein)
 
     return scoredata
 
@@ -420,6 +442,10 @@ def compute_cosine_across_TimeMap(collectionmodel, scores=None, tokenize=None, s
 
             # our full_tokenize function handles stop words
             tfidf_vectorizer = TfidfVectorizer(tokenizer=full_tokenize, stop_words=None)
+
+            # TODO: when does this happen:
+            # ValueError: empty vocabulary; perhaps the documents only contain stop words
+            logger.info("number of documents: {}".format(documents))
             tfidf_matrix = tfidf_vectorizer.fit_transform(documents)
             cscores = cosine_similarity(tfidf_matrix[0:1], tfidf_matrix)
 
