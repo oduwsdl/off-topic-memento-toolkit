@@ -4,8 +4,6 @@ import sys
 import logging
 import argparse
 
-import pprint
-
 import offtopic
 
 def process_arguments(args):
@@ -118,10 +116,6 @@ if __name__ == '__main__':
 
         threshold = args.timemap_measures[measure]
 
-        logger.error("measure model dict follows")
-        logger.error(pprint.pformat(mm.generate_dict()))
-        logger.error("done with measure model dict")
-
         mm.calculate_offtopic_by_measure(
             "timemap measures", measure, threshold,
             offtopic.supported_timemap_measures[measure]["comparison direction"]
@@ -129,6 +123,7 @@ if __name__ == '__main__':
 
     mm.calculate_overall_offtopic_status()
 
+    logger.info("saving output as JSON")
     mm.save_as_JSON(args.output_filename)
 
     # for measure in args.collection_measures:

@@ -269,6 +269,9 @@ class MeasureModel:
 
                 for measuretype, measurename in self.get_Measures():
 
+                    if self.get_Memento_measurement_error_message(urim, measuretype, measurename):
+                        continue
+
                     topic_status = self.scoremodel[urit][urim][measuretype][measurename]["topic status"]
 
                     if topic_status == "off-topic":
@@ -288,7 +291,7 @@ class MeasureModel:
             tm_a_err = self.get_TimeMap_access_error_message(urit)
 
             if tm_a_err:
-                outputdata[urit]["access error"] = tm_a_err
+                outputdata[urit]["access error"] = str(tm_a_err)
             else:
 
                 for urim in self.get_Memento_URIs_in_TimeMap(urit):
@@ -298,7 +301,7 @@ class MeasureModel:
                     m_a_err = self.get_Memento_access_error_message(urim)
 
                     if m_a_err:
-                        outputdata[urit][urim]["access error"] = m_a_err
+                        outputdata[urit][urim]["access error"] = str(m_a_err)
                     else:
                         
                         for measuretype, measurename in self.get_Measures():
@@ -309,7 +312,7 @@ class MeasureModel:
                             m_m_err = self.get_Memento_measurement_error_message(urim, measuretype, measurename)
 
                             if m_m_err:
-                                outputdata[urit][urim][measuretype][measurename]["measurement error"] = m_m_err
+                                outputdata[urit][urim][measuretype][measurename]["measurement error"] = str(m_m_err)
 
                             else:
                                 outputdata[urit][urim][measuretype][measurename] = {
@@ -329,7 +332,7 @@ class MeasureModel:
         outputdata = self.generate_dict()
 
         with open(filename, 'w') as outputjson:
-            json.dump(outputdata, outputjson)
+            json.dump(outputdata, outputjson, indent=4)
 
     def save_as_goldstandard(self, filename):
 
