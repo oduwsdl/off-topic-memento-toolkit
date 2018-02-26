@@ -9,7 +9,8 @@ from nltk.stem.porter import PorterStemmer
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 
-from .collectionmodel import CollectionModelMementoErrorException
+from .collectionmodel import CollectionModelMementoErrorException, \
+    CollectionModelBoilerPlateRemovalFailureException
 
 logger = logging.getLogger(__name__)
 
@@ -53,6 +54,19 @@ def get_memento_data_for_measure(urim, collection_model,
 
     return data
 
+def apply_measurement_error_msg_to_all_mementos(urit, memento_list, 
+    measuremodel, measurename, errormsg):
+
+    for memento in memento_list:
+
+        # we cannot compute any meeaningful measurements, so store
+        # as errors for later output
+        urim = memento["uri"]
+        measuremodel.set_Memento_measurement_error(urit, urim, 
+            "timemap measures", measurename, errormsg)   
+
+    return measuremodel
+
 def compute_score_across_TimeMap(collectionmodel, measuremodel,
     measurename, scoredistance_function=None, 
     tokenize=True, stemming=True,
@@ -84,28 +98,31 @@ def compute_score_across_TimeMap(collectionmodel, measuremodel,
 
             logger.debug("Accessing content of first URI-M {} for calculations".format(first_urim))
 
-            first_data = get_memento_data_for_measure(
-                first_urim, collectionmodel, tokenize=tokenize, stemming=stemming, 
-                remove_boilerplate=remove_boilerplate)
+            try:
+                first_data = get_memento_data_for_measure(
+                    first_urim, collectionmodel, tokenize=tokenize, stemming=stemming, 
+                    remove_boilerplate=remove_boilerplate)
+
+            except CollectionModelBoilerPlateRemovalFailureException as e:
+                errormsg = "Boilerplate removal error with first memento in TimeMap, " \
+                    "cannot effectively compare memento content"
+
+                apply_measurement_error_msg_to_all_mementos(urit, memento_list,
+                    measuremodel, measurename, errormsg)
+                continue
+            
 
             if len(first_data) == 0:
 
-                errormsg = "After processing first memento in TimeMap is empty, cannot effectively compare memento content"
+                errormsg = "After processing content, the first memento in TimeMap is now empty, cannot effectively compare memento content"
                 logger.warning(errormsg)
 
-                for memento in memento_list:
-
-                    # we cannot compute any meeaningful measurements, so store
-                    # as errors for later output
-                    urim = memento["uri"]
-                    measuremodel.set_Memento_measurement_error(urit, urim, 
-                        "timemap measures", measurename, errormsg)
+                apply_measurement_error_msg_to_all_mementos(urit, memento_list,
+                    measuremodel, measurename, errormsg)
 
                 # move on to the next URI-T
                 uritcounter += 1
                 continue
-
-            # mementos = timemap["mementos"]["list"]
 
             mementototal = len(memento_list)
             logger.info("There are {} mementos in this TimeMap".format(mementototal))
@@ -121,18 +138,29 @@ def compute_score_across_TimeMap(collectionmodel, measuremodel,
                 logger.debug("Accessing content of URI-M {} for calculations".format(urim))
 
                 try:
-                    memento_data = get_memento_data_for_measure(
-                        urim, collectionmodel, tokenize=tokenize, 
-                        stemming=stemming, 
-                        remove_boilerplate=remove_boilerplate)
 
-                    score = scoredistance_function(first_data, memento_data)
-                    measuremodel.set_score(urit, urim, "timemap measures", measurename, score)
-                    measuremodel.set_tokenized(urit, urim, "timemap measures", measurename, tokenize)
-                    measuremodel.set_stemmed(urit, urim, "timemap measures", measurename, stemming)
-                    measuremodel.set_removed_boilerplate(
-                        urit, urim, "timemap measures", measurename, remove_boilerplate
-                    )                        
+                    try:
+                        memento_data = get_memento_data_for_measure(
+                            urim, collectionmodel, tokenize=tokenize, 
+                            stemming=stemming, 
+                            remove_boilerplate=remove_boilerplate)
+
+                        score = scoredistance_function(first_data, memento_data)
+                        measuremodel.set_score(urit, urim, "timemap measures", measurename, score)
+                        measuremodel.set_tokenized(urit, urim, "timemap measures", measurename, tokenize)
+                        measuremodel.set_stemmed(urit, urim, "timemap measures", measurename, stemming)
+                        measuremodel.set_removed_boilerplate(
+                            urit, urim, "timemap measures", measurename, remove_boilerplate
+                        )
+
+                    except CollectionModelBoilerPlateRemovalFailureException as e:
+                        errormsg = "Boilerplate could not be removed from " \
+                            "memento at URI-M {}; details: {}".format(urim, repr(e))
+                        logger.warning(errormsg)
+
+                        measuremodel.set_Memento_measurement_error(
+                            urit, urim, "timemap measures", measurename, repr(e)
+                        )
 
                 except CollectionModelMementoErrorException:
                     errormsg = "Errors were recorded while attempting to " \
@@ -398,20 +426,24 @@ def compute_cosine_across_TimeMap(collectionmodel, measuremodel, tokenize=None, 
 
             logger.debug("Accessing content of first URI-M {} for calculations".format(first_urim))
 
-            first_data = collectionmodel.getMementoContentWithoutBoilerplate(first_urim)
+            try:
+                first_data = collectionmodel.getMementoContentWithoutBoilerplate(first_urim)
+
+            except CollectionModelBoilerPlateRemovalFailureException as e:
+                errormsg = "Boilerplate removal error with first memento in TimeMap, " \
+                    "cannot effectively compare memento content"
+
+                apply_measurement_error_msg_to_all_mementos(urit, memento_list,
+                    measuremodel, measurename, errormsg)
+                continue
 
             if len(first_data) == 0:
 
-                errormsg = "After processing first memento in TimeMap is empty, cannot effectively compare memento content"
+                errormsg = "After processing content, the first memento in TimeMap is now empty, cannot effectively compare memento content"
                 logger.warning(errormsg)
 
-                for memento in memento_list:
-
-                    # we cannot compute any meeaningful measurements, so store
-                    # as errors for later output
-                    urim = memento["uri"]
-                    measuremodel.set_Memento_measurement_error(urit, urim, 
-                        "timemap measures", measurename, errormsg)
+                apply_measurement_error_msg_to_all_mementos(urit, memento_list,
+                    measuremodel, measurename, errormsg)
 
                 # move on to the next URI-T
                 uritcounter += 1
@@ -444,10 +476,20 @@ def compute_cosine_across_TimeMap(collectionmodel, measuremodel, tokenize=None, 
                     # in case the mementos are not sorted in order of memento datetime
                     # we ignore the first one for comparison because we already saved it
                     if urim != first_urim:
-                        memento_data = collectionmodel.getMementoContentWithoutBoilerplate(urim)
-                            
-                        processed_urims.append(urim)
-                        documents.append(memento_data)
+                        try:
+                            memento_data = collectionmodel.getMementoContentWithoutBoilerplate(urim)
+                                
+                            processed_urims.append(urim)
+                            documents.append(memento_data)
+
+                        except CollectionModelBoilerPlateRemovalFailureException as e:
+                            errormsg = "Boilerplate could not be removed from " \
+                                "memento at URI-M {}; details: {}".format(urim, repr(e))
+                            logger.warning(errormsg)
+
+                            measuremodel.set_Memento_measurement_error(
+                                urit, urim, "timemap measures", measurename, repr(e)
+                            )
 
                 except CollectionModelMementoErrorException:
                     errormsg = "Errors were recorded while attempting to " \

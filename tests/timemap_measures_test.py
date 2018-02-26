@@ -611,7 +611,7 @@ class TestingTimeMapMeasures(unittest.TestCase):
 
                     self.assertEquals(
                         mm.get_Memento_measurement_error_message(urim, "timemap measures", measurename),
-                        "First memento in TimeMap is empty, cannot effectively compare memento content"
+                        "After processing content, the first memento in TimeMap is now empty, cannot effectively compare memento content"
                     )
 
         shutil.rmtree(working_directory)
@@ -720,63 +720,137 @@ class TestingTimeMapMeasures(unittest.TestCase):
 
                     self.assertEquals(
                         mm.get_Memento_measurement_error_message(urim, "timemap measures", measurename),
-                        "First memento in TimeMap is empty, cannot effectively compare memento content"
+                        "After processing content, the first memento in TimeMap is now empty, cannot effectively compare memento content"
                     )
 
         shutil.rmtree(working_directory)
 
-    # def test_evaluate_all_off_topic_happy_path(self):
+    def test_handle_boilerplateremoval_error_due_to_empty_document(self):
 
-    #     scoring = {
-    #         "timemaps": {
-    #             "timemap1": {
-    #                 "memento11": {
-    #                     "timemap measures": {
-    #                         "faux measure1": {
-    #                             "topic status": "on-topic"
-    #                         },
-    #                         "faux measure2": {
-    #                             "topic status": "on-topic"
-    #                         }
-    #                     }                        
-    #                 },
-    #                 "memento12": {
-    #                     "timemap measures": {
-    #                         "faux measure1": {
-    #                             "topic status": "on-topic"
-    #                         },
-    #                         "faux measure2": {
-    #                             "topic status": "on-topic"
-    #                         }
-    #                     }
-    #                 },
-    #                 "memento13": {
-    #                     "timemap measures": {
-    #                         "faux measure1": {
-    #                             "topic status": "on-topic"
-    #                         },
-    #                         "faux measure2": {
-    #                             "topic status": "off-topic"
-    #                         }
-    #                     }
-    #                 }
-    #             }
-    #         }
-    #     }
+        working_directory = "/tmp/test_handle_boilerplateremoval_error"
 
-    #     actual_scoring = evaluate_all_off_topic(scoring)
+        if os.path.exists(working_directory):
+            shutil.rmtree(working_directory)
 
-    #     self.assertEqual(
-    #         actual_scoring["timemaps"]["timemap1"]["memento11"]["overall topic status"],
-    #         "on-topic"
-    #     )
+        cm = collectionmodel.CollectionModel(working_directory=working_directory)
 
-    #     self.assertEqual(
-    #         actual_scoring["timemaps"]["timemap1"]["memento12"]["overall topic status"],
-    #         "on-topic"
-    #     )
+        headers = {
+            "key1": "value1",
+            "key2": "value2"
+        }
 
-    #     self.assertEqual(
-    #         actual_scoring["timemaps"]["timemap1"]["memento13"]["overall topic status"],
-    #         "off-topic"
-    #     )
+        timemap_content ="""<original1>; rel="original",
+<timemap1>; rel="self"; type="application/link-format"; from="Tue, 21 Mar 2016 15:45:06 GMT"; until="Tue, 21 Mar 2018 15:45:12 GMT",
+<timegate1>; rel="timegate",
+<memento11>; rel="first memento"; datetime="Tue, 21 Jan 2016 15:45:06 GMT",
+<memento12>; rel="memento"; datetime="Tue, 21 Jan 2017 15:45:06 GMT",
+<memento13>; rel="last memento"; datetime="Tue, 21 Jan 2018 15:45:12 GMT"
+"""
+
+        full_html_document = b"<html>The quick brown fox jumps over the lazy dog<body></html>"
+        really_empty_document = b""
+
+        cm.addTimeMap("timemap1", timemap_content, headers)
+        cm.addMemento("memento11", full_html_document, headers)
+        cm.addMemento("memento12", really_empty_document, headers)
+        cm.addMemento("memento13", full_html_document, headers)
+
+        # TODO: how to handle the empty document?
+
+        mm = MeasureModel()
+
+        mm = compute_jaccard_across_TimeMap(
+            cm, mm, tokenize=None, stemming=True)
+
+        pp.pprint(mm.scoremodel)
+
+        self.assertEqual(
+            mm.get_Memento_measurement_error_message("memento12", "timemap measures", "jaccard"),
+            "CollectionModelBoilerPlateRemovalFailureException(\"ParserError('Document is empty',)\",)"
+        )
+
+        mm = compute_cosine_across_TimeMap(
+            cm, mm, tokenize=None, stemming=True)
+
+        self.assertEqual(
+            mm.get_Memento_measurement_error_message("memento12", "timemap measures", "cosine"),
+            "CollectionModelBoilerPlateRemovalFailureException(\"ParserError('Document is empty',)\",)"
+        )
+
+
+        shutil.rmtree(working_directory)
+
+    def test_handle_boilerplateremoval_error_due_to_empty_first_document(self):
+
+        working_directory = "/tmp/test_handle_boilerplateremoval_error"
+
+        if os.path.exists(working_directory):
+            shutil.rmtree(working_directory)
+
+        cm = collectionmodel.CollectionModel(working_directory=working_directory)
+
+        headers = {
+            "key1": "value1",
+            "key2": "value2"
+        }
+
+        timemap_content ="""<original1>; rel="original",
+<timemap1>; rel="self"; type="application/link-format"; from="Tue, 21 Mar 2016 15:45:06 GMT"; until="Tue, 21 Mar 2018 15:45:12 GMT",
+<timegate1>; rel="timegate",
+<memento11>; rel="first memento"; datetime="Tue, 21 Jan 2016 15:45:06 GMT",
+<memento12>; rel="memento"; datetime="Tue, 21 Jan 2017 15:45:06 GMT",
+<memento13>; rel="last memento"; datetime="Tue, 21 Jan 2018 15:45:12 GMT"
+"""
+
+        full_html_document = b"<html>The quick brown fox jumps over the lazy dog<body></html>"
+        really_empty_document = b""
+
+        cm.addTimeMap("timemap1", timemap_content, headers)
+        cm.addMemento("memento11", really_empty_document, headers)
+        cm.addMemento("memento12", full_html_document, headers)
+        cm.addMemento("memento13", full_html_document, headers)
+
+        # TODO: how to handle the empty document?
+
+        mm = MeasureModel()
+
+        mm = compute_jaccard_across_TimeMap(
+            cm, mm, tokenize=None, stemming=True)
+
+        pp.pprint(mm.scoremodel)
+
+        self.assertEqual(
+            mm.get_Memento_measurement_error_message("memento11", "timemap measures", "jaccard"),
+            "Boilerplate removal error with first memento in TimeMap, cannot effectively compare memento content"
+        )
+
+        self.assertEqual(
+            mm.get_Memento_measurement_error_message("memento12", "timemap measures", "jaccard"),
+            "Boilerplate removal error with first memento in TimeMap, cannot effectively compare memento content"
+        )
+
+        self.assertEqual(
+            mm.get_Memento_measurement_error_message("memento13", "timemap measures", "jaccard"),
+            "Boilerplate removal error with first memento in TimeMap, cannot effectively compare memento content"
+        )
+
+        mm = compute_cosine_across_TimeMap(
+            cm, mm, tokenize=None, stemming=True)
+
+        self.assertEqual(
+            mm.get_Memento_measurement_error_message("memento11", "timemap measures", "cosine"),
+            "Boilerplate removal error with first memento in TimeMap, cannot effectively compare memento content"
+        )
+
+        self.assertEqual(
+            mm.get_Memento_measurement_error_message("memento12", "timemap measures", "cosine"),
+            "Boilerplate removal error with first memento in TimeMap, cannot effectively compare memento content"
+        )
+
+        self.assertEqual(
+            mm.get_Memento_measurement_error_message("memento13", "timemap measures", "cosine"),
+            "Boilerplate removal error with first memento in TimeMap, cannot effectively compare memento content"
+        )
+
+
+        shutil.rmtree(working_directory)

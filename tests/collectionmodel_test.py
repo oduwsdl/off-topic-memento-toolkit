@@ -11,6 +11,8 @@ pp = pprint.PrettyPrinter(indent=4)
 
 from datetime import datetime
 
+import lxml.etree
+
 from offtopic import collectionmodel
 
 # Disabled this pylint rule because of too many false positives
@@ -484,3 +486,66 @@ class TestingCollectionModel(unittest.TestCase):
         )
 
         shutil.rmtree(test_directory)
+
+    def test_boilerplate_problem(self):
+
+        working_directory = "/tmp/collectionmodel_test/test_boilerplate_problem"
+       
+        cm = collectionmodel.CollectionModel(working_directory=working_directory)
+
+        testtimemap2 = """<http://a.example.org>;rel="original",
+        <http://arxiv.example.net/timemap/http://a.example.org>
+        ; rel="self";type="application/link-format"
+        ; from="Tue, 20 Jun 2000 18:02:59 GMT"
+        ; until="Wed, 09 Apr 2008 20:30:51 GMT",
+        <http://arxiv.example.net/timegate/http://a.example.org>
+        ; rel="timegate",
+        <http://arxiv.example.net/web/20000620180259/http://a.example.org>
+        ; rel="first memento";datetime="Tue, 20 Jun 2000 18:02:59 GMT"
+        ; license="http://creativecommons.org/publicdomain/zero/1.0/",
+        <http://arxiv.example.net/web/20091027204954/http://a.example.org>
+        ; rel="last memento";datetime="Tue, 27 Oct 2009 20:49:54 GMT"
+        ; license="http://creativecommons.org/publicdomain/zero/1.0/",
+        <http://arxiv.example.net/web/20000621011731/http://a.example.org>
+        ; rel="memento";datetime="Wed, 21 Jun 2000 01:17:31 GMT"
+        ; license="http://creativecommons.org/publicdomain/zero/1.0/",
+        <http://arxiv.example.net/web/20000621044156/http://a.example.org>
+        ; rel="memento";datetime="Wed, 21 Jun 2000 04:41:56 GMT"
+        ; license="http://creativecommons.org/publicdomain/zero/1.0/",
+        """
+        
+        testheaders = {
+            "header1": "value1",
+            "header2": "value2"
+        }
+
+        testurit2 = "testing-storage:timemap2"
+
+        cm.addTimeMap(testurit2, testtimemap2, testheaders )
+
+        testcontent = b"<html><body>hi</body></html>"
+
+        cm.addMemento("http://arxiv.example.net/web/20000620180259/http://a.example.org",
+            testcontent, testheaders)
+
+        cm.addMemento("http://arxiv.example.net/web/20091027204954/http://a.example.org",
+            testcontent, testheaders)
+
+        cm.addMemento("http://arxiv.example.net/web/20000621011731/http://a.example.org",
+            testcontent, testheaders)
+
+        cm.addMemento("http://arxiv.example.net/web/20000621044156/http://a.example.org",
+            b"", testheaders)
+
+        self.assertEqual(
+            cm.getMementoContentWithoutBoilerplate(
+                "http://arxiv.example.net/web/20000620180259/http://a.example.org"),
+           b"hi\n"
+        )
+
+        with self.assertRaises(collectionmodel.CollectionModelBoilerPlateRemovalFailureException):
+            data = cm.getMementoContentWithoutBoilerplate(
+                "http://arxiv.example.net/web/20000621044156/http://a.example.org")
+            data # here to shut up pylint
+
+        shutil.rmtree(working_directory)

@@ -5,6 +5,8 @@ import json
 import csv
 import logging
 
+import lxml.etree
+
 from datetime import datetime
 from datetime import date
 
@@ -39,6 +41,9 @@ class CollectionModelNoSuchMementoException(CollectionModelException):
     pass
 
 class CollectionModelNoSuchTimeMapException(CollectionModelException):
+    pass
+
+class CollectionModelBoilerPlateRemovalFailureException(CollectionModelException):
     pass
 
 class CollectionModel:
@@ -348,12 +353,17 @@ class CollectionModel:
                     self.memento_directory, filename_digest), 'rb') as fileinput:
                     data = fileinput.read()
 
-                paragraphs = justext(data, get_stoplist('English'))
+                try:
+                    paragraphs = justext(data, get_stoplist('English'))
 
-                with open(boilerplate_filename, 'wb') as bpfile:
-                    
-                    for paragraph in paragraphs:
-                        bpfile.write(bytes("{}\n".format(paragraph.text), "utf8"))
+
+                    with open(boilerplate_filename, 'wb') as bpfile:
+                        
+                        for paragraph in paragraphs:
+                            bpfile.write(bytes("{}\n".format(paragraph.text), "utf8"))
+
+                except lxml.etree.ParserError as e:
+                    raise CollectionModelBoilerPlateRemovalFailureException(repr(e))
 
             with open(boilerplate_filename, 'rb') as bpfile:
                 content_without_boilerplate = bpfile.read()
