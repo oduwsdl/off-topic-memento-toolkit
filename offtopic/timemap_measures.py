@@ -526,62 +526,6 @@ def compute_cosine_across_TimeMap(collectionmodel, measuremodel, tokenize=None, 
 
     return measuremodel
 
-# def evaluate_off_topic_single_measure(scoring, threshold, measurename, comparison_direction):
-
-#     for urit in scoring["timemaps"]:
-
-#         if "measure calculation error" not in scoring["timemaps"][urit]:
-
-#             for urim in scoring["timemaps"][urit]:
-
-#                 # if there was an access error, we can't say if it was off-topic or not
-#                 if "access error" not in scoring["timemaps"][urit][urim]:
-
-#                     scoring["timemaps"][urit][urim]["timemap measures"][measurename]["topic status"] = "on-topic"
-
-                    # TODO: fix this if/elif block
-                    # I know I can use eval, but also know its use has security implications
-#                     if comparison_direction == ">":
-#                         if scoring["timemaps"][urit][urim]["timemap measures"][measurename]["comparison score"] > threshold:
-#                             scoring["timemaps"][urit][urim]["timemap measures"][measurename]["topic status"] = "off-topic"
-#                     elif comparison_direction == "==":
-#                         if scoring["timemaps"][urit][urim]["timemap measures"][measurename]["comparison score"] == threshold:
-#                             scoring["timemaps"][urit][urim]["timemap measures"][measurename]["topic status"] = "off-topic"
-#                     elif comparison_direction == "<":
-#                         if scoring["timemaps"][urit][urim]["timemap measures"][measurename]["comparison score"] < threshold:
-#                             scoring["timemaps"][urit][urim]["timemap measures"][measurename]["topic status"] = "off-topic"
-#                     elif comparison_direction == "!=":
-#                         if scoring["timemaps"][urit][urim]["timemap measures"][measurename]["comparison score"] != threshold:
-#                             scoring["timemaps"][urit][urim]["timemap measures"][measurename]["topic status"] = "off-topic"
-
-#                 else:
-#                     scoring["timemaps"][urit][urim]["timemap measures"][measurename]["topic status"] = "no data for calculation"
-
-#     return scoring
-
-# def evaluate_all_off_topic(scoring):
-
-#     for urit in scoring["timemaps"]:
-
-#         for urim in scoring["timemaps"][urit]:
-
-            
-#             memento_data = scoring["timemaps"][urit][urim]
-#             logger.error("memento data type {}".format(memento_data))
-#             memento_data["overall topic status"] = "on-topic"
-
-#             for measurename in memento_data["timemap measures"]:
-
-#                 measure_data = memento_data["timemap measures"][measurename]
-
-#                 if measure_data["topic status"] == "off-topic":
-
-#                     memento_data["overall topic status"] = "off-topic"
-#                     break
-
-#     return scoring
-
-
 supported_timemap_measures = {
     "cosine": {
         "name": "Cosine Similarity",
