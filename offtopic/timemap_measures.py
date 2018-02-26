@@ -9,6 +9,8 @@ from nltk.stem.porter import PorterStemmer
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 
+from simhash import Simhash
+
 from .collectionmodel import CollectionModelMementoErrorException, \
     CollectionModelBoilerPlateRemovalFailureException
 
@@ -177,6 +179,36 @@ def compute_score_across_TimeMap(collectionmodel, measuremodel,
                 mementocounter += 1
 
             uritcounter += 1
+
+    return measuremodel
+
+
+def simhash_scoredistance(first_data, memento_data):
+
+    if type(first_data) == type(memento_data):
+        if type(first_data) == bytes:
+            first_data = str(first_data)
+            memento_data = str(memento_data)
+
+    score = Simhash(first_data).distance(Simhash(memento_data))
+
+    return score
+
+def compute_rawsimhash_across_TimeMap(collectionmodel, measuremodel, tokenize=False, stemming=False):
+
+    measuremodel = compute_score_across_TimeMap(collectionmodel, measuremodel, "raw_simhash", 
+        simhash_scoredistance, tokenize=False, stemming=False,
+        remove_boilerplate=False
+    )
+
+    return measuremodel
+
+def compute_tfsimhash_across_TimeMap(collectionmodel, measuremodel, tokenize=True, stemming=True):
+
+    measuremodel = compute_score_across_TimeMap(collectionmodel, measuremodel, "tf_simhash", 
+        simhash_scoredistance, tokenize=True, stemming=True,
+        remove_boilerplate=True
+    )
 
     return measuremodel
 
@@ -563,16 +595,30 @@ supported_timemap_measures = {
         "comparison direction": ">",
         "default threshold": 0.05
     },
-    "levenshtein": {
-        "name": "Levenshtein Distance",
-        "function": compute_levenshtein_across_TimeMap,
+    "raw_simhash": {
+        "name": "Simhash on raw memento content",
+        "function": compute_rawsimhash_across_TimeMap,
         "comparison direction": ">",
-        "default threshold": 0.05
+        "default threshold": 0
     },
-    "nlevenshtein": {
-        "name": "Normalized Levenshtein Distance",
-        "function": compute_nlevenshtein_across_TimeMap,
+    "tf_simhash": {
+        "name": "Simhash on term frequencies in memento",
+        "function": compute_tfsimhash_across_TimeMap,
         "comparison direction": ">",
-        "default threshold": 0.05
+        "default threshold": 0
     }
+    # Note: these took way too long to execute
+    # ,
+    # "levenshtein": {
+    #     "name": "Levenshtein Distance",
+    #     "function": compute_levenshtein_across_TimeMap,
+    #     "comparison direction": ">",
+    #     "default threshold": 0.05
+    # },
+    # "nlevenshtein": {
+    #     "name": "Normalized Levenshtein Distance",
+    #     "function": compute_nlevenshtein_across_TimeMap,
+    #     "comparison direction": ">",
+    #     "default threshold": 0.05
+    # }
 }

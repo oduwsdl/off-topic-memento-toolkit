@@ -11,8 +11,8 @@ from offtopic import collectionmodel, compute_bytecount_across_TimeMap, \
     compute_wordcount_across_TimeMap, compute_jaccard_across_TimeMap, \
     compute_cosine_across_TimeMap, compute_sorensen_across_TimeMap, \
     compute_levenshtein_across_TimeMap, compute_nlevenshtein_across_TimeMap, \
-    compute_tfintersection_across_TimeMap, \
-    MeasureModel
+    compute_tfintersection_across_TimeMap, compute_tfsimhash_across_TimeMap, \
+    compute_rawsimhash_across_TimeMap, MeasureModel
 
 import logging
 logging.basicConfig(level=logging.DEBUG)
@@ -26,7 +26,9 @@ same_scores = {
     "jaccard": 0.0,
     "sorensen": 0,
     "levenshtein": 0,
-    "nlevenshtein": 0
+    "nlevenshtein": 0,
+    "raw_simhash": 0,
+    "tf_simhash": 0
 }
 
 class TestingTimeMapMeasures(unittest.TestCase):
@@ -112,6 +114,14 @@ class TestingTimeMapMeasures(unittest.TestCase):
         )
 
         mm = compute_tfintersection_across_TimeMap(
+            cm, mm, tokenize=True, stemming=True
+        )
+
+        mm = compute_rawsimhash_across_TimeMap(
+            cm, mm, tokenize=False, stemming=False
+        )
+
+        mm = compute_tfsimhash_across_TimeMap(
             cm, mm, tokenize=True, stemming=True
         )
 
@@ -208,6 +218,14 @@ class TestingTimeMapMeasures(unittest.TestCase):
         )
 
         mm = compute_tfintersection_across_TimeMap(
+            cm, mm, tokenize=True, stemming=True
+        )
+
+        mm = compute_rawsimhash_across_TimeMap(
+            cm, mm, tokenize=False, stemming=False
+        )
+
+        mm = compute_tfsimhash_across_TimeMap(
             cm, mm, tokenize=True, stemming=True
         )
 
@@ -337,6 +355,10 @@ class TestingTimeMapMeasures(unittest.TestCase):
         #     cm, scores=scores, tokenize=True, stemming=True
         # )
 
+        # mm = compute_rawsimhash_across_TimeMap(
+        #     cm, mm, tokenize=False, stemming=False
+        # )
+
         self.assertTrue( "timemap1" in mm.get_TimeMap_URIs() )
         self.assertTrue( "timemap2" in mm.get_TimeMap_URIs() )
 
@@ -356,6 +378,7 @@ class TestingTimeMapMeasures(unittest.TestCase):
                                                                              'sorensen': {   'comparison score': 0.0},
                                                                              'wordcount': {   'comparison score': 0.0,
                                                                                               'individual score': 94}}},
+                                                                             
                                     'memento12': {   'timemap measures': {   'bytecount': {   'comparison score': -0.43015214384508993,
                                                                                               'individual score': 1034},
                                                                              'jaccard': {   'comparison score': 0.11363636363636365},
@@ -402,7 +425,8 @@ class TestingTimeMapMeasures(unittest.TestCase):
             # we'll have to test TF intersection separately,
             # the way that I build the sentences does not
             # have enough different words
-            if measure == "tfintersection" or measure == "cosine":
+            if measure == "tfintersection" or measure == "cosine" or \
+                measure == "raw_simhash" or measure == "tf_simhash":
                 continue
 
             for urit in mm.get_TimeMap_URIs():
@@ -852,5 +876,133 @@ class TestingTimeMapMeasures(unittest.TestCase):
             "Boilerplate removal error with first memento in TimeMap, cannot effectively compare memento content"
         )
 
+
+        shutil.rmtree(working_directory)
+
+    def test_raw_simhash(self):
+
+        working_directory = "/tmp/test_raw_simhash"
+
+        if os.path.exists(working_directory):
+            shutil.rmtree(working_directory)
+
+        cm = collectionmodel.CollectionModel(working_directory=working_directory)
+
+        headers = {
+            "key1": "value1",
+            "key2": "value2"
+        }
+
+        full_sentence = ['The', 'quick', 'brown', 'fox', 'jumps', 'over', 
+            'the', 'lazy', 'dog', 'etaoin', 'shrdlu', 'Now','is', 'the', 
+            'time', 'for', 'all', 'good', 'men', 'to', 'come', 'to', 'the', 
+            'aid', 'of', 'their', 'country',
+            'Jived', 'fox', 'nymph', 'grabs', 'quick', 'waltz',
+            'Glib', 'jocks', 'quiz', 'nymph', 'to', 'vex', 'dwarf',
+            'Sphinx', 'of', 'black', 'quartz,', 'judge', 'my', 'vow',
+            'How', 'vexingly', 'quick', 'daft', 'zebras', 'jump',
+            'The', 'five', 'boxing', 'wizards', 'jump', 'quickly',
+            'Pack', 'my', 'box', 'with', 'five', 'dozen', 'liquor', 'jugs'
+            ]
+
+        memcontent1 = bytes("<html><body>{}</body></html>".format(" ".join(full_sentence[0:20])), "utf8")
+        memcontent2 = bytes("<html><body>{}</body></html>".format(" ".join(full_sentence[20:-1])), "utf8")
+
+        timemap_content ="""<original1>; rel="original",
+<timemap1>; rel="self"; type="application/link-format"; from="Tue, 21 Mar 2016 15:45:06 GMT"; until="Tue, 21 Mar 2018 15:45:12 GMT",
+<timegate1>; rel="timegate",
+<memento11>; rel="first memento"; datetime="Tue, 21 Jan 2016 15:45:06 GMT",
+<memento12>; rel="last memento"; datetime="Tue, 21 Jan 2018 15:45:12 GMT"
+"""
+
+        cm.addTimeMap("timemap1", timemap_content, headers)
+        cm.addMemento("memento11", memcontent1, headers)
+        cm.addMemento("memento12", memcontent2, headers)
+
+        mm = MeasureModel()
+
+        mm = compute_rawsimhash_across_TimeMap(cm, mm, tokenize=None, stemming=True)
+
+        self.assertNotEqual(
+            same_scores['raw_simhash'],
+            mm.get_score("timemap1", "memento12", "timemap measures", "raw_simhash")
+        )
+
+        # after removing stop words, the first document consists of 11 words
+        # the comparison document consists of more than 20 words
+        # the terms 'quick' and 'jump' overlap, giving 2 overlapping terms
+        # 11 - 2 = 9, hence the comparison score of 9
+        expected_scores = {   'timemaps': {   'timemap1': {   'memento11': {   'timemap measures': {   'raw_simhash': {   'comparison score': 0}}},
+                                    'memento12': {   'timemap measures': {   'raw_simhash': {   'comparison score': 36}}}}}}
+
+        # for regression
+        self.assertAlmostEqual(
+            expected_scores['timemaps']['timemap1']['memento12']['timemap measures']['raw_simhash']['comparison score'],
+            mm.get_score("timemap1", "memento12", "timemap measures", "raw_simhash")
+        )
+
+        shutil.rmtree(working_directory)
+
+    def test_tf_simhash(self):
+
+        working_directory = "/tmp/test_tf_simhash"
+
+        if os.path.exists(working_directory):
+            shutil.rmtree(working_directory)
+
+        cm = collectionmodel.CollectionModel(working_directory=working_directory)
+
+        headers = {
+            "key1": "value1",
+            "key2": "value2"
+        }
+
+        full_sentence = ['The', 'quick', 'brown', 'fox', 'jumps', 'over', 
+            'the', 'lazy', 'dog', 'etaoin', 'shrdlu', 'Now','is', 'the', 
+            'time', 'for', 'all', 'good', 'men', 'to', 'come', 'to', 'the', 
+            'aid', 'of', 'their', 'country',
+            'Jived', 'fox', 'nymph', 'grabs', 'quick', 'waltz',
+            'Glib', 'jocks', 'quiz', 'nymph', 'to', 'vex', 'dwarf',
+            'Sphinx', 'of', 'black', 'quartz,', 'judge', 'my', 'vow',
+            'How', 'vexingly', 'quick', 'daft', 'zebras', 'jump',
+            'The', 'five', 'boxing', 'wizards', 'jump', 'quickly',
+            'Pack', 'my', 'box', 'with', 'five', 'dozen', 'liquor', 'jugs'
+            ]
+
+        memcontent1 = bytes("<html><body>{}</body></html>".format(" ".join(full_sentence[0:20])), "utf8")
+        memcontent2 = bytes("<html><body>{}</body></html>".format(" ".join(full_sentence[20:-1])), "utf8")
+
+        timemap_content ="""<original1>; rel="original",
+<timemap1>; rel="self"; type="application/link-format"; from="Tue, 21 Mar 2016 15:45:06 GMT"; until="Tue, 21 Mar 2018 15:45:12 GMT",
+<timegate1>; rel="timegate",
+<memento11>; rel="first memento"; datetime="Tue, 21 Jan 2016 15:45:06 GMT",
+<memento12>; rel="last memento"; datetime="Tue, 21 Jan 2018 15:45:12 GMT"
+"""
+
+        cm.addTimeMap("timemap1", timemap_content, headers)
+        cm.addMemento("memento11", memcontent1, headers)
+        cm.addMemento("memento12", memcontent2, headers)
+
+        mm = MeasureModel()
+
+        mm = compute_tfsimhash_across_TimeMap(cm, mm, tokenize=None, stemming=True)
+
+        self.assertNotEqual(
+            same_scores['raw_simhash'],
+            mm.get_score("timemap1", "memento12", "timemap measures", "tf_simhash")
+        )
+
+        # after removing stop words, the first document consists of 11 words
+        # the comparison document consists of more than 20 words
+        # the terms 'quick' and 'jump' overlap, giving 2 overlapping terms
+        # 11 - 2 = 9, hence the comparison score of 9
+        expected_scores = {   'timemaps': {   'timemap1': {   'memento11': {   'timemap measures': {   'tf_simhash': {   'comparison score': 0}}},
+                                    'memento12': {   'timemap measures': {   'tf_simhash': {   'comparison score': 24}}}}}}
+
+        # for regression
+        self.assertAlmostEqual(
+            expected_scores['timemaps']['timemap1']['memento12']['timemap measures']['tf_simhash']['comparison score'],
+            mm.get_score("timemap1", "memento12", "timemap measures", "tf_simhash")
+        )
 
         shutil.rmtree(working_directory)

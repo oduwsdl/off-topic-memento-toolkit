@@ -35,7 +35,8 @@ setup(name='offtopic2',
         'warcio',
         'requests',
         'numpy',
-        'scipy'
+        'scipy',
+        'simhash'
     ],
     setup_requires=['nltk'],
     test_suite="tests"
