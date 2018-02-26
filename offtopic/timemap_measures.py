@@ -90,7 +90,7 @@ def compute_score_across_TimeMap(collectionmodel, measuremodel,
 
             if len(first_data) == 0:
 
-                errormsg = "First memento in TimeMap is empty, cannot effectively compare memento content"
+                errormsg = "After processing first memento in TimeMap is empty, cannot effectively compare memento content"
                 logger.warning(errormsg)
 
                 for memento in memento_list:
@@ -102,6 +102,7 @@ def compute_score_across_TimeMap(collectionmodel, measuremodel,
                         "timemap measures", measurename, errormsg)
 
                 # move on to the next URI-T
+                uritcounter += 1
                 continue
 
             # mementos = timemap["mementos"]["list"]
@@ -113,7 +114,7 @@ def compute_score_across_TimeMap(collectionmodel, measuremodel,
 
             for memento in memento_list:
 
-                logger.info("Processing Memento {} of {}".format(mementocounter, mementototal))
+                logger.debug("Processing Memento {} of {}".format(mementocounter, mementototal))
 
                 urim = memento["uri"]
 
@@ -401,7 +402,7 @@ def compute_cosine_across_TimeMap(collectionmodel, measuremodel, tokenize=None, 
 
             if len(first_data) == 0:
 
-                errormsg = "First memento in TimeMap is empty, cannot effectively compare memento content"
+                errormsg = "After processing first memento in TimeMap is empty, cannot effectively compare memento content"
                 logger.warning(errormsg)
 
                 for memento in memento_list:
@@ -413,6 +414,7 @@ def compute_cosine_across_TimeMap(collectionmodel, measuremodel, tokenize=None, 
                         "timemap measures", measurename, errormsg)
 
                 # move on to the next URI-T
+                uritcounter += 1
                 continue
 
             mementototal = len(memento_list)
@@ -431,7 +433,7 @@ def compute_cosine_across_TimeMap(collectionmodel, measuremodel, tokenize=None, 
 
             for memento in memento_list:
 
-                logger.info("Processing Memento {} of {}".format(mementocounter, mementototal))
+                logger.debug("Processing Memento {} of {}".format(mementocounter, mementototal))
 
                 urim = memento["uri"]
 
@@ -466,7 +468,6 @@ def compute_cosine_across_TimeMap(collectionmodel, measuremodel, tokenize=None, 
             tfidf_vectorizer = TfidfVectorizer(tokenizer=full_tokenize, stop_words=None)
             tfidf_matrix = tfidf_vectorizer.fit_transform(documents)
             cscores = cosine_similarity(tfidf_matrix[0:1], tfidf_matrix)
-            logger.info("Successful generation of cosine similarity scores")
 
             for i in range(0, len(cscores[0])):
                 urim = processed_urims[i]

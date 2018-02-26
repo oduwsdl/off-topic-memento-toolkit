@@ -206,8 +206,15 @@ class MeasureModel:
         return list(self.measures)
 
     def get_off_topic_status_by_measure(self, urim, measuretype, measurename):
-        urit = self.mementos_to_timemaps[urim]
-        return self.scoremodel[urit][urim][measuretype][measurename]["topic status"]
+        status = None
+
+        try:
+            urit = self.mementos_to_timemaps[urim]
+            status = self.scoremodel[urit][urim][measuretype][measurename]["topic status"]
+        except KeyError as e:
+            self.handle_key_error(e, urit, urim, measuretype, measurename)
+
+        return status
 
     def get_overall_off_topic_status(self, urim):
         urit = self.mementos_to_timemaps[urim]
@@ -337,36 +344,37 @@ class MeasureModel:
     def save_as_goldstandard(self, filename):
 
         outputdata = []
+        uritcounter = 1
 
         for urit in self.get_TimeMap_URIs():
 
             tm_a_err = self.get_TimeMap_access_error_message(urit)
 
             if tm_a_err:
-                outputdata[urit]["access error"] = tm_a_err
-
                 outputdict = {}
-                outputdict["URI-T"] = urit
-                outputdict["Overall Topic Status"] = "ERROR"
+                outputdict["id"] = uritcounter
+                outputdict["label"] = "ERROR"
+                outputdata.append(outputdict)
 
             else:
 
                 for urim in self.get_Memento_URIs_in_TimeMap(urit):
 
                     outputdict = {}
-                    outputdict["URI-M"] = urim
+                    outputdict["id"] = uritcounter
+                    outputdict["URI"] = urim
 
                     fronturim = urim[:urim.find('/http')]
 
                     if fronturim[-3:] == 'id_':
                         fronturim = fronturim[:-3]
 
-                    outputdict["Date"] = fronturim[fronturim.rfind('/') + 1:] 
+                    outputdict["date"] = fronturim[fronturim.rfind('/') + 1:] 
 
                     m_a_err = self.get_Memento_access_error_message(urim)
 
                     if m_a_err:
-                        outputdict["Overall Topic Status"] = "ERROR"
+                        outputdict["label"] = "ERROR"
                     else:
                         
                         for measuretype, measurename in self.get_Measures():
@@ -374,18 +382,25 @@ class MeasureModel:
                             m_m_err = self.get_Memento_measurement_error_message(urim, measuretype, measurename)
 
                             if m_m_err:
-                                outputdict["Overall Topic Status"] = "ERROR"
+                                outputdict["label"] = "ERROR"
                             else:
 
-                                outputdict["Overall Topic Status"] = self.get_overall_off_topic_status(urim)
+                                if self.get_overall_off_topic_status(urim) == "on-topic":
+                                    outputdict["label"] = "1"
+                                elif self.get_overall_off_topic_status(urim) == "off-topic":
+                                    outputdict["label"] = "0"
 
-        with open(filename, 'wb') as csvfile:
+                    outputdata.append(outputdict)
+
+            uritcounter += 1
+
+        with open(filename, 'w') as tsvfile:
 
             fieldnames = [
-                'URI-T', 'Date', 'URI-M', 'Overall Topic Status'
+                'id', 'date', 'URI', 'label'
             ]
 
-            writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+            writer = csv.DictWriter(tsvfile, fieldnames=fieldnames, delimiter='\t')
             writer.writeheader()
 
             for row in outputdata:
@@ -400,12 +415,12 @@ class MeasureModel:
             tm_a_err = self.get_TimeMap_access_error_message(urit)
 
             if tm_a_err:
-                outputdata[urit]["access error"] = tm_a_err
 
                 outputdict = {}
                 outputdict["URI-T"] = urit
                 outputdict["Error"] = "TimeMap Access Error"
                 outputdict["Error Message"] = tm_a_err
+                outputdata.append(outputdict)
 
             else:
 
@@ -442,7 +457,9 @@ class MeasureModel:
                                 outputdict["Topic Status"] = self.get_off_topic_status_by_measure(urim, measuretype, measurename)
                                 outputdict["Overall Topic Status"] = self.get_overall_off_topic_status(urim)
 
-        with open(filename, 'wb') as csvfile:
+                    outputdata.append(outputdict)
+
+        with open(filename, 'w') as csvfile:
 
             fieldnames = [
                 'URI-T', 'URI-M', 'Error', 'Error Message','Measurement Type', 'Measurement Name', 'Comparison Score',

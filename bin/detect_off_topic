@@ -18,8 +18,7 @@ def process_arguments(args):
         "* warc=[warc-filenames separated by commas with no spaces] - EXPERIMENTAL\n"
         "* archiveit=[collection identifier or collection URI]\n"
         "* timemap=[URI of TimeMap]\n"
-        "* goldtest=[tab-separated gold standard data file]\n"
-        # "* dir=[existing input directory from prior run]"
+        "* goldtest=[tab-separated gold standard data file]"
         )
 
     parser.add_argument('-o', '--output', dest='output_filename', 
@@ -31,10 +30,11 @@ def process_arguments(args):
         ' and processed. If data is already here, it will be used in'
         ' lieu of any supplied input option.')
 
-    parser.add_argument('-t', '--output-type', dest='output_type',
+    parser.add_argument('-ot', '--output-type', dest='output_type',
         default='json', type=offtopic.process_output_types,
         help="output type for off-topic analysis:\n"
-        "* JSON - a JSON file containing the memento offtopic status(default)\n"
+        "* json - a JSON file containing the memento offtopic status(default)\n"
+        "* csv - a CSV file containinig similar data to the JSON format\n"
         "* golddatafile - a TSV file in the same format as the gold standard data"
         )
 
@@ -56,16 +56,6 @@ def process_arguments(args):
         "Leave thresholds off to use default thresholds.\n"
         "Accepted values:\n{}".format(tmmeasurehelp)
         )
-
-    # parser.add_argument('-cm', '--collection-measures', dest='collection_measures',
-    #     default="cosine=0.15,wordcount=-0.85",
-    #     type=offtopic.process_similarity_measure_inputs,
-    #     help="NOT YET IMPLEMENTED\n"
-    #     "The Collection-Wide similarity measures specified will be used. \n"
-    #     "For each of these measures, content from all mementos in the \n"
-    #     "collection will be taken into account to detect which mementos \n"
-    #     "are off-topic."
-    #     )
 
     parser.add_argument('-l', '--logfile', dest='logfile',
         default=sys.stdout,
@@ -123,22 +113,10 @@ if __name__ == '__main__':
 
     mm.calculate_overall_offtopic_status()
 
-    logger.info("saving output as JSON")
-    mm.save_as_JSON(args.output_filename)
+    logger.info("saving ouput as type {}".format(args.output_type))
 
-    # for measure in args.collection_measures:
-
-    #     logger.info("Processing mementos using collection measure {}".format(measure))
-    #     threshold = args.measures[measure]
-    #     scoring[measure] = offtopic.supported_timemap_measures[measure]["function"](cm)
-    #     scoring[measure] = offtopic.evaluate_off_topic(
-    #         scoring[measure], 
-    #         offtopic.supported_timemap_measures[measure]["default threshold"])
-
-    # scoring = offtopic.evaluate_all_off_topic(scoring)
-
-    # with open(args.output_filename, "w") as outputfile:
-    #     offtopic.supported_output_types[args.output_type](outputfile, scoring, cm)
+    offtopic.supported_output_types[args.output_type](
+        args.output_filename, mm, cm)
 
     logger.info("output written to {}".format(args.output_filename))
 

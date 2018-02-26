@@ -13,12 +13,17 @@ class TestingMeasureModel(unittest.TestCase):
 
     def test_measuremodel_storage_happy_path(self):
 
+        working_directory = "/tmp/test_measuremodel_storage_happy_path"
+
+        if not os.path.exists(working_directory):
+            os.makedirs(working_directory)
+
         mm = MeasureModel()
 
-        mm.set_score("timemap1", "memento1", "measuretype1", "measure1", 539)
+        mm.set_score("timemap1", "http://examplearchive.org/19700101000000/http://memento1", "measuretype1", "measure1", 539)
 
         self.assertEqual(
-            mm.get_score("timemap1", "memento1", "measuretype1", "measure1"),
+            mm.get_score("timemap1", "http://examplearchive.org/19700101000000/http://memento1", "measuretype1", "measure1"),
             539
         )
 
@@ -36,54 +41,54 @@ class TestingMeasureModel(unittest.TestCase):
         #     "this is an error message for timemap3"
         # )
 
-        mm.set_Memento_access_error("timemap4", "memento2", "this is a memento error message for memento2")
+        mm.set_Memento_access_error("timemap4", "http://examplearchive.org/19700101000000/http://memento2", "this is a memento error message for http://examplearchive.org/19700101000000/http://memento2")
 
         self.assertEqual(
-            mm.get_Memento_access_error_message("memento2"),
-            "this is a memento error message for memento2"
+            mm.get_Memento_access_error_message("http://examplearchive.org/19700101000000/http://memento2"),
+            "this is a memento error message for http://examplearchive.org/19700101000000/http://memento2"
         )
 
-        mm.set_Memento_measurement_error("timemap5", "memento3", 
-            "measuretype1", "measure1", "this is a memento error message for memento3")
+        mm.set_Memento_measurement_error("timemap5", "http://examplearchive.org/19700101000000/http://memento3", 
+            "measuretype1", "measure1", "this is a memento error message for http://examplearchive.org/19700101000000/http://memento3")
 
         self.assertEqual(
-            mm.get_Memento_measurement_error_message("memento3", "measuretype1", "measure1"),
-            "this is a memento error message for memento3"
+            mm.get_Memento_measurement_error_message("http://examplearchive.org/19700101000000/http://memento3", "measuretype1", "measure1"),
+            "this is a memento error message for http://examplearchive.org/19700101000000/http://memento3"
         )
 
         self.assertEqual(
-            mm.get_stemmed("timemap1", "memento1", "measuretype1", "measure1"),
+            mm.get_stemmed("timemap1", "http://examplearchive.org/19700101000000/http://memento1", "measuretype1", "measure1"),
             None
         )
 
-        mm.set_stemmed("timemap1", "memento1", "measuretype1", "measure1", True)
+        mm.set_stemmed("timemap1", "http://examplearchive.org/19700101000000/http://memento1", "measuretype1", "measure1", True)
 
         self.assertEqual(
-            mm.get_stemmed("timemap1", "memento1", "measuretype1", "measure1"),
+            mm.get_stemmed("timemap1", "http://examplearchive.org/19700101000000/http://memento1", "measuretype1", "measure1"),
             True
         )
 
         self.assertEqual(
-            mm.get_tokenized("timemap1", "memento1", "measuretype1", "measure1"),
+            mm.get_tokenized("timemap1", "http://examplearchive.org/19700101000000/http://memento1", "measuretype1", "measure1"),
             None
         )
 
-        mm.set_tokenized("timemap1", "memento1", "measuretype1", "measure1", True)
+        mm.set_tokenized("timemap1", "http://examplearchive.org/19700101000000/http://memento1", "measuretype1", "measure1", True)
 
         self.assertEqual(
-            mm.get_tokenized("timemap1", "memento1", "measuretype1", "measure1"),
+            mm.get_tokenized("timemap1", "http://examplearchive.org/19700101000000/http://memento1", "measuretype1", "measure1"),
             True
         )
 
         self.assertEqual(
-            mm.get_removed_boilerplate("timemap1", "memento1", "measuretype1", "measure1"),
+            mm.get_removed_boilerplate("timemap1", "http://examplearchive.org/19700101000000/http://memento1", "measuretype1", "measure1"),
             None
         )
 
-        mm.set_removed_boilerplate("timemap1", "memento1", "measuretype1", "measure1", True)
+        mm.set_removed_boilerplate("timemap1", "http://examplearchive.org/19700101000000/http://memento1", "measuretype1", "measure1", True)
 
         self.assertEqual(
-            mm.get_removed_boilerplate("timemap1", "memento1", "measuretype1", "measure1"),
+            mm.get_removed_boilerplate("timemap1", "http://examplearchive.org/19700101000000/http://memento1", "measuretype1", "measure1"),
             True
         )
 
@@ -94,7 +99,7 @@ class TestingMeasureModel(unittest.TestCase):
 
         self.assertEqual(
             mm.get_Memento_URIs_in_TimeMap("timemap1"),
-            ["memento1"]
+            ["http://examplearchive.org/19700101000000/http://memento1"]
         )
 
         self.assertEqual(
@@ -102,9 +107,26 @@ class TestingMeasureModel(unittest.TestCase):
             [("measuretype1", "measure1")]
         )
 
-        jsonfilename = "/tmp/test_measuremodel_storage_happy_path.json"
+        mm.set_score("timemap1", "http://examplearchive.org/19700101000000/http://memento4", "measuretype1", "measure1", 550)
 
-        mm.set_score("timemap1", "memento4", "measuretype1", "measure1", 550)
+        mm.calculate_offtopic_by_measure("measuretype1", "measure1", 540, ">")
+        mm.calculate_overall_offtopic_status()
+
+        self.assertEqual(
+            mm.get_off_topic_status_by_measure(
+                "http://examplearchive.org/19700101000000/http://memento1",
+                "measuretype1", "measure1"),
+            "on-topic"
+        )
+
+        self.assertEqual(
+            mm.get_off_topic_status_by_measure(
+                "http://examplearchive.org/19700101000000/http://memento4",
+                "measuretype1", "measure1"),
+            "off-topic"
+        )
+
+        jsonfilename = "{}/test_measuremodel_storage_happy_path.json".format(working_directory)
 
         mm.save_as_JSON(jsonfilename)
 
@@ -115,44 +137,44 @@ class TestingMeasureModel(unittest.TestCase):
 
         expectedjsondata = {
             "timemap1": {
-                "memento1":{
+                "http://examplearchive.org/19700101000000/http://memento1":{
                      "measuretype1": {
                          "measure1" : {
                             "stemmed": True,
                             "tokenized": True,
                             "removed boilerplate": True,
                             "comparison score": 539,
-                            "topic status": None
+                            "topic status": "on-topic"
                          }
                      },
-                     "overall topic status": None
+                     "overall topic status": "on-topic"
                 },
-                "memento4": {
+                "http://examplearchive.org/19700101000000/http://memento4": {
                     "measuretype1": {
                         "measure1": {
                             "stemmed": None,
                             "tokenized": None,
                             "removed boilerplate": None,
                             "comparison score": 550,
-                            "topic status": None
+                            "topic status": "off-topic"
                         }
                     },
-                    "overall topic status": None
+                    "overall topic status": "off-topic"
                 }
             },
             "timemap2": {
                 "access error": "this is an error message for timemap2"
             },
             "timemap4": {
-                "memento2": {
-                    "access error": "this is a memento error message for memento2"
+                "http://examplearchive.org/19700101000000/http://memento2": {
+                    "access error": "this is a memento error message for http://examplearchive.org/19700101000000/http://memento2"
                 }
             },
             "timemap5": {
-                "memento3": {
+                "http://examplearchive.org/19700101000000/http://memento3": {
                     "measuretype1": {
                         "measure1": {
-                            "measurement error": "this is a memento error message for memento3"
+                            "measurement error": "this is a memento error message for http://examplearchive.org/19700101000000/http://memento3"
                         }
                     }
                 }
@@ -163,76 +185,94 @@ class TestingMeasureModel(unittest.TestCase):
 
         self.assertEqual(expectedjsondata, jsondata)
 
+        csvfilename = "{}/test_measuremodel_storage_happy_path.csv".format(working_directory)
+
+        mm.save_as_CSV(csvfilename)
+
+        with open(csvfilename) as csvfile:
+            csvdata = csvfile.read()
+
+        expectedcsvdata ="""URI-T,URI-M,Error,Error Message,Measurement Type,Measurement Name,Comparison Score,Stemmed,Tokenized,Removed Boilerplate,Topic Status,Overall Topic Status
+timemap1,http://examplearchive.org/19700101000000/http://memento1,,,measuretype1,measure1,539,True,True,True,on-topic,on-topic
+timemap1,http://examplearchive.org/19700101000000/http://memento4,,,measuretype1,measure1,550,,,,off-topic,off-topic
+timemap2,,TimeMap Access Error,this is an error message for timemap2,,,,,,,,
+timemap4,http://examplearchive.org/19700101000000/http://memento2,Memento Access Error,this is a memento error message for http://examplearchive.org/19700101000000/http://memento2,,,,,,,,
+timemap5,http://examplearchive.org/19700101000000/http://memento3,Memento Measurement Error,this is a memento error message for http://examplearchive.org/19700101000000/http://memento3,measuretype1,measure1,,,,,,
+"""
+
+        self.assertEqual(expectedcsvdata, csvdata)
+
+        gsfilename = "{}/test_measuremodel_storage_happy_path.tsv".format(working_directory)
+
+        mm.save_as_goldstandard(gsfilename)
+
+        expectedgsdata = """id	date	URI	label
+1	19700101000000	http://examplearchive.org/19700101000000/http://memento1	1
+1	19700101000000	http://examplearchive.org/19700101000000/http://memento4	0
+2			ERROR
+3	19700101000000	http://examplearchive.org/19700101000000/http://memento2	ERROR
+4	19700101000000	http://examplearchive.org/19700101000000/http://memento3	ERROR
+"""
+
+        with open(gsfilename) as gsfile:
+            gsdata = gsfile.read()
+
+        self.assertEqual(expectedgsdata, gsdata)
+
     def test_measuremodel_storage_sad_path(self):
 
         mm = MeasureModel()
 
         with self.assertRaises(MeasureModelNoSuchTimeMap):
-            mm.get_score("timemap1", "memento1", "measuretype1", "measure1")
+            mm.get_score("timemap1", "http://examplearchive.org/19700101000000/http://memento1", "measuretype1", "measure1")
 
         with self.assertRaises(MeasureModelNoSuchTimeMap):
-            mm.get_stemmed("timemap1", "memento1", "measuretype1", "measure1")
+            mm.get_stemmed("timemap1", "http://examplearchive.org/19700101000000/http://memento1", "measuretype1", "measure1")
 
         with self.assertRaises(MeasureModelNoSuchTimeMap):
-            mm.get_tokenized("timemap1", "memento1", "measuretype1", "measure1")
+            mm.get_tokenized("timemap1", "http://examplearchive.org/19700101000000/http://memento1", "measuretype1", "measure1")
 
         with self.assertRaises(MeasureModelNoSuchTimeMap):
-            mm.get_removed_boilerplate("timemap1", "memento1", "measuretype1", "measure1")
+            mm.get_removed_boilerplate("timemap1", "http://examplearchive.org/19700101000000/http://memento1", "measuretype1", "measure1")
 
         mm.scoremodel["timemap1"] = {}
 
         with self.assertRaises(MeasureModelNoSuchMemento):
-            mm.get_score("timemap1", "memento1", "measuretype1", "measure1")
+            mm.get_score("timemap1", "http://examplearchive.org/19700101000000/http://memento1", "measuretype1", "measure1")
 
         with self.assertRaises(MeasureModelNoSuchMemento):
-            mm.get_stemmed("timemap1", "memento1", "measuretype1", "measure1")
+            mm.get_stemmed("timemap1", "http://examplearchive.org/19700101000000/http://memento1", "measuretype1", "measure1")
 
         with self.assertRaises(MeasureModelNoSuchMemento):
-            mm.get_tokenized("timemap1", "memento1", "measuretype1", "measure1")
+            mm.get_tokenized("timemap1", "http://examplearchive.org/19700101000000/http://memento1", "measuretype1", "measure1")
 
         with self.assertRaises(MeasureModelNoSuchMemento):
-            mm.get_removed_boilerplate("timemap1", "memento1", "measuretype1", "measure1")
+            mm.get_removed_boilerplate("timemap1", "http://examplearchive.org/19700101000000/http://memento1", "measuretype1", "measure1")
 
-        mm.scoremodel["timemap1"]["memento1"] = {}
+        mm.scoremodel["timemap1"]["http://examplearchive.org/19700101000000/http://memento1"] = {}
 
         with self.assertRaises(MeasureModelNoSuchMeasureType):    
-            mm.get_score("timemap1", "memento1", "measuretype1", "measure1")
+            mm.get_score("timemap1", "http://examplearchive.org/19700101000000/http://memento1", "measuretype1", "measure1")
 
         with self.assertRaises(MeasureModelNoSuchMeasureType):
-            mm.get_stemmed("timemap1", "memento1", "measuretype1", "measure1")
+            mm.get_stemmed("timemap1", "http://examplearchive.org/19700101000000/http://memento1", "measuretype1", "measure1")
 
         with self.assertRaises(MeasureModelNoSuchMeasureType):
-            mm.get_tokenized("timemap1", "memento1", "measuretype1", "measure1")
+            mm.get_tokenized("timemap1", "http://examplearchive.org/19700101000000/http://memento1", "measuretype1", "measure1")
 
         with self.assertRaises(MeasureModelNoSuchMeasureType):
-            mm.get_removed_boilerplate("timemap1", "memento1", "measuretype1", "measure1")
+            mm.get_removed_boilerplate("timemap1", "http://examplearchive.org/19700101000000/http://memento1", "measuretype1", "measure1")
 
-        mm.scoremodel["timemap1"]["memento1"]["measuretype1"] = {}
-
-        with self.assertRaises(MeasureModelNoSuchMeasure):
-            mm.get_score("timemap1", "memento1", "measuretype1", "measure1")
+        mm.scoremodel["timemap1"]["http://examplearchive.org/19700101000000/http://memento1"]["measuretype1"] = {}
 
         with self.assertRaises(MeasureModelNoSuchMeasure):
-            mm.get_stemmed("timemap1", "memento1", "measuretype1", "measure1")
+            mm.get_score("timemap1", "http://examplearchive.org/19700101000000/http://memento1", "measuretype1", "measure1")
 
         with self.assertRaises(MeasureModelNoSuchMeasure):
-            mm.get_tokenized("timemap1", "memento1", "measuretype1", "measure1")
+            mm.get_stemmed("timemap1", "http://examplearchive.org/19700101000000/http://memento1", "measuretype1", "measure1")
 
         with self.assertRaises(MeasureModelNoSuchMeasure):
-            mm.get_removed_boilerplate("timemap1", "memento1", "measuretype1", "measure1")
+            mm.get_tokenized("timemap1", "http://examplearchive.org/19700101000000/http://memento1", "measuretype1", "measure1")
 
-    # TODO:
-    def test_measuremodel_offtopic_by_measure(self):
-        pass
-
-    # TODO:
-    def test_measuremodel_offtopic_overall(self):
-        pass
-
-    # TODO:
-    def test_CSV_output(self):
-        pass
-
-    # TODO:
-    def test_goldstandard_output(self):
-        pass
+        with self.assertRaises(MeasureModelNoSuchMeasure):
+            mm.get_removed_boilerplate("timemap1", "http://examplearchive.org/19700101000000/http://memento1", "measuretype1", "measure1")
