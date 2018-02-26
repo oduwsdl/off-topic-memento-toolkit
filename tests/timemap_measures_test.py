@@ -11,7 +11,8 @@ from offtopic import collectionmodel, compute_bytecount_across_TimeMap, \
     compute_wordcount_across_TimeMap, compute_jaccard_across_TimeMap, \
     compute_cosine_across_TimeMap, compute_sorensen_across_TimeMap, \
     compute_levenshtein_across_TimeMap, compute_nlevenshtein_across_TimeMap, \
-    compute_tfintersection_across_TimeMap, evaluate_all_off_topic
+    compute_tfintersection_across_TimeMap, \
+    MeasureModel
 
 import logging
 logging.basicConfig(level=logging.DEBUG)
@@ -80,74 +81,61 @@ class TestingTimeMapMeasures(unittest.TestCase):
 
                 cm.addMemento(urim, contents[i], headers)
 
-        scores = compute_bytecount_across_TimeMap(
-            cm, scores=None, tokenize=False, stemming=False
+        mm = MeasureModel()
+
+        mm = compute_bytecount_across_TimeMap(
+            cm, mm, tokenize=False, stemming=False
         )
 
-        scores = compute_wordcount_across_TimeMap(
-            cm, scores=scores, tokenize=True, stemming=True
+        mm = compute_wordcount_across_TimeMap(
+            cm, mm, tokenize=True, stemming=True
         )
 
-        scores = compute_jaccard_across_TimeMap(
-            cm, scores=scores, tokenize=True, stemming=True
+        mm = compute_jaccard_across_TimeMap(
+            cm, mm, tokenize=True, stemming=True
         )
 
-        scores = compute_cosine_across_TimeMap(
-            cm, scores=scores, tokenize=True, stemming=True
+        mm = compute_cosine_across_TimeMap(
+            cm, mm, tokenize=True, stemming=True
         )
 
-        scores = compute_sorensen_across_TimeMap(
-            cm, scores=scores, tokenize=True, stemming=True
+        mm = compute_sorensen_across_TimeMap(
+            cm, mm, tokenize=True, stemming=True
         )
 
-        scores = compute_levenshtein_across_TimeMap(
-            cm, scores=scores, tokenize=True, stemming=True
+        mm = compute_levenshtein_across_TimeMap(
+            cm, mm, tokenize=True, stemming=True
         )
 
-        scores = compute_nlevenshtein_across_TimeMap(
-            cm, scores=scores, tokenize=True, stemming=True
+        mm = compute_nlevenshtein_across_TimeMap(
+            cm, mm, tokenize=True, stemming=True
         )
 
-        scores = compute_tfintersection_across_TimeMap(
-            cm, scores=scores, tokenize=True, stemming=True
+        mm = compute_tfintersection_across_TimeMap(
+            cm, mm, tokenize=True, stemming=True
         )
 
-        pp.pprint(scores)
+        self.assertTrue( "timemap1" in mm.get_TimeMap_URIs() )
+        self.assertTrue( "timemap2" in mm.get_TimeMap_URIs() )
 
-        self.assertTrue( "timemap1" in scores["timemaps"] )
-        self.assertTrue( "timemap2" in scores["timemaps"] )
+        self.assertTrue( "memento11" in mm.get_Memento_URIs_in_TimeMap("timemap1") )
+        self.assertTrue( "memento12" in mm.get_Memento_URIs_in_TimeMap("timemap1") )
+        self.assertTrue( "memento13" in mm.get_Memento_URIs_in_TimeMap("timemap1") )
 
-        self.assertTrue( "memento11" in scores["timemaps"]["timemap1"] )
-        self.assertTrue( "memento12" in scores["timemaps"]["timemap1"] )
-        self.assertTrue( "memento13" in scores["timemaps"]["timemap1"] )
-
-        self.assertTrue( "memento21" in scores["timemaps"]["timemap2"] )
-        self.assertTrue( "memento22" in scores["timemaps"]["timemap2"] )
-        self.assertTrue( "memento23" in scores["timemaps"]["timemap2"] )
-
-        for urit in scores["timemaps"]:
-
-            for urim in scores["timemaps"][urit]:
-
-                self.assertTrue( "bytecount" in scores["timemaps"][urit][urim]["timemap measures"] )
-                self.assertTrue( "wordcount" in scores["timemaps"][urit][urim]["timemap measures"] )
-                self.assertTrue( "jaccard" in scores["timemaps"][urit][urim]["timemap measures"] )
-                self.assertTrue( "sorensen" in scores["timemaps"][urit][urim]["timemap measures"] )
-                self.assertTrue( "levenshtein" in scores["timemaps"][urit][urim]["timemap measures"] )
-                self.assertTrue( "nlevenshtein" in scores["timemaps"][urit][urim]["timemap measures"] )
-                self.assertTrue( "tfintersection" in scores["timemaps"][urit][urim]["timemap measures"] )
-                self.assertTrue( "cosine" in scores["timemaps"][urit][urim]["timemap measures"] )
+        self.assertTrue( "memento21" in mm.get_Memento_URIs_in_TimeMap("timemap2") )
+        self.assertTrue( "memento22" in mm.get_Memento_URIs_in_TimeMap("timemap2") )
+        self.assertTrue( "memento23" in mm.get_Memento_URIs_in_TimeMap("timemap2") )
 
         for measure in same_scores:
 
             print("evaluating measure {}".format(measure))
 
-            for urit in scores["timemaps"]:
+            for urit in mm.get_TimeMap_URIs():
 
-                for urim in scores["timemaps"][urit]:
+                for urim in mm.get_Memento_URIs_in_TimeMap(urit):
 
                     self.assertAlmostEqual(
-                        scores["timemaps"][urit][urim]["timemap measures"][measure]["comparison score"],
+                        mm.get_score(urit, urim, "timemap measures", measure),
                         same_scores[measure],
                         msg="measure {} does not compute the correct score "
                         "for document sameness with URI-M {}".format(measure, urim)
@@ -189,65 +177,54 @@ class TestingTimeMapMeasures(unittest.TestCase):
 
             cm.addMemento(urim, contents, headers)
 
-        scores = compute_bytecount_across_TimeMap(
-            cm, scores=None, tokenize=False, stemming=False
+        mm = MeasureModel()
+
+        mm = compute_bytecount_across_TimeMap(
+            cm, mm, tokenize=False, stemming=False
         )
 
-        scores = compute_wordcount_across_TimeMap(
-            cm, scores=scores, tokenize=True, stemming=True
+        mm = compute_wordcount_across_TimeMap(
+            cm, mm, tokenize=True, stemming=True
         )
 
-        scores = compute_jaccard_across_TimeMap(
-            cm, scores=scores, tokenize=True, stemming=True
+        mm = compute_jaccard_across_TimeMap(
+            cm, mm, tokenize=True, stemming=True
         )
 
-        scores = compute_cosine_across_TimeMap(
-            cm, scores=scores, stemming=True
+        mm = compute_cosine_across_TimeMap(
+            cm, mm, stemming=True
         )
 
-        scores = compute_sorensen_across_TimeMap(
-            cm, scores=scores, tokenize=True, stemming=True
+        mm = compute_sorensen_across_TimeMap(
+            cm, mm, tokenize=True, stemming=True
         )
 
-        scores = compute_levenshtein_across_TimeMap(
-            cm, scores=scores, tokenize=True, stemming=True
+        mm = compute_levenshtein_across_TimeMap(
+            cm, mm, tokenize=True, stemming=True
         )
 
-        scores = compute_nlevenshtein_across_TimeMap(
-            cm, scores=scores, tokenize=True, stemming=True
+        mm = compute_nlevenshtein_across_TimeMap(
+            cm, mm, tokenize=True, stemming=True
         )
 
-        scores = compute_tfintersection_across_TimeMap(
-            cm, scores=scores, tokenize=True, stemming=True
+        mm = compute_tfintersection_across_TimeMap(
+            cm, mm, tokenize=True, stemming=True
         )
 
-        pp.pprint(scores)
+        self.assertTrue( "timemap1" in mm.get_TimeMap_URIs() )
 
-        self.assertTrue( "timemap1" in scores["timemaps"] )
-
-        self.assertTrue( "memento11" in scores["timemaps"]["timemap1"] )
+        self.assertTrue( "memento11" in mm.get_Memento_URIs_in_TimeMap("timemap1") )
 
         urit = "timemap1"
 
-        for urim in scores["timemaps"]["timemap1"]:
-
-            self.assertTrue( "bytecount" in scores["timemaps"][urit][urim]["timemap measures"] )
-            self.assertTrue( "wordcount" in scores["timemaps"][urit][urim]["timemap measures"] )
-            self.assertTrue( "jaccard" in scores["timemaps"][urit][urim]["timemap measures"] )
-            self.assertTrue( "sorensen" in scores["timemaps"][urit][urim]["timemap measures"] )
-            self.assertTrue( "levenshtein" in scores["timemaps"][urit][urim]["timemap measures"] )
-            self.assertTrue( "nlevenshtein" in scores["timemaps"][urit][urim]["timemap measures"] )
-            self.assertTrue( "tfintersection" in scores["timemaps"][urit][urim]["timemap measures"] )
-            self.assertTrue( "cosine" in scores["timemaps"][urit][urim]["timemap measures"] )
-
         for measure in same_scores:
 
-            for urit in scores["timemaps"]:
+            for urit in mm.get_TimeMap_URIs():
 
-                for urim in scores["timemaps"][urit]:
+                for urim in mm.get_Memento_URIs_in_TimeMap("timemap1"):
 
                     self.assertAlmostEqual(
-                        scores["timemaps"][urit][urim]["timemap measures"][measure]["comparison score"],
+                        mm.get_score(urit, urim, "timemap measures", measure),
                         same_scores[measure],
                         msg="measure {} does not compute the correct score "
                         "for document sameness for URI-M {}".format(measure, urim)
@@ -326,61 +303,50 @@ class TestingTimeMapMeasures(unittest.TestCase):
 
                 cm.addMemento(urim, bytes(content, "utf8"), headers)
 
-        scores = compute_bytecount_across_TimeMap(
-            cm, scores=None, tokenize=False, stemming=False
+        mm = MeasureModel()
+
+        mm = compute_bytecount_across_TimeMap(
+            cm, mm, tokenize=False, stemming=False
         )
 
-        scores = compute_wordcount_across_TimeMap(
-            cm, scores=scores, tokenize=True, stemming=True
+        mm = compute_wordcount_across_TimeMap(
+            cm, mm, tokenize=True, stemming=True
         )
 
-        scores = compute_jaccard_across_TimeMap(
-            cm, scores=scores, tokenize=True, stemming=True
+        mm = compute_jaccard_across_TimeMap(
+            cm, mm, tokenize=True, stemming=True
         )
 
-        # scores = compute_cosine_across_TimeMap(
+        # mm = compute_cosine_across_TimeMap(
         #     cm, scores=scores, stemming=True
         # )
 
-        scores = compute_sorensen_across_TimeMap(
-            cm, scores=scores, tokenize=True, stemming=True
+        mm = compute_sorensen_across_TimeMap(
+            cm, mm, tokenize=True, stemming=True
         )
 
-        scores = compute_levenshtein_across_TimeMap(
-            cm, scores=scores, tokenize=True, stemming=True
+        mm = compute_levenshtein_across_TimeMap(
+            cm, mm, tokenize=True, stemming=True
         )
 
-        scores = compute_nlevenshtein_across_TimeMap(
-            cm, scores=scores, tokenize=True, stemming=True
+        mm = compute_nlevenshtein_across_TimeMap(
+            cm, mm, tokenize=True, stemming=True
         )
 
-        # scores = compute_tfintersection_across_TimeMap(
+        # mm = compute_tfintersection_across_TimeMap(
         #     cm, scores=scores, tokenize=True, stemming=True
         # )
 
-        pp.pprint(scores)
+        self.assertTrue( "timemap1" in mm.get_TimeMap_URIs() )
+        self.assertTrue( "timemap2" in mm.get_TimeMap_URIs() )
 
-        self.assertTrue( "timemap1" in scores["timemaps"] )
-        self.assertTrue( "timemap2" in scores["timemaps"] )
+        self.assertTrue( "memento11" in mm.get_Memento_URIs_in_TimeMap("timemap1") )
+        self.assertTrue( "memento12" in mm.get_Memento_URIs_in_TimeMap("timemap1") )
+        self.assertTrue( "memento13" in mm.get_Memento_URIs_in_TimeMap("timemap1") )
 
-        self.assertTrue( "memento11" in scores["timemaps"]["timemap1"] )
-        self.assertTrue( "memento12" in scores["timemaps"]["timemap1"] )
-        self.assertTrue( "memento13" in scores["timemaps"]["timemap1"] )
-
-        self.assertTrue( "memento21" in scores["timemaps"]["timemap2"] )
-        self.assertTrue( "memento22" in scores["timemaps"]["timemap2"] )
-        self.assertTrue( "memento23" in scores["timemaps"]["timemap2"] )
-
-        for urit in scores["timemaps"]:
-
-            for urim in scores["timemaps"][urit]:
-
-                self.assertTrue( "bytecount" in scores["timemaps"][urit][urim]["timemap measures"] )
-                self.assertTrue( "wordcount" in scores["timemaps"][urit][urim]["timemap measures"] )
-                self.assertTrue( "jaccard" in scores["timemaps"][urit][urim]["timemap measures"] )
-                self.assertTrue( "sorensen" in scores["timemaps"][urit][urim]["timemap measures"] )
-                self.assertTrue( "levenshtein" in scores["timemaps"][urit][urim]["timemap measures"] )
-                self.assertTrue( "nlevenshtein" in scores["timemaps"][urit][urim]["timemap measures"] )
+        self.assertTrue( "memento21" in mm.get_Memento_URIs_in_TimeMap("timemap2") )
+        self.assertTrue( "memento22" in mm.get_Memento_URIs_in_TimeMap("timemap2") )
+        self.assertTrue( "memento23" in mm.get_Memento_URIs_in_TimeMap("timemap2") )
 
         expected_scores = {   'timemaps': {   'timemap1': {   'memento11': {   'timemap measures': {   'bytecount': {   'comparison score': 0.0,
                                                                                               'individual score': 723},
@@ -439,21 +405,21 @@ class TestingTimeMapMeasures(unittest.TestCase):
             if measure == "tfintersection" or measure == "cosine":
                 continue
 
-            for urit in scores["timemaps"]:
+            for urit in mm.get_TimeMap_URIs():
 
-                for urim in scores["timemaps"][urit]:
+                for urim in mm.get_Memento_URIs_in_TimeMap(urit):
 
                     # comparisons with themselves should match
                     if urim == "memento11" or urim == "memento21":
                         self.assertEqual(
-                            scores["timemaps"][urit][urim]["timemap measures"][measure]["comparison score"],
+                            mm.get_score(urit, urim, "timemap measures", measure),
                             same_scores[measure],
                             "measure {} does not compute the correct score "
                             "for document sameness".format(measure)
                         )
                     else:
                         self.assertNotEqual(
-                            scores["timemaps"][urit][urim]["timemap measures"][measure]["comparison score"],
+                            mm.get_score(urit, urim, "timemap measures", measure),
                             same_scores[measure],
                             "measure {} does not compute the correct score "
                             "for document differentness for URI-M {}".format(
@@ -462,7 +428,7 @@ class TestingTimeMapMeasures(unittest.TestCase):
 
                     # for regression
                     self.assertAlmostEqual(
-                            scores["timemaps"][urit][urim]["timemap measures"][measure]["comparison score"],
+                            mm.get_score(urit, urim, "timemap measures", measure),
                             expected_scores["timemaps"][urit][urim]["timemap measures"][measure]["comparison score"],
                             msg="measure {} does not compute the expected score "
                             "for URI-M {}".format(measure, urim)
@@ -510,13 +476,13 @@ class TestingTimeMapMeasures(unittest.TestCase):
         cm.addMemento("memento11", memcontent1, headers)
         cm.addMemento("memento12", memcontent2, headers)
 
-        scores = compute_tfintersection_across_TimeMap(cm, scores=None, tokenize=None, stemming=True)
+        mm = MeasureModel()
 
-        pp.pprint(scores)
+        mm = compute_tfintersection_across_TimeMap(cm, mm, tokenize=None, stemming=True)
 
         self.assertNotEqual(
             same_scores['tfintersection'],
-            scores['timemaps']['timemap1']['memento12']['timemap measures']['tfintersection']['comparison score']
+            mm.get_score("timemap1", "memento12", "timemap measures", "tfintersection")
         )
 
         # after removing stop words, the first document consists of 11 words
@@ -529,7 +495,7 @@ class TestingTimeMapMeasures(unittest.TestCase):
         # for regression
         self.assertAlmostEqual(
             expected_scores['timemaps']['timemap1']['memento12']['timemap measures']['tfintersection']['comparison score'],
-            scores['timemaps']['timemap1']['memento12']['timemap measures']['tfintersection']['comparison score']
+            mm.get_score("timemap1", "memento12", "timemap measures", "tfintersection")
         )
 
         shutil.rmtree(working_directory)
@@ -574,13 +540,13 @@ class TestingTimeMapMeasures(unittest.TestCase):
         cm.addMemento("memento11", memcontent1, headers)
         cm.addMemento("memento12", memcontent2, headers)
 
-        scores = compute_cosine_across_TimeMap(cm, scores=None, tokenize=None, stemming=True)
+        mm = MeasureModel()       
 
-        pp.pprint(scores)
+        mm = compute_cosine_across_TimeMap(cm, mm, tokenize=None, stemming=True)
 
         self.assertNotEqual(
             same_scores['cosine'],
-            scores['timemaps']['timemap1']['memento12']['timemap measures']['cosine']['comparison score']
+            mm.get_score("timemap1", "memento12", "timemap measures", "cosine")
         )
 
         # after removing stop words, the first document consists of 11 words
@@ -593,7 +559,7 @@ class TestingTimeMapMeasures(unittest.TestCase):
         # for regression
         self.assertAlmostEqual(
             expected_scores['timemaps']['timemap1']['memento12']['timemap measures']['cosine']['comparison score'],
-            scores['timemaps']['timemap1']['memento12']['timemap measures']['cosine']['comparison score']
+            mm.get_score("timemap1", "memento12", "timemap measures", "cosine")
         )
 
         shutil.rmtree(working_directory)
@@ -629,21 +595,24 @@ class TestingTimeMapMeasures(unittest.TestCase):
         cm.addMemento("memento12", empty_html_document, headers)
         cm.addMemento("memento13", empty_html_document, headers)
 
-        scores = compute_jaccard_across_TimeMap(
-            cm, scores=None, tokenize=None, stemming=True)
+        mm = MeasureModel()
 
-        pp.pprint(scores)
+        mm = compute_jaccard_across_TimeMap(
+            cm, mm, tokenize=None, stemming=True)
 
-        scores = compute_cosine_across_TimeMap(
-            cm, scores=None, tokenize=None, stemming=True)
-
-        pp.pprint(scores)
+        mm = compute_cosine_across_TimeMap(
+            cm, mm, tokenize=None, stemming=True)
         
-        for urit in scores["timemaps"]:
+        for urit in mm.get_TimeMap_URIs():
 
-            self.assertTrue(
-                "measure calculation error" in scores["timemaps"][urit]
-            )
+            for urim in mm.get_Memento_URIs_in_TimeMap(urit):
+
+                for measurename in ["cosine", "jaccard"]:
+
+                    self.assertEquals(
+                        mm.get_Memento_measurement_error_message(urim, "timemap measures", measurename),
+                        "First memento in TimeMap is empty, cannot effectively compare memento content"
+                    )
 
         shutil.rmtree(working_directory)
 
@@ -677,22 +646,31 @@ class TestingTimeMapMeasures(unittest.TestCase):
         cm.addMemento("memento12", empty_html_document, headers)
         cm.addMemento("memento13", full_html_document, headers)
 
-        scores = compute_jaccard_across_TimeMap(
-            cm, scores=None, tokenize=None, stemming=True)
+        mm = MeasureModel()
 
-        pp.pprint(scores)
+        mm = compute_jaccard_across_TimeMap(
+            cm, mm, tokenize=None, stemming=True)
 
         # Rather than dealing with empty documents, this throws
         # ValueError: empty vocabulary; perhaps the documents only contain stop words
         # it should handle the error gracefully
-        scores = compute_cosine_across_TimeMap(
-            cm, scores=None, tokenize=None, stemming=True)
+        mm = compute_cosine_across_TimeMap(
+            cm, mm, tokenize=None, stemming=True)
 
-        pp.pprint(scores)
+        self.assertAlmostEqual(
+            mm.get_score("timemap1", "memento11", "timemap measures", "cosine"),
+            1.0
+        )
 
-        self.assertAlmostEqual(scores["timemaps"]["timemap1"]["memento11"]["timemap measures"]['cosine']['comparison score'], 1.0)
-        self.assertAlmostEqual(scores["timemaps"]["timemap1"]["memento12"]["timemap measures"]['cosine']['comparison score'], 0.0)
-        self.assertAlmostEqual(scores["timemaps"]["timemap1"]["memento13"]["timemap measures"]['cosine']['comparison score'], 1.0)
+        self.assertAlmostEqual(
+            mm.get_score("timemap1", "memento12", "timemap measures", "cosine"),
+            0.0
+        )
+
+        self.assertAlmostEqual(
+            mm.get_score("timemap1", "memento13", "timemap measures", "cosine"),
+            1.0
+        )
 
         shutil.rmtree(working_directory)
 
@@ -726,76 +704,79 @@ class TestingTimeMapMeasures(unittest.TestCase):
         cm.addMemento("memento12", full_html_document, headers)
         cm.addMemento("memento13", full_html_document, headers)
 
-        scores = compute_jaccard_across_TimeMap(
-            cm, scores=None, tokenize=None, stemming=True)
+        mm = MeasureModel()
 
-        pp.pprint(scores)
+        mm = compute_jaccard_across_TimeMap(
+            cm, mm, tokenize=None, stemming=True)
 
-        scores = compute_cosine_across_TimeMap(
-            cm, scores=None, tokenize=None, stemming=True)
+        mm = compute_cosine_across_TimeMap(
+            cm, mm, tokenize=None, stemming=True)
 
-        pp.pprint(scores)
+        for urit in mm.get_TimeMap_URIs():
 
-        for urit in scores["timemaps"]:
+            for urim in mm.get_Memento_URIs_in_TimeMap(urit):
 
-            self.assertTrue(
-                "measure calculation error" in scores["timemaps"][urit]
-            )
+                for measurename in ["cosine", "jaccard"]:
+
+                    self.assertEquals(
+                        mm.get_Memento_measurement_error_message(urim, "timemap measures", measurename),
+                        "First memento in TimeMap is empty, cannot effectively compare memento content"
+                    )
 
         shutil.rmtree(working_directory)
 
-    def test_evaluate_all_off_topic_happy_path(self):
+    # def test_evaluate_all_off_topic_happy_path(self):
 
-        scoring = {
-            "timemaps": {
-                "timemap1": {
-                    "memento11": {
-                        "timemap measures": {
-                            "faux measure1": {
-                                "topic status": "on-topic"
-                            },
-                            "faux measure2": {
-                                "topic status": "on-topic"
-                            }
-                        }                        
-                    },
-                    "memento12": {
-                        "timemap measures": {
-                            "faux measure1": {
-                                "topic status": "on-topic"
-                            },
-                            "faux measure2": {
-                                "topic status": "on-topic"
-                            }
-                        }
-                    },
-                    "memento13": {
-                        "timemap measures": {
-                            "faux measure1": {
-                                "topic status": "on-topic"
-                            },
-                            "faux measure2": {
-                                "topic status": "off-topic"
-                            }
-                        }
-                    }
-                }
-            }
-        }
+    #     scoring = {
+    #         "timemaps": {
+    #             "timemap1": {
+    #                 "memento11": {
+    #                     "timemap measures": {
+    #                         "faux measure1": {
+    #                             "topic status": "on-topic"
+    #                         },
+    #                         "faux measure2": {
+    #                             "topic status": "on-topic"
+    #                         }
+    #                     }                        
+    #                 },
+    #                 "memento12": {
+    #                     "timemap measures": {
+    #                         "faux measure1": {
+    #                             "topic status": "on-topic"
+    #                         },
+    #                         "faux measure2": {
+    #                             "topic status": "on-topic"
+    #                         }
+    #                     }
+    #                 },
+    #                 "memento13": {
+    #                     "timemap measures": {
+    #                         "faux measure1": {
+    #                             "topic status": "on-topic"
+    #                         },
+    #                         "faux measure2": {
+    #                             "topic status": "off-topic"
+    #                         }
+    #                     }
+    #                 }
+    #             }
+    #         }
+    #     }
 
-        actual_scoring = evaluate_all_off_topic(scoring)
+    #     actual_scoring = evaluate_all_off_topic(scoring)
 
-        self.assertEqual(
-            actual_scoring["timemaps"]["timemap1"]["memento11"]["overall topic status"],
-            "on-topic"
-        )
+    #     self.assertEqual(
+    #         actual_scoring["timemaps"]["timemap1"]["memento11"]["overall topic status"],
+    #         "on-topic"
+    #     )
 
-        self.assertEqual(
-            actual_scoring["timemaps"]["timemap1"]["memento12"]["overall topic status"],
-            "on-topic"
-        )
+    #     self.assertEqual(
+    #         actual_scoring["timemaps"]["timemap1"]["memento12"]["overall topic status"],
+    #         "on-topic"
+    #     )
 
-        self.assertEqual(
-            actual_scoring["timemaps"]["timemap1"]["memento13"]["overall topic status"],
-            "off-topic"
-        )
+    #     self.assertEqual(
+    #         actual_scoring["timemaps"]["timemap1"]["memento13"]["overall topic status"],
+    #         "off-topic"
+    #     )

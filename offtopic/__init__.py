@@ -12,8 +12,11 @@ from .timemap_measures import compute_bytecount_across_TimeMap, \
     compute_wordcount_across_TimeMap, compute_jaccard_across_TimeMap, \
     compute_cosine_across_TimeMap, compute_sorensen_across_TimeMap, \
     compute_levenshtein_across_TimeMap, compute_nlevenshtein_across_TimeMap, \
-    compute_tfintersection_across_TimeMap, supported_timemap_measures, \
-    evaluate_off_topic, evaluate_all_off_topic
+    compute_tfintersection_across_TimeMap, supported_timemap_measures
+    # , \
+    # evaluate_off_topic_single_measure, evaluate_all_off_topic
+from .measuremodel import MeasureModel, MeasureModelNoSuchMemento, \
+    MeasureModelNoSuchTimeMap, MeasureModelNoSuchMeasure, MeasureModelNoSuchMeasureType
 
 # __init__.py documentation: https://docs.python.org/3/tutorial/modules.html#packages
 # file/folder info: https://www.python.org/dev/peps/pep-0008/#package-and-module-names
@@ -33,7 +36,9 @@ __all__ = ["CollectionModel", "CollectionModelException",
     "compute_cosine_across_TimeMap", "compute_sorensen_across_TimeMap",
     "compute_levenshtein_across_TimeMap", "compute_nlevenshtein_across_TimeMap",
     "compute_tfintersection_across_TimeMap", "supported_timemap_measures",
-    "evaluate_off_topic", "evaluate_all_off_topic"
+    # "evaluate_off_topic_single_measure", "evaluate_all_off_topic",
+    "MeasureModel", "MeasureModelNoSuchMemento",
+    "MeasureModelNoSuchTimeMap", "MeasureModelNoSuchMeasure"
     ]
 
 import logging
