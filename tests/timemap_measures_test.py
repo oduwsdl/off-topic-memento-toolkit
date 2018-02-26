@@ -11,7 +11,7 @@ from offtopic import collectionmodel, compute_bytecount_across_TimeMap, \
     compute_wordcount_across_TimeMap, compute_jaccard_across_TimeMap, \
     compute_cosine_across_TimeMap, compute_sorensen_across_TimeMap, \
     compute_levenshtein_across_TimeMap, compute_nlevenshtein_across_TimeMap, \
-    compute_tfintersection_across_TimeMap
+    compute_tfintersection_across_TimeMap, evaluate_all_off_topic
 
 import logging
 logging.basicConfig(level=logging.DEBUG)
@@ -587,8 +587,8 @@ class TestingTimeMapMeasures(unittest.TestCase):
         # the comparison document consists of more than 20 words
         # the terms 'quick' and 'jump' overlap, giving 2 overlapping terms
         # 11 - 2 = 9, hence the comparison score of 9
-        expected_scores = {   'timemaps': {   'timemap1': {   'memento11': {   'timemap measures': {   'cosine': {   'comparison score': 1.0000000000000002}}},
-                                    'memento12': {   'timemap measures': {   'cosine': {   'comparison score': 0.117041776804418}}}}}}
+        expected_scores = {   'timemaps': {   'timemap1': {   'memento11': {   'timemap measures': {   'cosine': {   'comparison score': 1.0}}},
+                                    'memento12': {   'timemap measures': {   'cosine': {   'comparison score': 0.12882843018556128}}}}}}
 
         # for regression
         self.assertAlmostEqual(
@@ -622,6 +622,8 @@ class TestingTimeMapMeasures(unittest.TestCase):
 
         empty_html_document = b"<html><body></body></html>"
 
+        # if the first document is empty and all subsequent docs are empty, 
+        # then we are still on-topic, but this is to be debated
         cm.addTimeMap("timemap1", timemap_content, headers)
         cm.addMemento("memento11", empty_html_document, headers)
         cm.addMemento("memento12", empty_html_document, headers)
@@ -632,56 +634,18 @@ class TestingTimeMapMeasures(unittest.TestCase):
 
         pp.pprint(scores)
 
-        # Rather than dealing with empty documents, this throws
-        # ValueError: empty vocabulary; perhaps the documents only contain stop words
-        # it should handle the error gracefully
         scores = compute_cosine_across_TimeMap(
             cm, scores=None, tokenize=None, stemming=True)
 
         pp.pprint(scores)
-
-        expected_scores = {   'timemaps': {   'timemap1': {   'memento11': {   'timemap measures': {   'cosine': {   'boilerplate removal': True,
-                                                                                           'comparison score': 1.0,
-                                                                                           'error': "ValueError('empty "
-                                                                                                    'vocabulary; '
-                                                                                                    'perhaps '
-                                                                                                    'the '
-                                                                                                    'documents '
-                                                                                                    'only '
-                                                                                                    'contain '
-                                                                                                    'stop '
-                                                                                                    "words',)",
-                                                                                           'stemmed': True,
-                                                                                           'tokenized': True}}},
-                                    'memento12': {   'timemap measures': {   'cosine': {   'boilerplate removal': True,
-                                                                                           'comparison score': 1.0,
-                                                                                           'error': "ValueError('empty "
-                                                                                                    'vocabulary; '
-                                                                                                    'perhaps '
-                                                                                                    'the '
-                                                                                                    'documents '
-                                                                                                    'only '
-                                                                                                    'contain '
-                                                                                                    'stop '
-                                                                                                    "words',)",
-                                                                                           'stemmed': True,
-                                                                                           'tokenized': True}}},
-                                    'memento13': {   'timemap measures': {   'cosine': {   'boilerplate removal': True,
-                                                                                           'comparison score': 1.0,
-                                                                                           'error': "ValueError('empty "
-                                                                                                    'vocabulary; '
-                                                                                                    'perhaps '
-                                                                                                    'the '
-                                                                                                    'documents '
-                                                                                                    'only '
-                                                                                                    'contain '
-                                                                                                    'stop '
-                                                                                                    "words',)",
-                                                                                           'stemmed': True,
-                                                                                           'tokenized': True}}}}}}
-
         
-        self.assertEqual(expected_scores, scores)
+        for urit in scores["timemaps"]:
+
+            self.assertTrue(
+                "measure calculation error" in scores["timemaps"][urit]
+            )
+
+        shutil.rmtree(working_directory)
 
     def test_empty_document_in_middle(self):
 
@@ -726,20 +690,112 @@ class TestingTimeMapMeasures(unittest.TestCase):
 
         pp.pprint(scores)
 
-        expected_scores = {   'timemaps': {   'timemap1': {   
-                                    'memento11': {   'timemap measures': {   'cosine': {   'boilerplate removal': True,
-                                                                                           'comparison score': 1.0000000000000002,
-                                                                                           'stemmed': True,
-                                                                                           'tokenized': True}}},
-                                    'memento12': {   'timemap measures': {   'cosine': {   'boilerplate removal': True,
-                                                                                           'comparison score': 0.0,
-                                                                                           'stemmed': True,
-                                                                                           'tokenized': True}}},
-                                    'memento13': {   'timemap measures': {   'cosine': {   'boilerplate removal': True,
-                                                                                           'comparison score': 1.0000000000000002,
-                                                                                           'stemmed': True,
-                                                                                           'tokenized': True}}}}}}
+        self.assertAlmostEqual(scores["timemaps"]["timemap1"]["memento11"]["timemap measures"]['cosine']['comparison score'], 1.0)
+        self.assertAlmostEqual(scores["timemaps"]["timemap1"]["memento12"]["timemap measures"]['cosine']['comparison score'], 0.0)
+        self.assertAlmostEqual(scores["timemaps"]["timemap1"]["memento13"]["timemap measures"]['cosine']['comparison score'], 1.0)
 
-        
-        self.assertEqual(expected_scores, scores)
+        shutil.rmtree(working_directory)
 
+    def test_first_document_is_empty_otherwise_filled(self):
+
+        working_directory = "/tmp/test_empty_documents"
+
+        if os.path.exists(working_directory):
+            shutil.rmtree(working_directory)
+
+        cm = collectionmodel.CollectionModel(working_directory=working_directory)
+
+        headers = {
+            "key1": "value1",
+            "key2": "value2"
+        }
+
+        timemap_content ="""<original1>; rel="original",
+<timemap1>; rel="self"; type="application/link-format"; from="Tue, 21 Mar 2016 15:45:06 GMT"; until="Tue, 21 Mar 2018 15:45:12 GMT",
+<timegate1>; rel="timegate",
+<memento11>; rel="first memento"; datetime="Tue, 21 Jan 2016 15:45:06 GMT",
+<memento12>; rel="memento"; datetime="Tue, 21 Jan 2017 15:45:06 GMT",
+<memento13>; rel="last memento"; datetime="Tue, 21 Jan 2018 15:45:12 GMT"
+"""
+
+        full_html_document = b"<html>The quick brown fox jumps over the lazy dog<body></html>"
+        empty_html_document = b"<html><body></body></html>"
+
+        cm.addTimeMap("timemap1", timemap_content, headers)
+        cm.addMemento("memento11", empty_html_document, headers)
+        cm.addMemento("memento12", full_html_document, headers)
+        cm.addMemento("memento13", full_html_document, headers)
+
+        scores = compute_jaccard_across_TimeMap(
+            cm, scores=None, tokenize=None, stemming=True)
+
+        pp.pprint(scores)
+
+        scores = compute_cosine_across_TimeMap(
+            cm, scores=None, tokenize=None, stemming=True)
+
+        pp.pprint(scores)
+
+        for urit in scores["timemaps"]:
+
+            self.assertTrue(
+                "measure calculation error" in scores["timemaps"][urit]
+            )
+
+        shutil.rmtree(working_directory)
+
+    def test_evaluate_all_off_topic_happy_path(self):
+
+        scoring = {
+            "timemaps": {
+                "timemap1": {
+                    "memento11": {
+                        "timemap measures": {
+                            "faux measure1": {
+                                "topic status": "on-topic"
+                            },
+                            "faux measure2": {
+                                "topic status": "on-topic"
+                            }
+                        }                        
+                    },
+                    "memento12": {
+                        "timemap measures": {
+                            "faux measure1": {
+                                "topic status": "on-topic"
+                            },
+                            "faux measure2": {
+                                "topic status": "on-topic"
+                            }
+                        }
+                    },
+                    "memento13": {
+                        "timemap measures": {
+                            "faux measure1": {
+                                "topic status": "on-topic"
+                            },
+                            "faux measure2": {
+                                "topic status": "off-topic"
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        actual_scoring = evaluate_all_off_topic(scoring)
+
+        self.assertEqual(
+            actual_scoring["timemaps"]["timemap1"]["memento11"]["overall topic status"],
+            "on-topic"
+        )
+
+        self.assertEqual(
+            actual_scoring["timemaps"]["timemap1"]["memento12"]["overall topic status"],
+            "on-topic"
+        )
+
+        self.assertEqual(
+            actual_scoring["timemaps"]["timemap1"]["memento13"]["overall topic status"],
+            "off-topic"
+        )

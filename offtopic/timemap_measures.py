@@ -94,14 +94,14 @@ def compute_score_across_TimeMap(collectionmodel, measurename,
                 first_urim, collectionmodel, tokenize=tokenize, stemming=stemming, 
                 remove_boilerplate=remove_boilerplate)
 
-            mementos = timemap["mementos"]["list"]
+            # mementos = timemap["mementos"]["list"]
 
-            mementototal = len(mementos)
+            mementototal = len(memento_list)
             logger.info("There are {} mementos in this TimeMap".format(mementototal))
 
             mementocounter = 1
 
-            for memento in mementos:
+            for memento in memento_list:
 
                 logger.info("Processing Memento {} of {}".format(mementocounter, mementototal))
 
@@ -110,6 +110,7 @@ def compute_score_across_TimeMap(collectionmodel, measurename,
                 logger.debug("Accessing content of URI-M {} for calculations".format(urim))
 
                 scores["timemaps"][urit].setdefault(urim, {})
+                scores["timemaps"][urit][urim].setdefault("timemap measures", {})
 
                 try:
                     memento_data = get_memento_data_for_measure(
@@ -117,7 +118,6 @@ def compute_score_across_TimeMap(collectionmodel, measurename,
                         stemming=stemming, 
                         remove_boilerplate=remove_boilerplate)
                         
-                    scores["timemaps"][urit][urim].setdefault("timemap measures", {})
                     scores["timemaps"][urit][urim]["timemap measures"][measurename] = \
                         scoredistance_function(first_data, memento_data)
                     scores["timemaps"][urit][urim]["timemap measures"][measurename]["tokenized"] = tokenize
@@ -125,9 +125,11 @@ def compute_score_across_TimeMap(collectionmodel, measurename,
                     scores["timemaps"][urit][urim]["timemap measures"][measurename]["boilerplate removal"] = remove_boilerplate
 
                 except CollectionModelMementoErrorException:
-                    logger.warning("Errors were recorded while attempting to "
-                        "access URI-M {}, skipping {} calcualtions for this "
-                        "URI-M".format(urim, measurename))
+                    errormsg = "Errors were recorded while attempting to " \
+                        "access URI-M {}, skipping {} calcualtions for this " \
+                        "URI-M".format(urim, measurename)
+                    logger.warning(errormsg)
+                    scores["timemaps"][urit][urim]["access error"] = errormsg
                 
                 mementocounter += 1
 
@@ -135,7 +137,7 @@ def compute_score_across_TimeMap(collectionmodel, measurename,
 
     return scores
 
-def bytecount_scoredistance(first_data, memento_data, scorecache=None):
+def bytecount_scoredistance(first_data, memento_data):
 
     scoredata = {}
 
@@ -175,7 +177,7 @@ def compute_bytecount_across_TimeMap(collectionmodel, scores=None, tokenize=Fals
 
     return scores
 
-def wordcount_scoredistance(first_data, memento_data, scorecache=None):
+def wordcount_scoredistance(first_data, memento_data):
 
     scoredata = {}
 
@@ -224,7 +226,7 @@ def compute_scores_on_distance_measure(first_data, memento_data, distance_functi
     return scoredata
 
 
-def jaccard_scoredistance(first_data, memento_data, scorecache=None):
+def jaccard_scoredistance(first_data, memento_data):
 
     scoredata = {}
 
@@ -242,7 +244,7 @@ def compute_jaccard_across_TimeMap(collectionmodel, scores=None, tokenize=True, 
 
     return scores
 
-def sorensen_scoredistance(first_data, memento_data, scorecache=None):
+def sorensen_scoredistance(first_data, memento_data):
 
     scoredata = {}
 
@@ -260,7 +262,7 @@ def compute_sorensen_across_TimeMap(collectionmodel, scores=None, tokenize=True,
 
     return scores
 
-def levenshtein_scoredistance(first_data, memento_data, scorecache=None):
+def levenshtein_scoredistance(first_data, memento_data):
 
     scoredata = {}
 
@@ -278,7 +280,7 @@ def compute_levenshtein_across_TimeMap(collectionmodel, scores=None, tokenize=Tr
 
     return scores
 
-def nlevenshtein_scoredistance(first_data, memento_data, scorecache=None):
+def nlevenshtein_scoredistance(first_data, memento_data):
 
     scoredata = {}
 
@@ -312,7 +314,7 @@ def calculate_term_frequencies(tokens):
 
     return sorted(tf, reverse=True)
 
-def tfintersection_scoredistance(first_data, memento_data, scorecache=None):
+def tfintersection_scoredistance(first_data, memento_data):
 
     scoredata = {}
 
@@ -370,6 +372,7 @@ def compute_cosine_across_TimeMap(collectionmodel, scores=None, tokenize=None, s
 
     tokenize = True
     remove_boilerplate = True
+    stemming = True
 
     logger.info("Computing cosine score across TimeMap, beginning TimeMap iteration...")
 
@@ -396,25 +399,31 @@ def compute_cosine_across_TimeMap(collectionmodel, scores=None, tokenize=None, s
 
             logger.debug("Accessing content of first URI-M {} for calculations".format(first_urim))
 
-            # first_data = get_memento_data_for_measure(
-            #     first_urim, collectionmodel, tokenize=tokenize, stemming=stemming, 
-            #     remove_boilerplate=remove_boilerplate)
             first_data = collectionmodel.getMementoContentWithoutBoilerplate(first_urim)
 
-            mementos = timemap["mementos"]["list"]
+            if len(first_data) == 0:
+                errormsg = "The first memento of the TimeMap at {} has no content" \
+                    " after removing boilerplate, skipping this timemap for" \
+                    " processing...".format(urit)
+                logger.warning(errormsg)
+                scores["timemaps"][urit]["measure calculation error"] = errormsg
+                continue
 
-            mementototal = len(mementos)
+            mementototal = len(memento_list)
             logger.info("There are {} mementos in this TimeMap".format(mementototal))
 
             mementocounter = 1
 
             processed_urims = []
+            error_urims = []
             documents = []
 
+            # in case the mementos are not sorted in order of memento datetime
+            # we save the first one for comparison
             processed_urims.append(first_urim)
             documents.append(first_data)
 
-            for memento in mementos:
+            for memento in memento_list:
 
                 logger.info("Processing Memento {} of {}".format(mementocounter, mementototal))
 
@@ -423,38 +432,42 @@ def compute_cosine_across_TimeMap(collectionmodel, scores=None, tokenize=None, s
                 logger.debug("Accessing content of URI-M {} for calculations".format(urim))
 
                 scores["timemaps"][urit].setdefault(urim, {})
+                scores["timemaps"][urit][urim].setdefault("timemap measures", {})
+                scores["timemaps"][urit][urim]["timemap measures"].setdefault(measurename, {})
 
                 try:
-                    # memento_data = get_memento_data_for_measure(
-                    #     urim, collectionmodel, tokenize=tokenize, 
-                    #     stemming=stemming, 
-                    #     remove_boilerplate=remove_boilerplate)
-                    memento_data = collectionmodel.getMementoContentWithoutBoilerplate(urim)
-                        
-                    processed_urims.append(urim)
-                    documents.append(memento_data)
+
+                    # in case the mementos are not sorted in order of memento datetime
+                    # we ignore the first one for comparison because we already saved it
+                    if urim != first_urim:
+                        memento_data = collectionmodel.getMementoContentWithoutBoilerplate(urim)
+                            
+                        processed_urims.append(urim)
+                        documents.append(memento_data)
 
                 except CollectionModelMementoErrorException:
-                    logger.warning("Errors were recorded while attempting to "
-                        "access URI-M {}, skipping {} calcualtions for this "
-                        "URI-M".format(urim, measurename))
+                    errormsg = "Errors were recorded while attempting to " \
+                        "access URI-M {}, skipping {} calcualtions for this " \
+                        "URI-M".format(urim, measurename)
+                    logger.warning(errormsg)
+                    error_urims.append(urim)
+                    errorinfo = collectionmodel.getMementoErrorInformation(urim)
+                    scores["timemaps"][urit][urim]["access error"] = str(errorinfo)
                 
                 mementocounter += 1
 
             # our full_tokenize function handles stop words
             tfidf_vectorizer = TfidfVectorizer(tokenizer=full_tokenize, stop_words=None)
 
-            # TODO: when does this happen:
-            # ValueError: empty vocabulary; perhaps the documents only contain stop words
-            logger.info("number of documents: {}".format(documents))
-
             errormsg = None
 
             try:
                 tfidf_matrix = tfidf_vectorizer.fit_transform(documents)
                 cscores = cosine_similarity(tfidf_matrix[0:1], tfidf_matrix)
+                logger.info("Successful processing of cosine similarity scores")
             except ValueError as e:
                 errormsg = repr(e)
+                logger.warn(errormsg)
                 cscores = [[]]
 
                 for i in range(0, len(documents)):
@@ -465,45 +478,83 @@ def compute_cosine_across_TimeMap(collectionmodel, scores=None, tokenize=None, s
             for i in range(0, len(cscores[0])):
                 urim = processed_urims[i]
                 logger.debug("saving cosine scores for URI-M {}".format(urim))
-                scores["timemaps"][urit][urim].setdefault("timemap measures", {})
-                scores["timemaps"][urit][urim]["timemap measures"].setdefault(measurename, {})
+
                 scores["timemaps"][urit][urim]["timemap measures"][measurename]["comparison score"] = cscores[0][i]
                 scores["timemaps"][urit][urim]["timemap measures"][measurename]["tokenized"] = tokenize
                 scores["timemaps"][urit][urim]["timemap measures"][measurename]["stemmed"] = stemming
                 scores["timemaps"][urit][urim]["timemap measures"][measurename]["boilerplate removal"] = remove_boilerplate
 
                 if errormsg:
-                    scores["timemaps"][urit][urim]["timemap measures"][measurename]["error"] = \
+                    scores["timemaps"][urit][urim]["timemap measures"][measurename]["measure calculation error"] = \
                         errormsg
 
             uritcounter += 1
 
     return scores
 
+# TODO: rename to evaluate_off_topic_single_measure
 def evaluate_off_topic(scoring, threshold, measurename, comparison_direction):
+
+    for urit in scoring["timemaps"]:
+
+        if "measure calculation error" not in scoring["timemaps"][urit]:
+
+            for urim in scoring["timemaps"][urit]:
+
+                # try:
+
+                # if there was an access error, we can't say if it was off-topic or not
+                if "access error" not in scoring["timemaps"][urit][urim]:
+
+                    scoring["timemaps"][urit][urim]["timemap measures"][measurename]["topic status"] = "on-topic"
+
+                    # TODO: fix this if/elif block
+                    # I know I can use eval, but also know its use has security implications
+                    if comparison_direction == ">":
+                        if scoring["timemaps"][urit][urim]["timemap measures"][measurename]["comparison score"] > threshold:
+                            scoring["timemaps"][urit][urim]["timemap measures"][measurename]["topic status"] = "off-topic"
+                    elif comparison_direction == "==":
+                        if scoring["timemaps"][urit][urim]["timemap measures"][measurename]["comparison score"] == threshold:
+                            scoring["timemaps"][urit][urim]["timemap measures"][measurename]["topic status"] = "off-topic"
+                    elif comparison_direction == "<":
+                        if scoring["timemaps"][urit][urim]["timemap measures"][measurename]["comparison score"] < threshold:
+                            scoring["timemaps"][urit][urim]["timemap measures"][measurename]["topic status"] = "off-topic"
+                    elif comparison_direction == "!=":
+                        if scoring["timemaps"][urit][urim]["timemap measures"][measurename]["comparison score"] != threshold:
+                            scoring["timemaps"][urit][urim]["timemap measures"][measurename]["topic status"] = "off-topic"
+
+                else:
+                    scoring["timemaps"][urit][urim]["timemap measures"][measurename]["topic status"] = "no data for calculation"
+
+                # except KeyError as e:
+                #     logger.error("While determining if off-topic, it was discovered that"
+                #         " a key is missing in the calculations data structure for URI-T {} and URI-M {}".format(
+                #         urit, urim
+                #     ))
+                #     scoring["timemaps"][urit][urim]["per measure threshold calculation error"] = repr(e)
+
+    return scoring
+
+def evaluate_all_off_topic(scoring):
 
     for urit in scoring["timemaps"]:
 
         for urim in scoring["timemaps"][urit]:
 
-            scoring["timemaps"][urit][urim]["timemap measures"][measurename]["topic status"] = "on-topic"
+            memento_data = scoring["timemaps"][urit][urim]
+            memento_data["overall topic status"] = "on-topic"
 
-            # TODO: fix this if/elif block
-            # I know I can use eval, but also know its use has security implications
-            if comparison_direction == ">":
-                if scoring["timemaps"][urit][urim]["timemap measures"][measurename]["comparison score"] > threshold:
-                    scoring["timemaps"][urit][urim]["timemap measures"][measurename]["topic status"] = "off-topic"
-            elif comparison_direction == "==":
-                if scoring["timemaps"][urit][urim]["timemap measures"][measurename]["comparison score"] == threshold:
-                    scoring["timemaps"][urit][urim]["timemap measures"][measurename]["topic status"] = "off-topic"
-            elif comparison_direction == "<":
-                if scoring["timemaps"][urit][urim]["timemap measures"][measurename]["comparison score"] < threshold:
-                    scoring["timemaps"][urit][urim]["timemap measures"][measurename]["topic status"] = "off-topic"
-            elif comparison_direction == "!=":
-                if scoring["timemaps"][urit][urim]["timemap measures"][measurename]["comparison score"] != threshold:
-                    scoring["timemaps"][urit][urim]["timemap measures"][measurename]["topic status"] = "off-topic"
+            for measurename in memento_data["timemap measures"]:
+
+                measure_data = memento_data["timemap measures"][measurename]
+
+                if measure_data["topic status"] == "off-topic":
+
+                    memento_data["overall topic status"] = "off-topic"
+                    break
 
     return scoring
+
 
 supported_timemap_measures = {
     "cosine": {

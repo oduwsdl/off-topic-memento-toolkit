@@ -20,12 +20,16 @@ def output_datafile(outputfile, scoredata, collectionmodel):
 
             outputrow = {}
 
-            if scoredata["timemaps"][urit][urim]["overall topic status"] == \
-                "off-topic":
-                label = 0
+            try:
+                if scoredata["timemaps"][urit][urim]["overall topic status"] == \
+                    "off-topic":
+                    label = 0
 
-            else:
-                label = 1
+                else:
+                    label = 1
+
+            except KeyError as e:
+                label = repr(e)
 
             fronturim = urim[:urim.find('/http')]
 

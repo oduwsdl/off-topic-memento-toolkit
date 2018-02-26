@@ -130,19 +130,7 @@ if __name__ == '__main__':
     #         scoring[measure], 
     #         offtopic.supported_timemap_measures[measure]["default threshold"])
 
-    for urit in scoring["timemaps"]:
-
-        for urim in scoring["timemaps"][urit]:
-
-            memento_data = scoring["timemaps"][urit][urim]
-
-            for measurename in memento_data["timemap measures"]:
-
-                measure_data = memento_data["timemap measures"][measurename]
-
-                if measure_data["topic status"] == "off-topic":
-                    scoring["timemaps"][urit][urim]["overall topic status"] == \
-                        "off-topic"
+    scoring = offtopic.evaluate_all_off_topic(scoring)
 
     with open(args.output_filename, "w") as outputfile:
         offtopic.supported_output_types[args.output_type](outputfile, scoring, cm)
