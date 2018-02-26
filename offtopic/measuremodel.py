@@ -1,4 +1,5 @@
 import json
+import csv
 
 class MeasureModelException(Exception):
     pass
@@ -40,6 +41,9 @@ class MeasureModel:
         self.scoremodel[urit][urim][measuretype][measure].setdefault("stemmed", None)
         self.scoremodel[urit][urim][measuretype][measure].setdefault("tokenized", None)
         self.scoremodel[urit][urim][measuretype][measure].setdefault("removed boilerplate", None)
+        self.scoremodel[urit][urim][measuretype][measure].setdefault("topic status", None)
+
+        self.scoremodel[urit][urim]["overall topic status"] = None
 
         self.timemap_access_errormodel[urit] = None
 
@@ -201,8 +205,80 @@ class MeasureModel:
     def get_Measures(self):
         return list(self.measures)
 
-    def save_as_JSON(self, filename):
-        
+    def get_off_topic_status_by_measure(self, urim, measuretype, measurename):
+        urit = self.mementos_to_timemaps[urim]
+        return self.scoremodel[urit][urim][measuretype][measurename]["topic status"]
+
+    def get_overall_off_topic_status(self, urim):
+        urit = self.mementos_to_timemaps[urim]
+        return self.scoremodel[urit][urim]["overall topic status"]
+
+    def calculate_offtopic_by_measure(self, measuretype, measurename, threshold, comparison):
+
+        for urit in self.get_TimeMap_URIs():
+
+            if self.get_TimeMap_access_error_message(urit):
+                continue
+
+            for urim in self.get_Memento_URIs_in_TimeMap(urit):
+
+                if self.get_Memento_access_error_message(urim):
+                    continue
+
+                if self.get_Memento_measurement_error_message(urim, measuretype, measurename):
+                    continue
+
+                score = self.get_score(urit, urim, measuretype, measurename)
+
+                # TODO: fix this if/elif block
+                # I know I can use eval, but also know its use has security implications
+                if comparison == ">":
+                    if score > threshold:
+                        self.scoremodel[urit][urim][measuretype][measurename]["topic status"] = "off-topic"
+                    else:
+                        self.scoremodel[urit][urim][measuretype][measurename]["topic status"] = "on-topic"
+                elif comparison == "==":
+                    if score == threshold:
+                        self.scoremodel[urit][urim][measuretype][measurename]["topic status"] = "off-topic"
+                    else:
+                        self.scoremodel[urit][urim][measuretype][measurename]["topic status"] = "on-topic"
+                elif comparison == "<":
+                    if score < threshold:
+                        self.scoremodel[urit][urim][measuretype][measurename]["topic status"] = "off-topic"
+                    else:
+                        self.scoremodel[urit][urim][measuretype][measurename]["topic status"] = "on-topic"
+                elif comparison == "!=":
+                    if score != threshold:
+                        self.scoremodel[urit][urim][measuretype][measurename]["topic status"] = "off-topic"
+                    else:
+                        self.scoremodel[urit][urim][measuretype][measurename]["topic status"] = "on-topic"
+                else:
+                    raise MeasureModelException("Unsupported comparison type {}".format(comparison))
+
+    def calculate_overall_offtopic_status(self):
+
+        for urit in self.get_TimeMap_URIs():
+
+            if self.get_TimeMap_access_error_message(urit):
+                continue
+
+            for urim in self.get_Memento_URIs_in_TimeMap(urit):
+
+                if self.get_Memento_access_error_message(urim):
+                    continue
+
+                for measuretype, measurename in self.get_Measures():
+
+                    topic_status = self.scoremodel[urit][urim][measuretype][measurename]["topic status"]
+
+                    if topic_status == "off-topic":
+                        self.scoremodel[urit][urim]["overall topic status"] = "off-topic"
+                        break
+                    
+                    self.scoremodel[urit][urim]["overall topic status"] = topic_status
+
+    def generate_dict(self):
+
         outputdata = {}
 
         for urit in self.get_TimeMap_URIs():
@@ -240,14 +316,141 @@ class MeasureModel:
                                     "stemmed": self.get_stemmed(urit, urim, measuretype, measurename),
                                     "tokenized": self.get_tokenized(urit, urim, measuretype, measurename),
                                     "removed boilerplate": self.get_removed_boilerplate(urit, urim, measuretype, measurename),
-                                    "comparison score": self.get_score(urit, urim, measuretype, measurename)
+                                    "comparison score": self.get_score(urit, urim, measuretype, measurename),
+                                    "topic status": self.get_off_topic_status_by_measure(urim, measuretype, measurename)
                                 }
+
+                                outputdata[urit][urim]["overall topic status"] = self.get_overall_off_topic_status(urim)
+
+        return outputdata
+
+    def save_as_JSON(self, filename):
+        
+        outputdata = self.generate_dict()
 
         with open(filename, 'w') as outputjson:
             json.dump(outputdata, outputjson)
 
     def save_as_goldstandard(self, filename):
-        pass
+
+        outputdata = []
+
+        for urit in self.get_TimeMap_URIs():
+
+            tm_a_err = self.get_TimeMap_access_error_message(urit)
+
+            if tm_a_err:
+                outputdata[urit]["access error"] = tm_a_err
+
+                outputdict = {}
+                outputdict["URI-T"] = urit
+                outputdict["Overall Topic Status"] = "ERROR"
+
+            else:
+
+                for urim in self.get_Memento_URIs_in_TimeMap(urit):
+
+                    outputdict = {}
+                    outputdict["URI-M"] = urim
+
+                    fronturim = urim[:urim.find('/http')]
+
+                    if fronturim[-3:] == 'id_':
+                        fronturim = fronturim[:-3]
+
+                    outputdict["Date"] = fronturim[fronturim.rfind('/') + 1:] 
+
+                    m_a_err = self.get_Memento_access_error_message(urim)
+
+                    if m_a_err:
+                        outputdict["Overall Topic Status"] = "ERROR"
+                    else:
+                        
+                        for measuretype, measurename in self.get_Measures():
+
+                            m_m_err = self.get_Memento_measurement_error_message(urim, measuretype, measurename)
+
+                            if m_m_err:
+                                outputdict["Overall Topic Status"] = "ERROR"
+                            else:
+
+                                outputdict["Overall Topic Status"] = self.get_overall_off_topic_status(urim)
+
+        with open(filename, 'wb') as csvfile:
+
+            fieldnames = [
+                'URI-T', 'Date', 'URI-M', 'Overall Topic Status'
+            ]
+
+            writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+            writer.writeheader()
+
+            for row in outputdata:
+                writer.writerow(row)
     
     def save_as_CSV(self, filename):
-        pass
+        
+        outputdata = []
+
+        for urit in self.get_TimeMap_URIs():
+
+            tm_a_err = self.get_TimeMap_access_error_message(urit)
+
+            if tm_a_err:
+                outputdata[urit]["access error"] = tm_a_err
+
+                outputdict = {}
+                outputdict["URI-T"] = urit
+                outputdict["Error"] = "TimeMap Access Error"
+                outputdict["Error Message"] = tm_a_err
+
+            else:
+
+                for urim in self.get_Memento_URIs_in_TimeMap(urit):
+
+                    outputdict = {}
+                    outputdict["URI-T"] = urit
+                    outputdict["URI-M"] = urim
+
+                    m_a_err = self.get_Memento_access_error_message(urim)
+
+                    if m_a_err:
+                        outputdict["Error"] = "Memento Access Error"
+                        outputdict["Error Message"] = m_a_err
+                    else:
+                        
+                        for measuretype, measurename in self.get_Measures():
+
+                            m_m_err = self.get_Memento_measurement_error_message(urim, measuretype, measurename)
+
+                            outputdict["Measurement Type"] = measuretype
+                            outputdict["Measurement Name"] = measurename
+
+                            if m_m_err:
+                                outputdict["Error"] = "Memento Measurement Error"
+                                outputdict["Error Message"] = m_m_err
+
+                            else:
+
+                                outputdict["Comparison Score"] = self.get_score(urit, urim, measuretype, measurename)
+                                outputdict["Stemmed"] = self.get_stemmed(urit, urim, measuretype, measurename)
+                                outputdict["Tokenized"] = self.get_tokenized(urit, urim, measuretype, measurename)
+                                outputdict["Removed Boilerplate"] = self.get_removed_boilerplate(urit, urim, measuretype, measurename)
+                                outputdict["Topic Status"] = self.get_off_topic_status_by_measure(urim, measuretype, measurename)
+                                outputdict["Overall Topic Status"] = self.get_overall_off_topic_status(urim)
+
+        with open(filename, 'wb') as csvfile:
+
+            fieldnames = [
+                'URI-T', 'URI-M', 'Error', 'Error Message','Measurement Type', 'Measurement Name', 'Comparison Score',
+                'Stemmed', 'Tokenized', 'Removed Boilerplate', 'Topic Status', 'Overall Topic Status'
+            ]
+
+            writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+            writer.writeheader()
+
+            for row in outputdata:
+                writer.writerow(row)
+            
+
+

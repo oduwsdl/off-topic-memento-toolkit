@@ -121,9 +121,11 @@ class TestingMeasureModel(unittest.TestCase):
                             "stemmed": True,
                             "tokenized": True,
                             "removed boilerplate": True,
-                            "comparison score": 539
+                            "comparison score": 539,
+                            "topic status": None
                          }
-                     }
+                     },
+                     "overall topic status": None
                 },
                 "memento4": {
                     "measuretype1": {
@@ -131,9 +133,11 @@ class TestingMeasureModel(unittest.TestCase):
                             "stemmed": None,
                             "tokenized": None,
                             "removed boilerplate": None,
-                            "comparison score": 550
+                            "comparison score": 550,
+                            "topic status": None
                         }
-                    }
+                    },
+                    "overall topic status": None
                 }
             },
             "timemap2": {
@@ -216,3 +220,19 @@ class TestingMeasureModel(unittest.TestCase):
 
         with self.assertRaises(MeasureModelNoSuchMeasure):
             mm.get_removed_boilerplate("timemap1", "memento1", "measuretype1", "measure1")
+
+    # TODO:
+    def test_measuremodel_offtopic_by_measure(self):
+        pass
+
+    # TODO:
+    def test_measuremodel_offtopic_overall(self):
+        pass
+
+    # TODO:
+    def test_CSV_output(self):
+        pass
+
+    # TODO:
+    def test_goldstandard_output(self):
+        pass

@@ -4,6 +4,8 @@ import sys
 import logging
 import argparse
 
+import pprint
+
 import offtopic
 
 def process_arguments(args):
@@ -105,21 +107,29 @@ if __name__ == '__main__':
         input_type, input_type_arguments, args.working_directory
     )
 
-    scoring = None
+    mm = offtopic.MeasureModel()
 
     for measure in args.timemap_measures:
 
         logger.info("Processing mementos using TimeMap measure {}".format(measure))
 
-        scoring = offtopic.supported_timemap_measures[measure]["function"](
-            cm, scores=scoring)
+        mm = offtopic.supported_timemap_measures[measure]["function"](
+            cm, mm)
 
         threshold = args.timemap_measures[measure]
 
-        scoring = offtopic.evaluate_off_topic(
-            scoring, threshold, measure,
+        logger.error("measure model dict follows")
+        logger.error(pprint.pformat(mm.generate_dict()))
+        logger.error("done with measure model dict")
+
+        mm.calculate_offtopic_by_measure(
+            "timemap measures", measure, threshold,
             offtopic.supported_timemap_measures[measure]["comparison direction"]
             )
+
+    mm.calculate_overall_offtopic_status()
+
+    mm.save_as_JSON(args.output_filename)
 
     # for measure in args.collection_measures:
 
@@ -130,10 +140,10 @@ if __name__ == '__main__':
     #         scoring[measure], 
     #         offtopic.supported_timemap_measures[measure]["default threshold"])
 
-    scoring = offtopic.evaluate_all_off_topic(scoring)
+    # scoring = offtopic.evaluate_all_off_topic(scoring)
 
-    with open(args.output_filename, "w") as outputfile:
-        offtopic.supported_output_types[args.output_type](outputfile, scoring, cm)
+    # with open(args.output_filename, "w") as outputfile:
+    #     offtopic.supported_output_types[args.output_type](outputfile, scoring, cm)
 
     logger.info("output written to {}".format(args.output_filename))
 

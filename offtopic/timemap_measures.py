@@ -165,10 +165,6 @@ def bytecount_scoredistance(first_data, memento_data):
     first_bytecount = len(first_data)
     memento_bytecount = len(memento_data)
 
-    # TODO: score cache for individual scores
-    # scoredata["individual score"] = memento_bytecount
-    
-    # TODO: score cache for scores of both items
     if memento_bytecount == 0:
 
         if first_bytecount == 0:
@@ -184,12 +180,12 @@ def bytecount_scoredistance(first_data, memento_data):
 
 def compute_bytecount_across_TimeMap(collectionmodel, measuremodel, tokenize=False, stemming=False):
 
-    scores = compute_score_across_TimeMap(collectionmodel, measuremodel, "bytecount", 
+    measuremodel = compute_score_across_TimeMap(collectionmodel, measuremodel, "bytecount", 
         bytecount_scoredistance, tokenize=False, stemming=False,
         remove_boilerplate=False
     )
 
-    return scores
+    return measuremodel
 
 def wordcount_scoredistance(first_data, memento_data):
 
@@ -215,12 +211,12 @@ def wordcount_scoredistance(first_data, memento_data):
 
 def compute_wordcount_across_TimeMap(collectionmodel, measuremodel, tokenize=True, stemming=True):
     
-    scores = compute_score_across_TimeMap(collectionmodel, measuremodel, "wordcount", 
+    measuremodel = compute_score_across_TimeMap(collectionmodel, measuremodel, "wordcount", 
         wordcount_scoredistance, tokenize=True, stemming=stemming,
         remove_boilerplate=True
     )
 
-    return scores
+    return measuremodel
 
 def compute_scores_on_distance_measure(first_data, memento_data, distance_function):
 
@@ -500,8 +496,8 @@ def compute_cosine_across_TimeMap(collectionmodel, measuremodel, tokenize=None, 
 
 #                     scoring["timemaps"][urit][urim]["timemap measures"][measurename]["topic status"] = "on-topic"
 
-#                     # TODO: fix this if/elif block
-#                     # I know I can use eval, but also know its use has security implications
+                    # TODO: fix this if/elif block
+                    # I know I can use eval, but also know its use has security implications
 #                     if comparison_direction == ">":
 #                         if scoring["timemaps"][urit][urim]["timemap measures"][measurename]["comparison score"] > threshold:
 #                             scoring["timemaps"][urit][urim]["timemap measures"][measurename]["topic status"] = "off-topic"
