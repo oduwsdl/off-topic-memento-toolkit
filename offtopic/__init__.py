@@ -14,10 +14,9 @@ from .timemap_measures import compute_bytecount_across_TimeMap, \
     compute_levenshtein_across_TimeMap, compute_nlevenshtein_across_TimeMap, \
     compute_tfintersection_across_TimeMap, supported_timemap_measures, \
     compute_rawsimhash_across_TimeMap, compute_tfsimhash_across_TimeMap
-    # , \
-    # evaluate_off_topic_single_measure, evaluate_all_off_topic
 from .measuremodel import MeasureModel, MeasureModelNoSuchMemento, \
     MeasureModelNoSuchTimeMap, MeasureModelNoSuchMeasure, MeasureModelNoSuchMeasureType
+from .metadata_calcluations import save_Simhashes, save_raw_content_lengths
 
 # __init__.py documentation: https://docs.python.org/3/tutorial/modules.html#packages
 # file/folder info: https://www.python.org/dev/peps/pep-0008/#package-and-module-names
@@ -38,9 +37,9 @@ __all__ = ["CollectionModel", "CollectionModelException",
     "compute_levenshtein_across_TimeMap", "compute_nlevenshtein_across_TimeMap",
     "compute_tfintersection_across_TimeMap", "supported_timemap_measures",
     "compute_rawsimhash_across_TimeMap", "compute_tfsimhash_across_TimeMap",
-    # "evaluate_off_topic_single_measure", "evaluate_all_off_topic",
     "MeasureModel", "MeasureModelNoSuchMemento",
-    "MeasureModelNoSuchTimeMap", "MeasureModelNoSuchMeasure"
+    "MeasureModelNoSuchTimeMap", "MeasureModelNoSuchMeasure",
+    "save_Simhashes", "save_raw_content_lengths"
     ]
 
 import logging

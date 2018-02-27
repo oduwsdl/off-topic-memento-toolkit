@@ -31,9 +31,16 @@ class MeasureModel:
         self.mementos_to_timemaps = {}
         self.measures = []
 
-    def initialize_scoremodel_for_keys(self, urit, urim, measuretype, measure):
+    def initialize_scoremodel_for_urit_urim(self, urit, urim):
         self.scoremodel.setdefault(urit, {})
         self.scoremodel[urit].setdefault(urim, {})
+
+        self.scoremodel[urit][urim].setdefault("raw simhash value", None)
+        self.scoremodel[urit][urim].setdefault("content length", None)
+
+    def initialize_scoremodel_for_keys(self, urit, urim, measuretype, measure):
+        self.initialize_scoremodel_for_urit_urim(urit, urim)
+
         self.scoremodel[urit][urim].setdefault(measuretype, {})
         self.scoremodel[urit][urim][measuretype].setdefault(measure, {})
         self.scoremodel[urit][urim][measuretype][measure].setdefault(measure, {})
@@ -87,6 +94,42 @@ class MeasureModel:
             self.handle_key_error(e, urit, urim, measuretype, measure)
 
         return score
+
+    def set_content_length(self, urit, urim, content_length):
+        self.initialize_scoremodel_for_urit_urim(urit, urim)
+        self.scoremodel[urit][urim]["content length"] = content_length
+
+    def get_content_length(self, urit, urim):
+
+        content_length = None
+
+        try:
+            if "content length" in self.scoremodel[urit][urim]:
+                content_length = self.scoremodel[urit][urim]["content length"]
+            else:
+                content_length = None
+        except KeyError as e:
+            self.handle_key_error(e, urit, urim, None, None)
+
+        return content_length
+
+    def set_simhash(self, urit, urim, simhash_value):
+        self.initialize_scoremodel_for_urit_urim(urit, urim)
+        self.scoremodel[urit][urim]["raw simhash value"] = simhash_value
+
+    def get_simhash(self, urit, urim):
+
+        simhash_value = None
+
+        try:
+            if "raw simhash value" in self.scoremodel[urit][urim]:
+                simhash_value = self.scoremodel[urit][urim]["raw simhash value"]
+            else:
+                simhash_value = None
+        except KeyError as e:
+            self.handle_key_error(e, urit, urim, None, None)
+
+        return simhash_value
 
     def set_TimeMap_access_error(self, urit, errormsg):
         
@@ -195,7 +238,7 @@ class MeasureModel:
             self.handle_key_error(e, urit, urim, measuretype, measure)
 
         return removed_boilerplate
-    
+
     def get_TimeMap_URIs(self):
         return list(self.scoremodel.keys())
 
@@ -310,7 +353,15 @@ class MeasureModel:
                     if m_a_err:
                         outputdata[urit][urim]["access error"] = str(m_a_err)
                     else:
-                        
+
+                        if self.get_simhash(urit, urim):
+                            outputdata[urit][urim]["raw memento simhash value"] = \
+                                self.get_simhash(urit, urim)
+
+                        if self.get_content_length(urit,urim):
+                            outputdata[urit][urim]["content length"] = \
+                                self.get_content_length(urit, urim)
+
                         for measuretype, measurename in self.get_Measures():
 
                             outputdata[urit][urim].setdefault(measuretype, {})
@@ -456,13 +507,16 @@ class MeasureModel:
                                 outputdict["Removed Boilerplate"] = self.get_removed_boilerplate(urit, urim, measuretype, measurename)
                                 outputdict["Topic Status"] = self.get_off_topic_status_by_measure(urim, measuretype, measurename)
                                 outputdict["Overall Topic Status"] = self.get_overall_off_topic_status(urim)
+                                outputdict["Simhash"] = self.get_simhash(urit, urim)
+                                outputdict["Content Length"] = self.get_content_length(urit, urim)
 
                     outputdata.append(outputdict)
 
         with open(filename, 'w') as csvfile:
 
             fieldnames = [
-                'URI-T', 'URI-M', 'Error', 'Error Message','Measurement Type', 'Measurement Name', 'Comparison Score',
+                'URI-T', 'URI-M', 'Error', 'Error Message', 'Content Length', 'Simhash',
+                'Measurement Type', 'Measurement Name', 'Comparison Score',
                 'Stemmed', 'Tokenized', 'Removed Boilerplate', 'Topic Status', 'Overall Topic Status'
             ]
 

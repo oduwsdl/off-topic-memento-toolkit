@@ -192,12 +192,12 @@ class TestingMeasureModel(unittest.TestCase):
         with open(csvfilename) as csvfile:
             csvdata = csvfile.read()
 
-        expectedcsvdata ="""URI-T,URI-M,Error,Error Message,Measurement Type,Measurement Name,Comparison Score,Stemmed,Tokenized,Removed Boilerplate,Topic Status,Overall Topic Status
-timemap1,http://examplearchive.org/19700101000000/http://memento1,,,measuretype1,measure1,539,True,True,True,on-topic,on-topic
-timemap1,http://examplearchive.org/19700101000000/http://memento4,,,measuretype1,measure1,550,,,,off-topic,off-topic
-timemap2,,TimeMap Access Error,this is an error message for timemap2,,,,,,,,
-timemap4,http://examplearchive.org/19700101000000/http://memento2,Memento Access Error,this is a memento error message for http://examplearchive.org/19700101000000/http://memento2,,,,,,,,
-timemap5,http://examplearchive.org/19700101000000/http://memento3,Memento Measurement Error,this is a memento error message for http://examplearchive.org/19700101000000/http://memento3,measuretype1,measure1,,,,,,
+        expectedcsvdata ="""URI-T,URI-M,Error,Error Message,Content Length,Simhash,Measurement Type,Measurement Name,Comparison Score,Stemmed,Tokenized,Removed Boilerplate,Topic Status,Overall Topic Status
+timemap1,http://examplearchive.org/19700101000000/http://memento1,,,,,measuretype1,measure1,539,True,True,True,on-topic,on-topic
+timemap1,http://examplearchive.org/19700101000000/http://memento4,,,,,measuretype1,measure1,550,,,,off-topic,off-topic
+timemap2,,TimeMap Access Error,this is an error message for timemap2,,,,,,,,,,
+timemap4,http://examplearchive.org/19700101000000/http://memento2,Memento Access Error,this is a memento error message for http://examplearchive.org/19700101000000/http://memento2,,,,,,,,,,
+timemap5,http://examplearchive.org/19700101000000/http://memento3,Memento Measurement Error,this is a memento error message for http://examplearchive.org/19700101000000/http://memento3,,,measuretype1,measure1,,,,,,
 """
 
         self.assertEqual(expectedcsvdata, csvdata)
