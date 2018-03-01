@@ -1,19 +1,51 @@
+# -*- coding: utf-8 -*-
+
+"""
+offtopic.measuremodel
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+This module exists to store the results of the different measures. Its classes
+also handle output of those measures to different output types.
+
+Note: The MeasureModel class also exists so that it can be subclassed
+in the future. There is no reason that one should be limited to storing 
+the input data as a dictionary as I have here. A subclass that stores
+the data as a WARC, or to a database is also possible, and such a 
+subclass can be used with the measurement functions of timemap_measures,
+provided that such a subclass has the same methods and parameters.
+"""
+
 import json
 import csv
 
 class MeasureModelException(Exception):
+    """An exception class to be used by the functions in this file so that the
+    source of error can be detected.
+    """
     pass
 
 class MeasureModelNoSuchMemento(MeasureModelException):
+    """An exception class to be used when the requested Memento is not stored
+    by an instance of `MeasureModel`.
+    """
     pass
 
 class MeasureModelNoSuchTimeMap(MeasureModelException):
+    """An exception class to be used when the requested TimeMap is not stored
+    by an instance of `MeasureModel`.
+    """
     pass
 
 class MeasureModelNoSuchMeasure(MeasureModelException):
+    """An exception class to be used when the requested measure is not stored
+    by an instance of `MeasureModel`.
+    """
     pass
 
 class MeasureModelNoSuchMeasureType(MeasureModelException):
+    """An exception class to be used when the requested measure type is not
+    stored by an instance of `MeasureModel`.
+    """
     pass
 
 class MeasureModel:
@@ -21,6 +53,10 @@ class MeasureModel:
         This class exists because the data structure for keeping track
         of the scores and measures was getting too unwieldy. It seems
         awfully complex for its job, but I hadn't found an alternative yet.
+
+        One could conceivably replace it with a dict, but then everything
+        managed here would need to be managed in the calling code, making
+        them more tightly coupled than I wanted.
     """
 
     def __init__(self):
@@ -32,6 +68,8 @@ class MeasureModel:
         self.measures = []
 
     def initialize_scoremodel_for_urit_urim(self, urit, urim):
+        """Sets up the data structure for scores of URI-Ts and URI-Ms."""
+
         self.scoremodel.setdefault(urit, {})
         self.scoremodel[urit].setdefault(urim, {})
 
@@ -39,6 +77,8 @@ class MeasureModel:
         self.scoremodel[urit][urim].setdefault("content length", None)
 
     def initialize_scoremodel_for_keys(self, urit, urim, measuretype, measure):
+        """Sets up the data structure for scores and errors of
+         URI-Ts and URI-Ms."""
         self.initialize_scoremodel_for_urit_urim(urit, urim)
 
         self.scoremodel[urit][urim].setdefault(measuretype, {})
@@ -68,10 +108,17 @@ class MeasureModel:
             self.measures.append( (measuretype, measure) )
 
     def set_score(self, urit, urim, measuretype, measure, score):
+        """Sets the `score` for a given `urim`, belonging to a given `urit`, 
+        associated with a given `measuretype` and `measure`.
+        """
+
         self.initialize_scoremodel_for_keys(urit, urim, measuretype, measure)
         self.scoremodel[urit][urim][measuretype][measure]["comparison score"] = score
 
     def handle_key_error(self, exception, urit, urim, measuretype, measure):
+        """Handles the different types of KeyError issues that result from
+        mistakes in calling the methods of this class.
+        """
         key = str(exception).strip("'")
 
         if key == urit:
@@ -86,6 +133,10 @@ class MeasureModel:
             raise exception
 
     def get_score(self, urit, urim, measuretype, measure):
+        """Gets the `score` for a given `urim`, belonging to a given `urit`, 
+        associated with a given `measuretype` and `measure`.
+        """
+
         score = None
 
         try: 
@@ -96,10 +147,17 @@ class MeasureModel:
         return score
 
     def set_content_length(self, urit, urim, content_length):
+        """Sets the `content_length` for a given `urim`, belonging to a given
+        `urit`.
+        """
+
         self.initialize_scoremodel_for_urit_urim(urit, urim)
         self.scoremodel[urit][urim]["content length"] = content_length
 
     def get_content_length(self, urit, urim):
+        """Gets the content length for a given `urim`, belonging to a given
+        `urit`.
+        """
 
         content_length = None
 
@@ -114,10 +172,17 @@ class MeasureModel:
         return content_length
 
     def set_simhash(self, urit, urim, simhash_value):
+        """Sets the `simhash_value` for a given `urim`, belonging to a given
+        `urit`.
+        """
+
         self.initialize_scoremodel_for_urit_urim(urit, urim)
         self.scoremodel[urit][urim]["raw simhash value"] = simhash_value
 
     def get_simhash(self, urit, urim):
+        """Gets the simhash value for a given `urim`, belonging to a given
+        `urit`.
+        """
 
         simhash_value = None
 
@@ -132,6 +197,9 @@ class MeasureModel:
         return simhash_value
 
     def set_TimeMap_access_error(self, urit, errormsg):
+        """Associates `errormsg` with a given `urit` when the error involves
+        failure to access (i.e., download) a TimeMap.
+        """
         
         self.timemap_access_errormodel[urit] = errormsg
 
@@ -139,9 +207,18 @@ class MeasureModel:
         self.scoremodel.setdefault(urit, {})
 
     def get_TimeMap_access_error_message(self, urit):
+        """Gets the error message associated with a given `urit` when the
+        error involves failure to access (i.e., download) a TimeMap.
+
+        Returns None if no error association exists.
+        """
+
         return self.timemap_access_errormodel[urit]
 
     def set_Memento_access_error(self, urit, urim, errormsg):
+        """Associates `errormsg` with a given `urit` and `urim` when the 
+        error involves failure to access (i.e., download) a memento.
+        """
 
         self.memento_access_errormodel.setdefault(urit, {})
         self.memento_access_errormodel[urit][urim] = errormsg
@@ -163,10 +240,20 @@ class MeasureModel:
         self.timemap_access_errormodel[urit] = None
 
     def get_Memento_access_error_message(self, urim):
+        """Gets the error message associated with a given `urim` when the
+        error involves failure to access (i.e., download) a memento.
+
+        Returns None if no error association exists.
+        """
+
         urit = self.mementos_to_timemaps[urim]
         return self.memento_access_errormodel[urit][urim]
 
     def set_Memento_measurement_error(self, urit, urim, measuretype, measurename, errormsg):
+        """Associates `errormsg` with a given `urim`, `measuretype`,
+        and `measurename` when the error involves failure of one of the 
+        measures when processing a memento.
+        """
 
         self.memento_measure_errormodel.setdefault(urit, {})
         self.memento_measure_errormodel[urit].setdefault(urim, {})
@@ -190,15 +277,30 @@ class MeasureModel:
         self.timemap_access_errormodel[urit] = None
 
     def get_Memento_measurement_error_message(self, urim, measuretype, measurename):
+        """Gets the error message associated with a given `urim`, `measuretype`,
+        and `measurename` when the error involves failure of one of the 
+        measures when processing a memento.
+
+        Returns None if no error association exists.
+        """
 
         urit = self.mementos_to_timemaps[urim]
         return self.memento_measure_errormodel[urit][urim][measuretype][measurename]
 
     def set_stemmed(self, urit, urim, measuretype, measure, stemmed):
+        """Sets that a given `urit`, `urim` was `stemmed` while using
+        `measuretype` and `measure`.
+        """
+        
         self.initialize_scoremodel_for_keys(urit, urim, measuretype, measure)
         self.scoremodel[urit][urim][measuretype][measure]["stemmed"] = stemmed
 
     def get_stemmed(self, urit, urim, measuretype, measure):
+        """Gets that a given `urit`, `urim` was `stemmed` while using
+        `measuretype` and `measure`.
+
+        Returns None if not set.
+        """
 
         stemmed = None
 
@@ -210,10 +312,19 @@ class MeasureModel:
         return stemmed
 
     def set_tokenized(self, urit, urim, measuretype, measure, tokenized):
+        """Sets that a given `urit`, `urim` was `tokenized` while using
+        `measuretype` and `measure`.
+        """
+
         self.initialize_scoremodel_for_keys(urit, urim, measuretype, measure)
         self.scoremodel[urit][urim][measuretype][measure]["tokenized"] = tokenized
 
     def get_tokenized(self, urit, urim, measuretype, measure):
+        """Gets that a given `urit`, `urim` was `stemmed` while using
+        `measuretype` and `measure`.
+
+        Returns None if not set.
+        """
 
         tokenized = None
 
@@ -225,10 +336,19 @@ class MeasureModel:
         return tokenized
 
     def set_removed_boilerplate(self, urit, urim, measuretype, measure, removed_boilerplate):
+        """Sets that a given `urit`, `urim` was had its boilerplate removed
+        while using `measuretype` and `measure`.
+        """
+        
         self.initialize_scoremodel_for_keys(urit, urim, measuretype, measure)
         self.scoremodel[urit][urim][measuretype][measure]["removed boilerplate"] = removed_boilerplate
 
     def get_removed_boilerplate(self, urit, urim, measuretype, measure):
+        """Gets that a given `urit`, `urim` was had its boilerplate removed
+        while using `measuretype` and `measure`.
+
+        Returns None if not set.
+        """
 
         removed_boilerplate = None
 
@@ -240,15 +360,32 @@ class MeasureModel:
         return removed_boilerplate
 
     def get_TimeMap_URIs(self):
+        """Returns the list of TimeMap URIs (URI-Ts) that have been stored 
+        in this object.
+        """
+
         return list(self.scoremodel.keys())
 
     def get_Memento_URIs_in_TimeMap(self, urit):
+        """Returns the list of memento URIs (URI-Ms) that have been stored
+        in this object and associated with TimeMap `urit`.
+        """
+
         return list(self.scoremodel[urit].keys())
     
     def get_Measures(self):
+        """Returns the list of measure stored in this object.
+        """
+
         return list(self.measures)
 
     def get_off_topic_status_by_measure(self, urim, measuretype, measurename):
+        """Returns the off-topic status of `urim` for `measuretype` and
+        `measurename`.
+
+        Returns None if no off-topic status has been associated.
+        """
+
         status = None
 
         try:
@@ -260,10 +397,21 @@ class MeasureModel:
         return status
 
     def get_overall_off_topic_status(self, urim):
+        """Returns the off-topic status of `urim` for all measures.
+
+        Returns None if no off-topic status has been associated.
+        """
+
         urit = self.mementos_to_timemaps[urim]
         return self.scoremodel[urit][urim]["overall topic status"]
 
     def calculate_offtopic_by_measure(self, measuretype, measurename, threshold, comparison):
+        """Iterates through all TimeMaps and mementos, deteremining if the 
+        resulting scores for `measuretype` and `measurename` exceed the 
+        numeric value stored in `threshold` as indicated by `comparison`.
+
+        Valid values of `comparison` are <, >, ==, or !=.
+        """
 
         for urit in self.get_TimeMap_URIs():
 
@@ -306,6 +454,9 @@ class MeasureModel:
                     raise MeasureModelException("Unsupported comparison type {}".format(comparison))
 
     def calculate_overall_offtopic_status(self):
+        """Iterates through all TimeMaps and mementos, determining if a memento
+        was marked off-topic in any of its measures.
+        """
 
         for urit in self.get_TimeMap_URIs():
 
@@ -331,6 +482,7 @@ class MeasureModel:
                     self.scoremodel[urit][urim]["overall topic status"] = topic_status
 
     def generate_dict(self):
+        """Generates a dictionary of the content within this object."""
 
         outputdata = {}
 
@@ -386,6 +538,7 @@ class MeasureModel:
         return outputdata
 
     def save_as_JSON(self, filename):
+        """Saves the content of this object as JSON."""
         
         outputdata = self.generate_dict()
 
@@ -393,6 +546,9 @@ class MeasureModel:
             json.dump(outputdata, outputjson, indent=4)
 
     def save_as_goldstandard(self, filename):
+        """Saves the content of this object as the tab-delimited gold
+        standard data used in AlNoamany's work.
+        """
 
         outputdata = []
         uritcounter = 1
@@ -458,6 +614,7 @@ class MeasureModel:
                 writer.writerow(row)
     
     def save_as_CSV(self, filename):
+        """Saves the content of this object as a CSV."""
         
         outputdata = []
 

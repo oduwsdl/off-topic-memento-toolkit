@@ -1,3 +1,12 @@
+# -*- coding: utf-8 -*-
+
+"""
+offtopic.timemap
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+This module allows one to parse a link-format TimeMap.
+"""
+
 import requests
 from copy import deepcopy
 
@@ -8,10 +17,6 @@ class MalformedLinkFormatTimeMap(Exception):
         This class exists to indicate errors while processing TimeMaps in
         link format.
     """
-    pass
-
-class TimeMapError(Exception):
-
     pass
 
 def convert_LinkTimeMap_to_dict(timemap_text, skipErrors=False):
@@ -186,53 +191,3 @@ def convert_LinkTimeMap_to_dict(timemap_text, skipErrors=False):
     process_local_dict(local_dict, dict_timemap)
 
     return dict_timemap
-
-
-# class TimeMap:
-#     """
-#         A class for working with a Memento TimeMap.
-#     """
-
-#     urit = None
-#     memento_data = {}
-#     raw_timemap_dict = None
-
-#     def __init__(self, urit, urims=[], skipParseErrors=False,
-#         requests_session=None):
-
-#         self.urit = urit
-
-#         if not requests_session:
-#             r = requests.get(urit)
-#         else:
-#             r = requests_session.get(urit)
-
-#         timemap_raw = r.text
-
-#         if r.status_code == 200:
-
-#             self.raw_timemap_dict = convert_LinkTimeMap_to_dict(timemap_raw,
-#                 skipErrors=skipParseErrors)
-
-#             for entry in self.raw_timemap_dict["mementos"]["list"]:
-#                 self.memento_data[entry["uri"]] = entry["datetime"]
-
-#         else:
-#             raise TimeMapError("The archive has no TimeMap for {}"
-#                 .format(urit))
-
-#     def get_URIT(self):
-#         return self.urit
-
-#     def get_memento_data(self):
-#         return deepcopy(self.memento_data)
-
-#     def add_memento(self, urim, memento_datetime):
-        
-#         self.timemap_dict[urim] = memento_datetime
-
-#     def get_original_URI(self):
-#         return self.raw_timemap_dict["original_uri"]
-
-#     def get_TimeGate_URI(self):
-#         return self.raw_timemap_dict["timegate_uri"]

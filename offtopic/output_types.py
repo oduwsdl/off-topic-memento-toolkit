@@ -1,3 +1,12 @@
+# -*- coding: utf-8 -*-
+
+"""
+offtopic.timemap_measures
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+This module supplies the functions for exporting to different output types.
+"""
+
 import json
 import csv
 import logging

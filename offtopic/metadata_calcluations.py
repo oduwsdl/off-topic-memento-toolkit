@@ -1,3 +1,13 @@
+# -*- coding: utf-8 -*-
+
+"""
+offtopic.metadata_calculations
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+This contains functions for producing calculations on mementos outside of the
+timemap_measures model.
+"""
+
 import logging
 
 from simhash import Simhash
@@ -5,6 +15,10 @@ from simhash import Simhash
 logger = logging.getLogger(__name__)
 
 def save_Simhashes(collectionmodel, measuremodel):
+    """Iterates through all TimeMaps and mementos in `collectionmodel` and 
+    computes the Simhash on their raw content, storing the results in
+    `measuremodel`.
+    """
     
     urits = collectionmodel.getTimeMapURIList()
     urittotal = len(urits)
@@ -42,6 +56,10 @@ def save_Simhashes(collectionmodel, measuremodel):
 
 
 def save_raw_content_lengths(collectionmodel, measuremodel):
+    """Iterates through all TimeMaps and mementos in `collectionmodel` and 
+    computes the content length, storing the results in
+    `measuremodel`.
+    """
 
     urits = collectionmodel.getTimeMapURIList()
     urittotal = len(urits)

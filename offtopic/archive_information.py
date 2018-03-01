@@ -1,9 +1,21 @@
+# -*- coding: utf-8 -*-
+
+"""
+offtopic.timemap_measures
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+This module handles the idiosyncracies between archives.
+"""
+
 archive_mappings = {
     "wayback.archive-it.org": ( '/http', 'id_/http' ),
     "web.archive.org": ( '/http', 'id_/http' )
 }
 
 def generate_raw_urim(urim):
+    """Generates a raw URI-M based on the archive it belongs to. Supported
+    URI patterns are found in `archive_mappings`.
+    """
 
     raw_urim = urim
 

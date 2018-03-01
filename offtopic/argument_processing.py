@@ -1,3 +1,12 @@
+# -*- coding: utf-8 -*-
+
+"""
+offtopic.timemap_measures
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+This module handles the arguments passed to detect_off_topic and download_collection.
+"""
+
 import argparse
 import sys
 import logging

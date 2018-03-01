@@ -1,3 +1,19 @@
+# -*- coding: utf-8 -*-
+
+"""
+offtopic.archiveit_collection
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+This module acquires data about an Archvie-It collection both from its results
+pages and its CSV seed report.
+
+Note: In addition to being used as a library, this file can be run standalone
+to download and extract information about an Archive-It collection.
+
+Note: There be dragons here. This code was originally written for a different 
+project. I'm sure it can be improved.
+"""
+
 import os
 import json
 import requests
@@ -15,9 +31,15 @@ logger = logging.getLogger(__name__)
 collection_uri_prefix = "https://archive-it.org/collections"
 
 class ArchiveItCollectionException(Exception):
+    """An exception class to be used by the functions in this file so that the
+    source of error can be detected.
+    """
     pass
 
 def fetch_collection_web_page(collection_id, pages_dir):
+    """Save the first results web page of an Archive-It collection specified by
+    `collection_id` in the working directory `pages_dir`.
+    """
 
     collection_uri = "{}/{}".format(collection_uri_prefix, collection_id) 
 
@@ -33,7 +55,15 @@ def fetch_collection_web_page(collection_id, pages_dir):
 
     return pages_dir
 
-def fetch_collection_web_pages(collection_id, pages_dir, page_number=1, result_count=None, use_cache=True):
+def fetch_collection_web_pages(collection_id, pages_dir, page_number=1, 
+    result_count=None, use_cache=True):
+    """Save all results web pages associated with an Archive-It collection
+    specified by `collection_id` into the working directory `pages_dir`,
+    starting at the page number specified by `page_number`.
+
+    This function handles pagination between results pages so that all
+    results pages can be acquired.
+    """
 
     nextpage = get_next_collection_page(
         collection_id, pages_dir, page_number, result_count, use_cache)
@@ -53,7 +83,12 @@ def fetch_collection_web_pages(collection_id, pages_dir, page_number=1, result_c
 #    fetch_collection_web_pages(collection_id, pages_dir, page_number=nextpage, 
 #        result_count=result_count, use_cache=use_cache)
 
-def get_next_collection_page(collection_id, pages_dir, page_number=1, result_count=None, use_cache=True):
+def get_next_collection_page(collection_id, pages_dir, page_number=1, 
+    result_count=None, use_cache=True):
+    """Parse the Archive-It results page associated with `collection_id`
+    to find the URI of the next page. Pages are stored in `pages_dir`
+    if not already downloaded.
+    """
 
     logger.debug("result count: [{}]".format(result_count))
     logger.debug("page_number: [{}]".format(page_number))
@@ -107,6 +142,10 @@ def get_next_collection_page(collection_id, pages_dir, page_number=1, result_cou
     return nextpage
 
 def get_metadata_timestamp(collection_id, pages_dir, use_cache=True):
+    """Acquires the file timestamp of when the collection specified by 
+    `collection_id` was last downloaded, checking for the file in `pages_dir`.
+    If the file does not exist, the collection is downloaded.
+    """
 
     if (not os.path.exists("{}/1.html".format(pages_dir))) or \
         use_cache == False:
@@ -124,6 +163,10 @@ def get_metadata_timestamp(collection_id, pages_dir, use_cache=True):
     return timestamp
 
 def get_seed_metadata_timestamp(collection_id, pages_dir, use_cache=True):
+    """Acquires the file timestamp of when the seed metadata specified by 
+    `collection_id` was last downloaded, checking for the file in `pages_dir`.
+    If the file does not exist, the collection is downloaded.
+    """
 
     page_count = get_page_count(collection_id, pages_dir, use_cache=use_cache)
 
@@ -140,6 +183,9 @@ def get_seed_metadata_timestamp(collection_id, pages_dir, use_cache=True):
     return timestamp
 
 def get_seed_report_timestamp(collection_id, pages_dir, use_cache=True):
+    """Acquries the file timestamp of the CSV seed report accessible outside
+    of the collection results page.
+    """
 
     get_seed_metadata_from_seed_report(collection_id, pages_dir, use_cache=True)
 
@@ -150,6 +196,9 @@ def get_seed_report_timestamp(collection_id, pages_dir, use_cache=True):
     return timestamp 
 
 def get_result_count(collection_id, pages_dir, use_cache=True):
+    """Scrapes the nubmer of results from the Archive-It collection results
+    page.
+    """
 
     result_count = None
 
@@ -198,6 +247,9 @@ def get_result_count(collection_id, pages_dir, use_cache=True):
     return result_count
 
 def get_page_count(collection_id, pages_dir, use_cache=True):
+    """Scrapes the page count from the Archive-It collection results
+    page.
+    """ 
 
     logger.debug("getting page count for collection id {}, "
         "saving to directory {}".format(collection_id, pages_dir)
@@ -239,6 +291,9 @@ def get_page_count(collection_id, pages_dir, use_cache=True):
 
 
 def scrape_main_collection_data(soup):
+    """Scrapes general collection metadata the Archive-It collection
+    results page using the BeautfulSoup object `soup`.
+    """
 
     data = {}
 
@@ -330,6 +385,9 @@ def scrape_main_collection_data(soup):
     return data
 
 def scrape_optional_collection_data(soup):
+    """Scrapes optional collection metadata the Archive-It collection
+    results page using the BeautfulSoup object `soup`.
+    """
 
     data = {}
 
@@ -346,6 +404,9 @@ def scrape_optional_collection_data(soup):
 
 
 def get_metadata_from_web_page(pages_dir, data_type):
+    """Using the pages downloaded in `pages_dir`, this function returns the
+    metadata scraped based on the metadata type specified in `data_type`.
+    """
 
     logger.info("processing collection pages from directory {}".format(pages_dir))
 
@@ -368,6 +429,9 @@ def get_metadata_from_web_page(pages_dir, data_type):
             data_type, pages_dir))
 
 def scrape_seed_metadata(soup):
+    """Scrapes the seed metadata form an Archive-It results page stored in the
+    BeautifulSoup object `soup`.
+    """
 
     data = []
 
@@ -398,6 +462,10 @@ def scrape_seed_metadata(soup):
     return data
 
 def get_seed_metadata_from_web_pages(pages_dir):
+    """This function iterates through all downloaded pages in `pages_dir`
+    and extracts the seed metadata from those pages using
+    `scrape_seed_metadata`.
+    """
 
     seed_metadata = [] 
 
@@ -425,6 +493,9 @@ def get_seed_metadata_from_web_pages(pages_dir):
     return seed_metadata
 
 def get_seed_metadata_from_seed_report(collection_id, pages_dir, use_cache=True):
+    """Builds the CSV seed report URI using `collection_id` and saves the
+    seed report in `pages_dir`.
+    """
 
     seed_metadata = {}
 
@@ -461,6 +532,7 @@ def get_seed_metadata_from_seed_report(collection_id, pages_dir, use_cache=True)
     return seed_metadata 
 
 class ArchiveItCollection:
+    """Organizes all information acquired about the Archive-It collection."""
 
     def __init__(self, collection_id, working_directory='/tmp/archiveit_collection',
         use_cached=True, logger=None):
@@ -482,6 +554,10 @@ class ArchiveItCollection:
         #self.logger.debug("instantiated class...")
 
     def load_collection_metadata(self):
+        """Loads collection metadata from an existing directory, if possible.
+        If the existing directory does not exist, it will then download the
+        collection and process its metadata.
+        """
 
         #self.logger.debug("load_collection_metadata called")
 
@@ -513,6 +589,12 @@ class ArchiveItCollection:
             self.metadata_loaded = True
 
     def load_seed_metadata(self):
+        """Loads the seed metadata previously downloaded if possible, otherwise
+        acquires all collection results pages and parses them for seed metadata.
+
+        This function is separate to limit the number of requests. It should only
+        be called if seed metadata is needed.
+        """
 
         #self.logger.debug("load_seed_metadata called")
 
@@ -594,6 +676,7 @@ class ArchiveItCollection:
 
 
     def get_collection_name(self):
+        """Getter for the collection name, as scraped."""
 
         self.load_collection_metadata()
 
@@ -602,6 +685,7 @@ class ArchiveItCollection:
         return name
 
     def get_collection_uri(self):
+        """Getter for the collection URI, as constructed."""
 
         self.load_collection_metadata()
 
@@ -610,6 +694,7 @@ class ArchiveItCollection:
         return uri
 
     def get_collectedby_uri(self):
+        """Getter for the collecting organization's URI, as constructed."""
 
         self.load_collection_metadata()
 
@@ -618,6 +703,7 @@ class ArchiveItCollection:
         return uri
 
     def get_description(self):
+        """Getter for the collection description, as scraped."""
 
         self.load_collection_metadata()
 
@@ -626,6 +712,7 @@ class ArchiveItCollection:
         return description
 
     def get_collectedby(self):
+        """Getter for the collecting organization's name, as scraped."""
 
         self.load_collection_metadata()
 
@@ -634,6 +721,7 @@ class ArchiveItCollection:
         return collectedby
 
     def get_subject(self):
+        """Getter for the collection's topics, as scraped."""
         
         self.load_collection_metadata()
 
@@ -642,6 +730,7 @@ class ArchiveItCollection:
         return subjects
 
     def get_archived_since(self):
+        """Getter for the collection's archived since field, as scraped."""
 
         self.load_collection_metadata()
 
@@ -650,6 +739,7 @@ class ArchiveItCollection:
         return archived_since
 
     def get_optional_metadata(self, key):
+        """Given optional metadata field `key`, returns value as scraped."""
 
         self.load_collection_metadata()
 
@@ -658,6 +748,7 @@ class ArchiveItCollection:
         return value
 
     def list_optional_metadata_fields(self):
+        """Lists the optional metadata fields, as scraped."""
 
         self.load_collection_metadata()
 
@@ -666,6 +757,7 @@ class ArchiveItCollection:
         return keylist
 
     def is_private(self):
+        """Returns `True` if the collection is public, otherwise `False`."""
 
         self.load_collection_metadata()
 
@@ -677,6 +769,8 @@ class ArchiveItCollection:
             raise ArchiveItCollectionException("Could not determine private/public status")
 
     def does_exist(self):
+        """Returns `True` if the collection actually exists and requests for
+        its data did not result in 404s or soft-404s."""
 
         self.load_collection_metadata()
 
@@ -687,6 +781,7 @@ class ArchiveItCollection:
         return exists
 
     def list_seed_uris(self):
+        """Lists the seed URIs of an Archive-It collection."""
 
         self.load_collection_metadata()
         self.load_seed_metadata()
@@ -694,12 +789,15 @@ class ArchiveItCollection:
         return list(self.seed_metadata["seeds"].keys())
 
     def get_seed_metadata(self, uri):
+        """Returns a `dict` of seed metadata associated with the memento 
+        at `uri`."""
 
         d = self.seed_metadata["seeds"][uri] 
 
         return d
 
     def return_collection_metadata_dict(self):
+        """Returns a `dict` of collection metadata."""
 
         self.load_collection_metadata()
 
@@ -731,6 +829,7 @@ class ArchiveItCollection:
         return metadata
 
     def return_seed_metadata_dict(self):
+        """Returns all seed metadata of all mementos as a `dict`."""
 
         self.load_seed_metadata()
 
@@ -756,6 +855,7 @@ class ArchiveItCollection:
 
 
     def return_all_metadata_dict(self):
+        """Returns all metadata of the collection as a `dict`."""
 
         self.load_collection_metadata()
         self.load_seed_metadata()
@@ -779,6 +879,7 @@ class ArchiveItCollection:
         return collection_metadata
         
     def save_all_metadata_to_file(self, filename):
+        """Saves all metadata to `filename` in JSON format."""
 
         collection_metadata = self.return_all_metadata_dict()
 

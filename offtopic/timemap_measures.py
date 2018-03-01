@@ -1,3 +1,12 @@
+# -*- coding: utf-8 -*-
+
+"""
+offtopic.timemap_measures
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+This module executes the different timemap measures available.
+"""
+
 import distance
 import string
 import logging
@@ -19,6 +28,9 @@ logger = logging.getLogger(__name__)
 stemmer = PorterStemmer()
 
 def stem_tokens(tokens):
+    """Takes a list of `tokens` and feeds it through the Porter Stemmer, 
+    producing a new list of stemmed tokens.
+    """
 
     stemmed = []
 
@@ -28,6 +40,11 @@ def stem_tokens(tokens):
     return stemmed
 
 def full_tokenize(text, stemming=True):
+    """Takes in `text` and produces a list of stemmed tokens with stopwords 
+    removed. Stemming can be stopped by setting stemming to False.
+
+    It currently only supports English stopwords.
+    """
 
     stopset = stopwords.words("english") + list(string.punctuation)
 
@@ -43,6 +60,12 @@ def full_tokenize(text, stemming=True):
 
 def get_memento_data_for_measure(urim, collection_model,
     tokenize=True, stemming=True, remove_boilerplate=True):
+    """For a give memento identified by a `urim`, this function extracts the 
+    content of that URI-M from the given `collection_model` object. It then
+    applies tokenizing, stemming, or removing of boilerplate depending 
+    on the settings of the `tokenize`, `stemming`, or
+    `remove_boilerplate` variables.
+    """
 
     data = None
 
@@ -58,6 +81,13 @@ def get_memento_data_for_measure(urim, collection_model,
 
 def apply_measurement_error_msg_to_all_mementos(urit, memento_list, 
     measuremodel, measurename, errormsg):
+    """Iterates through all of the mementos in a `memento_list`
+    related to a TimeMap specified by `urit`, associating the same
+    error message `errormsg` to each memento in the `measuremodel`.
+
+    This is useful when the first memento in a TimeMap has some flaw
+    that will affect processing of other mementos in the TimeMap.
+    """
 
     for memento in memento_list:
 
@@ -73,6 +103,17 @@ def compute_score_across_TimeMap(collectionmodel, measuremodel,
     measurename, scoredistance_function=None, 
     tokenize=True, stemming=True,
     remove_boilerplate=True):
+    """Iterates through all TimeMaps stored in `collectionmodel`, discovering
+    all mementos within. Each memento is evaluated against the first memento
+    in each TimeMap using the `scoredistance_function`. The results are stored
+    in the `measuremodel` object and associated with the measure specified by
+    `measurename`. Tokenizing, stemming, and removing boilerplate can be 
+    controlled with the `tokenize`, `stemming`, and `remove_boilerplate`
+    arguments.
+
+    This function exists to avoid duplication in code, seeing as almost all
+    TimeMap measures easily fit into this pattern.
+    """
 
     # TODO: raise an exception if the scoredistance_function is not set
 
@@ -85,6 +126,7 @@ def compute_score_across_TimeMap(collectionmodel, measuremodel,
 
     for urit in urits:
 
+        # provide the user with some kind of progress message
         logger.info("Processing TimeMap {} of {}".format(uritcounter, urittotal))
         logger.debug("Processing mementos from TimeMap at {}".format(urit))
 
@@ -184,6 +226,9 @@ def compute_score_across_TimeMap(collectionmodel, measuremodel,
 
 
 def simhash_scoredistance(first_data, memento_data):
+    """Calculate the distance between Simhashes given the content in
+    `first_data` and `memento_data`.
+    """
 
     if type(first_data) == type(memento_data):
         if type(first_data) == bytes:
@@ -194,7 +239,11 @@ def simhash_scoredistance(first_data, memento_data):
 
     return score
 
-def compute_rawsimhash_across_TimeMap(collectionmodel, measuremodel, tokenize=False, stemming=False):
+def compute_rawsimhash_across_TimeMap(collectionmodel, measuremodel, 
+    tokenize=False, stemming=False):
+    """Contains the appropriate arguments to run the Simhash algorithm against
+    the raw memento text content of all mementos in a TimeMap.
+    """
 
     measuremodel = compute_score_across_TimeMap(collectionmodel, measuremodel, "raw_simhash", 
         simhash_scoredistance, tokenize=False, stemming=False,
@@ -204,6 +253,9 @@ def compute_rawsimhash_across_TimeMap(collectionmodel, measuremodel, tokenize=Fa
     return measuremodel
 
 def compute_tfsimhash_across_TimeMap(collectionmodel, measuremodel, tokenize=True, stemming=True):
+    """Contains the appropriate arguments to run the Simhash algorithm against
+    the term frequencies of the tokenized content of all mementos in a TimeMap.
+    """
 
     measuremodel = compute_score_across_TimeMap(collectionmodel, measuremodel, "tf_simhash", 
         simhash_scoredistance, tokenize=True, stemming=True,
@@ -213,6 +265,9 @@ def compute_tfsimhash_across_TimeMap(collectionmodel, measuremodel, tokenize=Tru
     return measuremodel
 
 def bytecount_scoredistance(first_data, memento_data):
+    """Calculate the distance between byte counts given the content in
+    `first_data` and `memento_data`.
+    """
 
     score = None
 
@@ -240,6 +295,13 @@ def bytecount_scoredistance(first_data, memento_data):
     return score
 
 def compute_bytecount_across_TimeMap(collectionmodel, measuremodel, tokenize=False, stemming=False):
+    """Contains the appropriate arguments to run the Byte Count algorithm against
+    the raw memento text content of all mementos in a TimeMap.
+    
+    Note: The `tokenize` and `stemming` arguments have no affect and are purely
+    included to support the same signature as the other "compute_" functions
+    so that a factory pattern can be used.
+    """
 
     measuremodel = compute_score_across_TimeMap(collectionmodel, measuremodel, "bytecount", 
         bytecount_scoredistance, tokenize=False, stemming=False,
@@ -249,13 +311,14 @@ def compute_bytecount_across_TimeMap(collectionmodel, measuremodel, tokenize=Fal
     return measuremodel
 
 def wordcount_scoredistance(first_data, memento_data):
+    """Calculates the distance between word counts given the content in
+    `first_data` and `memento_data`.
+    """
 
     score = None
 
     first_wordcount = len(first_data)
     memento_wordcount = len(memento_data)
-
-    # scoredata["individual score"] = memento_wordcount
 
     if memento_wordcount == 0:
 
@@ -271,7 +334,14 @@ def wordcount_scoredistance(first_data, memento_data):
     return score
 
 def compute_wordcount_across_TimeMap(collectionmodel, measuremodel, tokenize=True, stemming=True):
-    
+    """Contains the appropriate arguments to run the Word Count algorithm against
+    the raw memento text content of all mementos in a TimeMap.
+
+    Note: The `tokenize` argument has no affect and is purely
+    included to support the same signature as the other "compute_" functions
+    so that a factory pattern can be used.
+    """
+
     measuremodel = compute_score_across_TimeMap(collectionmodel, measuremodel, "wordcount", 
         wordcount_scoredistance, tokenize=True, stemming=stemming,
         remove_boilerplate=True
@@ -280,6 +350,9 @@ def compute_wordcount_across_TimeMap(collectionmodel, measuremodel, tokenize=Tru
     return measuremodel
 
 def compute_scores_on_distance_measure(first_data, memento_data, distance_function):
+    """Calculates the distance between scores for those measures that use
+    functions from the distance library.
+    """
 
     score = None
 
@@ -298,6 +371,9 @@ def compute_scores_on_distance_measure(first_data, memento_data, distance_functi
 
 
 def jaccard_scoredistance(first_data, memento_data):
+    """Calculates the Jaccard Distance given the content in
+    `first_data` and `memento_data`.
+    """
 
     score = compute_scores_on_distance_measure(
         first_data, memento_data, distance.jaccard)
@@ -305,6 +381,10 @@ def jaccard_scoredistance(first_data, memento_data):
     return score
 
 def compute_jaccard_across_TimeMap(collectionmodel, measuremodel, tokenize=True, stemming=True):
+    """Contains the appropriate arguments to run the Jaccard Distance 
+    algorithm against the raw memento text content of all mementos in a 
+    TimeMap.
+    """
 
     scores = compute_score_across_TimeMap(collectionmodel, measuremodel, "jaccard", 
         jaccard_scoredistance, tokenize=tokenize, stemming=stemming,
@@ -314,6 +394,9 @@ def compute_jaccard_across_TimeMap(collectionmodel, measuremodel, tokenize=True,
     return scores
 
 def sorensen_scoredistance(first_data, memento_data):
+    """Calculates the Sørensen-Dice Distance given the content in
+    `first_data` and `memento_data`.
+    """
 
     scoredata = {}
 
@@ -323,7 +406,11 @@ def sorensen_scoredistance(first_data, memento_data):
     return scoredata
 
 def compute_sorensen_across_TimeMap(collectionmodel, measuremodel, tokenize=True, stemming=True):
-    
+    """Contains the appropriate arguments to run the Sørensen-Dice Distance
+    algorithm against the raw memento text content of all mementos in a 
+    TimeMap.
+    """
+
     scores = compute_score_across_TimeMap(collectionmodel, measuremodel, "sorensen", 
         sorensen_scoredistance, tokenize=tokenize, stemming=stemming,
         remove_boilerplate=True
@@ -332,6 +419,9 @@ def compute_sorensen_across_TimeMap(collectionmodel, measuremodel, tokenize=True
     return scores
 
 def levenshtein_scoredistance(first_data, memento_data):
+    """Calculates the Levenshtein Distance given the content in
+    `first_data` and `memento_data`.
+    """
 
     score = compute_scores_on_distance_measure(
         first_data, memento_data, distance.levenshtein)
@@ -339,7 +429,11 @@ def levenshtein_scoredistance(first_data, memento_data):
     return score
 
 def compute_levenshtein_across_TimeMap(collectionmodel, measuremodel, tokenize=True, stemming=True):
-    
+    """Contains the appropriate arguments to run the Levenshtein Distance
+    algorithm against the raw memento text content of all mementos in a 
+    TimeMap.
+    """
+
     scores = compute_score_across_TimeMap(collectionmodel, measuremodel, "levenshtein", 
         levenshtein_scoredistance, tokenize=tokenize, stemming=stemming,
         remove_boilerplate=True
@@ -348,6 +442,9 @@ def compute_levenshtein_across_TimeMap(collectionmodel, measuremodel, tokenize=T
     return scores
 
 def nlevenshtein_scoredistance(first_data, memento_data):
+    """Calculates the Normalized Levenshtein Distance given the content in
+    `first_data` and `memento_data`.
+    """
 
     score = compute_scores_on_distance_measure(
         first_data, memento_data, distance.nlevenshtein)
@@ -355,6 +452,10 @@ def nlevenshtein_scoredistance(first_data, memento_data):
     return score
 
 def compute_nlevenshtein_across_TimeMap(collectionmodel, measuremodel, tokenize=True, stemming=True):
+    """Contains the appropriate arguments to run the Normalized Levenshtein 
+    Distance algorithm against the raw memento text content of all mementos 
+    in a TimeMap.
+    """
 
     scores = compute_score_across_TimeMap(collectionmodel, measuremodel, "nlevenshtein", 
         nlevenshtein_scoredistance, tokenize=tokenize, stemming=stemming,
@@ -364,6 +465,9 @@ def compute_nlevenshtein_across_TimeMap(collectionmodel, measuremodel, tokenize=
     return scores
 
 def calculate_term_frequencies(tokens):
+    """Given a series of `tokens`, produces a sorted list of tuples in the
+    format of (term frequency, token).
+    """
 
     frequency_dict = {}
 
@@ -380,6 +484,9 @@ def calculate_term_frequencies(tokens):
     return sorted(tf, reverse=True)
 
 def tfintersection_scoredistance(first_data, memento_data):
+    """Calculates the difference in term frequency intersection given 
+    the content in `first_data` and `memento_data`.
+    """
 
     score = None
 
@@ -418,6 +525,10 @@ def tfintersection_scoredistance(first_data, memento_data):
     return score
 
 def compute_tfintersection_across_TimeMap(collectionmodel, measuremodel, tokenize=None, stemming=True):
+    """Contains the appropriate arguments to run the TF-Intersection 
+    algorithm against the raw memento text content of all mementos 
+    in a TimeMap.
+    """
 
     scores = compute_score_across_TimeMap(collectionmodel, measuremodel, "tfintersection",
         tfintersection_scoredistance, tokenize=True, stemming=stemming,
@@ -427,8 +538,18 @@ def compute_tfintersection_across_TimeMap(collectionmodel, measuremodel, tokeniz
     return scores
 
 def compute_cosine_across_TimeMap(collectionmodel, measuremodel, tokenize=None, stemming=None):
-    
-    # TODO: alter compute_score_across_TimeMap so that much of this function can be replaced
+    """Contains the appropriate arguments to run the cosine similarity 
+    algorithm against the raw memento text content of all mementos 
+    in a TimeMap.
+
+    Note: The `tokenize` and `stemming` arguments have no affect and are purely
+    included to support the same signature as the other "compute_" functions
+    so that a factory pattern can be used.
+
+    Note: This function is very close to compute_score_across_TimeMap and that
+    function may be altered to support this measure in the future.
+    """
+
     measurename = "cosine"
 
     tokenize = True

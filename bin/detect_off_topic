@@ -78,6 +78,13 @@ def process_arguments(args):
     return parser.parse_args()
 
 if __name__ == '__main__':
+    """
+        This function is designed to work as follows:
+        1. Acquire content using the input types specified
+        2. Pass that content through the measures and thresholds specified
+        3. Perform an additional calculations
+        4. Save the results in the format specified
+    """
 
     args = process_arguments(sys.argv)
 
@@ -97,10 +104,14 @@ if __name__ == '__main__':
 
     logger.debug("timemap measures chosen: {}".format(args.timemap_measures))
 
+    # 1. Acquire content using the input types specified
+    # the content is stored in a CollectionModel object
     cm = offtopic.get_collection_model(
         input_type, input_type_arguments, args.working_directory
     )
 
+    # 2. Pass that content through the measures and thresholds specified
+    # the results are stored in a MeasureModel object
     mm = offtopic.MeasureModel()
 
     for measure in args.timemap_measures:
@@ -119,6 +130,7 @@ if __name__ == '__main__':
 
     mm.calculate_overall_offtopic_status()
 
+    # 3. Perform an additional calculations
     if args.compute_simhashes:
         logger.info("computing Simhashes")
         mm = offtopic.save_Simhashes(cm, mm)
@@ -127,6 +139,7 @@ if __name__ == '__main__':
         logger.info("computing content lengths")
         mm = offtopic.save_raw_content_lengths(cm, mm)
 
+    # 4. Save the results in the format specified
     logger.info("saving ouput as type {}".format(args.output_type))
 
     offtopic.supported_output_types[args.output_type](

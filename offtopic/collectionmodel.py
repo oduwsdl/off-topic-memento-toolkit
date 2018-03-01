@@ -1,3 +1,21 @@
+# -*- coding: utf-8 -*-
+
+"""
+offtopic.timemap_measures
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+This module exists to store the results of the different input types. Its
+classes are designed to allow access to the data needed for measurement
+calculations.
+
+Note: The CollectionModel class also exists so that it can be subclassed
+in the future. There is no reason that one should be limited to storing 
+the input data as files and folders as I have here. A subclass that stores
+the data as a WARC, or to a database is also possible, and such a 
+subclass can be used with the measurement functions of timemap_measures,
+provided that such a subclass has the same methods and parameters.
+"""
+
 import copy
 import os
 import hashlib
@@ -29,24 +47,47 @@ def json_serial(obj):
     raise TypeError ("Type %s not serializable" % type(obj))
 
 class CollectionModelException(Exception):
+    """An exception class to be used by the functions in this file so that the
+    source of error can be detected.
+    """
     pass
 
 class CollectionModelMementoErrorException(CollectionModelException):
+    """An exception indicating an error with accessing the given memento.
+    """
     pass
 
 class CollectionModelTimeMapErrorException(CollectionModelException):
+    """An exception indicating an error with accessing the given TimeMap.
+    """
     pass
 
 class CollectionModelNoSuchMementoException(CollectionModelException):
+    """An exception indicating that a given memento is not stored in 
+    this object.
+    """
     pass
 
 class CollectionModelNoSuchTimeMapException(CollectionModelException):
+    """An exception indicating that a given TimeMap is not stored in 
+    this object.
+    """
     pass
 
 class CollectionModelBoilerPlateRemovalFailureException(CollectionModelException):
+    """An exception indicating that boilerplate removal failed for a given memento.
+    """
     pass
 
 class CollectionModel:
+    """
+        This class exists because the dict for keeping track of
+        the mementos and timemaps was getting too unweildy and often 
+        required that certain calling functions occur in order.
+
+        This class can also be subclassed to store memento data in
+        another way, such as a database or WARC.
+    """
 
     # TODO: add functions for storing metadata, like for saving a collection id, name, etc.
 
@@ -100,6 +141,9 @@ class CollectionModel:
         self.memento_errors_metadatafile.close()
 
     def load_data_from_directory(self):
+        """
+            Loads data from a previous run of this class.
+        """
 
         logger.info("loading data from directory {}".format(self.timemap_directory))
 
@@ -179,6 +223,11 @@ class CollectionModel:
         memento_errors_metadatafile.close()
 
     def addTimeMap(self, urit, content, headers):
+        """Adds a TimeMap to the object, parsing it if it is in link-format
+        and then stores the TimeMap as a dict in memory and JSON on disk.
+
+        If JSON is given as `content`, then it is just converted to a dict.
+        """
 
         filename_digest = hashlib.sha3_256(bytes(urit, "utf8")).hexdigest()
 
@@ -241,10 +290,18 @@ class CollectionModel:
                 )
 
     def getTimeMap(self, urit):
+        """
+            Returns the dict form of TimeMap at `urit` provided that it
+            was previously stored via `addTimeMap`.
+        """
+
         # TODO: there may be too much data for low memory systems
         return copy.deepcopy( self.collection_timemaps[urit] )
 
     def addMemento(self, urim, content, headers):
+        """Adds Memento `content` specified by `urim` to the object, along 
+        with its headers.
+        """
 
         filename_digest = hashlib.sha3_256(bytes(urim, "utf8")).hexdigest()
 
@@ -261,6 +318,11 @@ class CollectionModel:
         self.memento_csvwriter.writerow([urim, filename_digest])
 
     def addMementoError(self, urim, content, headers, errorinformation):
+        """Associates `errorinformation` with memento specified by `urim` to
+        the object, `content` and `headers` can also be stored from the given
+        input transaction. If there are no headers or content, use content=""
+        and headers={}.
+        """
 
         filename_digest = hashlib.sha3_256(bytes(urim, "utf8")).hexdigest()
 
@@ -281,6 +343,15 @@ class CollectionModel:
         self.memento_errors_csvwriter.writerow([urim, filename_digest])
 
     def getMementoContent(self, urim):
+        """Returns the HTTP entity of memento at `urim` provided that it
+        was previously stored via `addMemento`.
+
+        If no data was stored via `addMemento` for `urim`, then
+        `CollectionModelNoSuchMementoException` is thrown.
+
+        If data was stored via `addMementoError` for `urim`, then
+        `CollectionModelMementoErrorException` is thrown.
+        """
 
         if urim in self.urimap["memento-errors"]:
             raise CollectionModelMementoErrorException
@@ -304,6 +375,12 @@ class CollectionModel:
         return data
 
     def getMementoErrorInformation(self, urim):
+        """Returns the error information associated with `urim`, provided that
+        it was previously stored via `addMementoError`.
+
+        If no data was stored via `addMemento` for `urim`, then
+        `CollectionModelNoSuchMementoException` is thrown.
+        """
 
         if urim in self.urimap["memento-errors"]:
 
@@ -328,6 +405,18 @@ class CollectionModel:
         return data
 
     def getMementoContentWithoutBoilerplate(self, urim):
+        """Returns the HTTP entity of memento at `urim` with all boilerplate
+        removed, provided that it was previously stored via `addMemento`.
+
+        If no data was stored via `addMemento` for `urim`, then
+        `CollectionModelNoSuchMementoException` is thrown.
+
+        If data was stored via `addMementoError` for `urim`, then
+        `CollectionModelMementoErrorException` is thrown.
+
+        If the boilerplate removal process produces an error for `urim`,
+        then CollectionModelBoilerPlateRemovalFailureException is thrown.
+        """
 
         if urim in self.urimap["memento-errors"]:
             raise CollectionModelMementoErrorException(
@@ -382,6 +471,10 @@ class CollectionModel:
         return content_without_boilerplate
 
     def getHeaders(self, objecttype, uri):
+        """Returns the headers associated with URI `uri`.
+        `objecttype` must be set to timemaps if headers
+        for a TimeMap are desired.
+        """
 
         if objecttype == "timemaps":
             directory = self.timemap_directory
@@ -405,6 +498,8 @@ class CollectionModel:
         return data
 
     def getMementoHeaders(self, urim):
+        """Returns the headers associated with memento at `urim`.
+        """
 
         if urim in self.urimap["memento-errors"]:
             raise CollectionModelMementoErrorException
@@ -412,16 +507,20 @@ class CollectionModel:
         return self.getHeaders("mementos", urim)
 
     def getTimeMapHeaders(self, urit):
+        """Returns the headers associated with TimeMap at `urit`.
+        """
 
         return self.getHeaders("timemaps", urit)
 
     def getMementoURIList(self):
+        """Returns a list of all URI-Ms stored in this object."""
 
         return copy.deepcopy(
             list(self.urimap["mementos"].keys())
         )
 
     def getTimeMapURIList(self):
+        """Returns a list of all URI-Ts stored in this object."""
 
         return copy.deepcopy(
             list(self.urimap["timemaps"].keys())
