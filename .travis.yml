@@ -4,6 +4,7 @@ python:
   - "3.6"
 
 script:
+  - python setup.py install
   - python setup.py test
   - python setup.py sdist bdist
-  - python setup.py install
+  
