@@ -20,6 +20,8 @@ To accomplish this, the OTMT accepts the following inputs:
 * URIs for one or more Memento TimeMaps (see RFC 7089)
 * one or more files in Web ARChive (WARC) format (see ISO 28500)
 
+These inputs are converted internally into a series of files and folders used for the rest of the evaluation.
+
 To specify an Archive-It collection use the `archiveit` keyword followed by an = and the collection ID, like so:
 `detect_off_topic -i archiveit=7877 -o outputfile.json`
 
@@ -30,7 +32,7 @@ Likewise, for one or more WARC files:
 `detect_off_topic -i warc=example1.warc.gz,example2.warc.gz -o outputfile.json`
 
 ## TimeMap Measures
-These inputs are converted internally into a series of files and folders that are processed to determine if the content within is off-topic. A user can choose one or more of the following measures:
+With TimeMap measures, each memento in a TimeMap is compared to the first memento of that TimeMap. The comparison is performed using one or more of the following measures:
 * Cosine Similarity (keyword: `cosine`) - this is the default, combined with wordcount
 * Word Count (keyword: `wordcount`) - this is the default, combined with cosine
 * Byte Count (keyword: `bytecount`)
