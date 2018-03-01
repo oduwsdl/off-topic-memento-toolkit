@@ -7,9 +7,9 @@ from datetime import datetime
 
 from requests.exceptions import ConnectionError, TooManyRedirects
 
-from offtopic import CollectionModel
-from offtopic import get_collection_model
-from offtopic import discover_raw_urims
+from otmt import CollectionModel
+from otmt import get_collection_model
+from otmt import discover_raw_urims
 
 import logging
 logging.basicConfig(level=logging.DEBUG)

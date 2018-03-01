@@ -4,7 +4,7 @@ import sys
 import logging
 import argparse
 
-import offtopic
+import otmt
 
 def process_arguments(args):
 
@@ -13,7 +13,7 @@ def process_arguments(args):
         formatter_class=argparse.RawTextHelpFormatter)
 
     parser.add_argument('-i', '--input', dest='input_type',
-        required=True, type=offtopic.process_input_types,
+        required=True, type=otmt.process_input_types,
         help="The source of the input data. The following options are available:\n"
         "* warc=[warc-filenames separated by commas with no spaces] - EXPERIMENTAL\n"
         "* archiveit=[collection identifier or collection URI]\n"
@@ -24,27 +24,27 @@ def process_arguments(args):
         required=True, help="The file name in which to store the results.")
 
     parser.add_argument('-d', '--directory', dest='working_directory',
-        default=offtopic.working_directory_default,
+        default=otmt.working_directory_default,
         help='The working directory holding the data being downloaded'
         ' and processed. If data is already here, it will be used in'
         ' lieu of any supplied input option.')
 
     parser.add_argument('-ot', '--output-type', dest='output_type',
-        default='json', type=offtopic.process_output_types,
+        default='json', type=otmt.process_output_types,
         help="output type for off-topic analysis:\n"
-        "* json - a JSON file containing the memento offtopic status(default)\n"
+        "* json - a JSON file containing the memento off-topic status(default)\n"
         "* csv - a CSV file containinig similar data to the JSON format"
         )
 
     tmmeasurehelp = ""
-    for measure in offtopic.supported_timemap_measures:
+    for measure in otmt.supported_timemap_measures:
         tmmeasurehelp += "* {} - {}, default threshold {}\n".format(
-            measure, offtopic.supported_timemap_measures[measure]['name'],
-            offtopic.supported_timemap_measures[measure]['default threshold'])
+            measure, otmt.supported_timemap_measures[measure]['name'],
+            otmt.supported_timemap_measures[measure]['default threshold'])
 
     parser.add_argument('-tm', '--timemap-measures', dest='timemap_measures',
         default="cosine=0.15,wordcount=-0.85",
-        type=offtopic.process_similarity_measure_inputs,
+        type=otmt.process_similarity_measure_inputs,
         help="The TimeMap-based similarity measures specified will be used. \n"
         "For each of these measures, the first memento in a TimeMap\n"
         "is compared with each subsequent memento to measure topic drift.\n"
@@ -89,8 +89,8 @@ if __name__ == '__main__':
     args = process_arguments(sys.argv)
 
     # set up logging for the rest of the system
-    logger = offtopic.get_logger(
-        __name__, offtopic.calculate_loglevel(
+    logger = otmt.get_logger(
+        __name__, otmt.calculate_loglevel(
             verbose=args.verbose, quiet=args.quiet), 
         args.logfile)
 
@@ -106,43 +106,43 @@ if __name__ == '__main__':
 
     # 1. Acquire content using the input types specified
     # the content is stored in a CollectionModel object
-    cm = offtopic.get_collection_model(
+    cm = otmt.get_collection_model(
         input_type, input_type_arguments, args.working_directory
     )
 
     # 2. Pass that content through the measures and thresholds specified
     # the results are stored in a MeasureModel object
-    mm = offtopic.MeasureModel()
+    mm = otmt.MeasureModel()
 
     for measure in args.timemap_measures:
 
         logger.info("Processing mementos using TimeMap measure {}".format(measure))
 
-        mm = offtopic.supported_timemap_measures[measure]["function"](
+        mm = otmt.supported_timemap_measures[measure]["function"](
             cm, mm)
 
         threshold = args.timemap_measures[measure]
 
-        mm.calculate_offtopic_by_measure(
+        mm.calculate_otmt_by_measure(
             "timemap measures", measure, threshold,
-            offtopic.supported_timemap_measures[measure]["comparison direction"]
+            otmt.supported_timemap_measures[measure]["comparison direction"]
             )
 
-    mm.calculate_overall_offtopic_status()
+    mm.calculate_overall_otmt_status()
 
     # 3. Perform an additional calculations
     if args.compute_simhashes:
         logger.info("computing Simhashes")
-        mm = offtopic.save_Simhashes(cm, mm)
+        mm = otmt.save_Simhashes(cm, mm)
 
     if args.compute_content_length:
         logger.info("computing content lengths")
-        mm = offtopic.save_raw_content_lengths(cm, mm)
+        mm = otmt.save_raw_content_lengths(cm, mm)
 
     # 4. Save the results in the format specified
     logger.info("saving ouput as type {}".format(args.output_type))
 
-    offtopic.supported_output_types[args.output_type](
+    otmt.supported_output_types[args.output_type](
         args.output_filename, mm, cm)
 
     logger.info("output written to {}".format(args.output_filename))

@@ -7,7 +7,7 @@ import pprint
 
 pp = pprint.PrettyPrinter(indent=4)
 
-from offtopic import collectionmodel, compute_bytecount_across_TimeMap, \
+from otmt import collectionmodel, compute_bytecount_across_TimeMap, \
     compute_wordcount_across_TimeMap, compute_jaccard_across_TimeMap, \
     compute_cosine_across_TimeMap, compute_sorensen_across_TimeMap, \
     compute_levenshtein_across_TimeMap, compute_nlevenshtein_across_TimeMap, \

@@ -1,6 +1,6 @@
 import unittest
 
-from offtopic import generate_raw_urim
+from otmt import generate_raw_urim
 
 class TestingArchiveInformation(unittest.TestCase):
 

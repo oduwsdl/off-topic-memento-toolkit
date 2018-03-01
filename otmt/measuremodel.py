@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 """
-offtopic.measuremodel
+otmt.measuremodel
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 This module exists to store the results of the different measures. Its classes

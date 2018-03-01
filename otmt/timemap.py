@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 """
-offtopic.timemap
+otmt.timemap
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 This module allows one to parse a link-format TimeMap.

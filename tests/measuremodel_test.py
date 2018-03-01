@@ -5,7 +5,7 @@ import pprint
 
 pp = pprint.PrettyPrinter(indent=4)
 
-from offtopic import MeasureModel, MeasureModelNoSuchMemento, \
+from otmt import MeasureModel, MeasureModelNoSuchMemento, \
     MeasureModelNoSuchTimeMap, MeasureModelNoSuchMeasure, \
     MeasureModelNoSuchMeasureType
 

@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 """
-offtopic.timemap_measures
+otmt.archive_information
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 This module handles the idiosyncracies between archives.

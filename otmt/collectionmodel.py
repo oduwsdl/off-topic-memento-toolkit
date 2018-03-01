@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 """
-offtopic.timemap_measures
+otmt.collectionmodel
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 This module exists to store the results of the different input types. Its

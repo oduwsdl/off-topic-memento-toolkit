@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 """
-offtopic.timemap_measures
+otmt.timemap_measures
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 This module handles the arguments passed to detect_off_topic and download_collection.

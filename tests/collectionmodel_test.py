@@ -13,7 +13,7 @@ from datetime import datetime
 
 import lxml.etree
 
-from offtopic import collectionmodel
+from otmt import collectionmodel
 
 # Disabled this pylint rule because of too many false positives
 # Ref: http://pylint-messages.wikidot.com/messages:e1101

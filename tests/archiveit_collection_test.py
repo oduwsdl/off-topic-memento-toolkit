@@ -9,7 +9,7 @@ import zipfile
 
 from datetime import datetime
 
-from offtopic import ArchiveItCollection
+from otmt import ArchiveItCollection
 
 class TestArchiveItCollection(unittest.TestCase):
 

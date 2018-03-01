@@ -22,7 +22,7 @@ setup(name='offtopic2',
     author='Shawn M. Jones',
     author_email='jones.shawn.m@gmail.com',
     license='MIT',
-    packages=['offtopic'],
+    packages=['otmt'],
     scripts=['bin/detect_off_topic', 'bin/download_collection'],
     install_requires=[
         'requests_futures',
