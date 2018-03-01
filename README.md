@@ -3,7 +3,8 @@
 Given a collection of archived web pages, known as mementos, the Off Topic Memento Toolkit (OTMT) allows one to determine which mementos are off-topic. Mementos are produced by crawling live web pages, resulting in collections that often contain different versions of the same web page. In time, due to hacking, loss of ownership of the domain, or even website restructuring, a web page can go off-topic, resulting in the collection containing off-topic mementos. The OTMT helps users detect these off-topic mementos before conducting research on their collections of archived web pages.
 
 This code is based on work by:
-AlNoamany, Y., Weigle, M.C. & Nelson, M.L. Int J Digit Libr (2016) 17: 203. https://doi.org/10.1007/s00799-016-0183-5
+
+AlNoamany, Y., Weigle, M.C. & Nelson, M.L. Detecting off-topic pages within TimeMaps in Web archives. *International Journal on Digital Libraries* (2016) 17: 203. https://doi.org/10.1007/s00799-016-0183-5
 
 # Quick start
 
