@@ -8,7 +8,7 @@ import offtopic
 
 def process_arguments(args):
 
-    parser = argparse.ArgumentParser(prog="python {}".format(args[0]),
+    parser = argparse.ArgumentParser(prog="{}".format(args[0]),
         description='Detects off-topic webpages in a collection.',
         formatter_class=argparse.RawTextHelpFormatter)
 

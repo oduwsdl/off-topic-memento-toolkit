@@ -232,10 +232,10 @@ def bytecount_scoredistance(first_data, memento_data):
             score = 0
 
         else:
-            score = 1 -  (memento_bytecount / first_bytecount)
+            score = (memento_bytecount / first_bytecount) - 1
 
     else:
-        score = 1 -  (memento_bytecount / first_bytecount)
+        score = (memento_bytecount / first_bytecount) - 1
     
     return score
 
@@ -263,10 +263,10 @@ def wordcount_scoredistance(first_data, memento_data):
             score = 0
 
         else:
-            score = 1 -  (memento_wordcount / first_wordcount)
+            score = (memento_wordcount / first_wordcount) - 1
 
     else:
-        score = 1 -  (memento_wordcount / first_wordcount)
+        score = (memento_wordcount / first_wordcount) - 1
 
     return score
 
