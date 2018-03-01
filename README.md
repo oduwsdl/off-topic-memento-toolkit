@@ -2,7 +2,11 @@ Given a collection of archived web pages, known as mementos, the Off Topic Memen
 
 # Quick start
 
-After cloning this repository, change into the resulting directory and type the following command to determine if the content in Archive-It collection is off-topic:
+After cloning this repository, change into the resulting directory and type the following command to install the software:
+
+`python ./setup.py install`
+
+This installs the `detect_off_topic` command on your system, along with the `offtopic` Python library. To determine if the content in Archive-It collection is off-topic:
 
 `detect_off_topic -i archiveit=7877 -o outputfile.json`
 
