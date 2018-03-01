@@ -684,19 +684,19 @@ supported_timemap_measures = {
         "name": "Cosine Similarity",
         "function": compute_cosine_across_TimeMap,
         "comparison direction": "<",
-        "default threshold": 0.15
+        "default threshold": 0.12
     },
     "bytecount": {
         "name": "Byte Count",
         "function": compute_bytecount_across_TimeMap,
         "comparison direction": "<",
-        "default threshold": -0.65
+        "default threshold": -0.43
     },
     "wordcount": {
         "name": "Word Count",
         "function": compute_wordcount_across_TimeMap,
         "comparison direction": "<",
-        "default threshold": -0.85
+        "default threshold": -0.70
     },
     "tfintersection": {
         "name": "TF-Intersection",
@@ -708,25 +708,25 @@ supported_timemap_measures = {
         "name": "Jaccard Distance",
         "function": compute_jaccard_across_TimeMap,
         "comparison direction": ">",
-        "default threshold": 0.05
+        "default threshold": 0.96
     },
     "sorensen": {
         "name": "Sørensen-Dice Distance",
         "function": compute_sorensen_across_TimeMap,
         "comparison direction": ">",
-        "default threshold": 0.05
+        "default threshold": 0.93
     },
     "raw_simhash": {
         "name": "Simhash on raw memento content",
         "function": compute_rawsimhash_across_TimeMap,
         "comparison direction": ">",
-        "default threshold": 0
+        "default threshold": 38
     },
     "tf_simhash": {
         "name": "Simhash on term frequencies in memento",
         "function": compute_tfsimhash_across_TimeMap,
         "comparison direction": ">",
-        "default threshold": 0
+        "default threshold": 34
     }
     # Note: these took way too long to execute
     # ,

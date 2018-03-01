@@ -7,9 +7,11 @@ from setuptools.command.install import install as _install
 
 # Thanks https://stackoverflow.com/questions/26799894/installing-nltk-data-in-setup-py-script
 # for detailing how to install nltk data as part of setup.py
+# Thanks https://blog.niteoweb.com/setuptools-run-custom-code-in-setup-py/
+# for detailing how to fix what that solution broke
 class Install(_install):
     def run(self):
-        _install.do_egg_install(self)
+        _install.run(self)
         import nltk
         nltk.download("stopwords")
         nltk.download("punkt")
@@ -39,6 +41,6 @@ setup(name='offtopic2',
         'simhash'
     ],
     setup_requires=['nltk'],
-    test_suite="tests"
-    # zip_safe=False
+    test_suite="tests",
+    zip_safe=True
     )
