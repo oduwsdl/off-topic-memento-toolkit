@@ -123,12 +123,12 @@ if __name__ == '__main__':
 
         threshold = args.timemap_measures[measure]
 
-        mm.calculate_otmt_by_measure(
+        mm.calculate_offtopic_by_measure(
             "timemap measures", measure, threshold,
             otmt.supported_timemap_measures[measure]["comparison direction"]
             )
 
-    mm.calculate_overall_otmt_status()
+    mm.calculate_overall_offtopic_status()
 
     # 3. Perform an additional calculations
     if args.compute_simhashes:

@@ -13,7 +13,8 @@ from .timemap_measures import compute_bytecount_across_TimeMap, \
     compute_cosine_across_TimeMap, compute_sorensen_across_TimeMap, \
     compute_levenshtein_across_TimeMap, compute_nlevenshtein_across_TimeMap, \
     compute_tfintersection_across_TimeMap, supported_timemap_measures, \
-    compute_rawsimhash_across_TimeMap, compute_tfsimhash_across_TimeMap
+    compute_rawsimhash_across_TimeMap, compute_tfsimhash_across_TimeMap, \
+    compute_gensim_lsi_across_TimeMap, compute_gensim_lda_across_TimeMap
 from .measuremodel import MeasureModel, MeasureModelNoSuchMemento, \
     MeasureModelNoSuchTimeMap, MeasureModelNoSuchMeasure, MeasureModelNoSuchMeasureType
 from .metadata_calcluations import save_Simhashes, save_raw_content_lengths

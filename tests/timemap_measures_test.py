@@ -12,7 +12,8 @@ from otmt import collectionmodel, compute_bytecount_across_TimeMap, \
     compute_cosine_across_TimeMap, compute_sorensen_across_TimeMap, \
     compute_levenshtein_across_TimeMap, compute_nlevenshtein_across_TimeMap, \
     compute_tfintersection_across_TimeMap, compute_tfsimhash_across_TimeMap, \
-    compute_rawsimhash_across_TimeMap, MeasureModel
+    compute_rawsimhash_across_TimeMap, compute_gensim_lsi_across_TimeMap, \
+    compute_gensim_lda_across_TimeMap, MeasureModel
 
 import logging
 logging.basicConfig(level=logging.DEBUG)
@@ -28,7 +29,15 @@ same_scores = {
     "levenshtein": 0,
     "nlevenshtein": 0,
     "raw_simhash": 0,
-    "tf_simhash": 0
+    "tf_simhash": 0,
+    "gensim_lsi": 1.0,
+    "gensim_lda": 0.999999
+    # LDA is not deterministic, all of these values indicate that 
+    # the test document is the same
+    # 0.9999999403953552
+    # 0.9999998807907104
+    # 0.9999999403953552
+    # 0.9999608397483826
 }
 
 class TestingTimeMapMeasures(unittest.TestCase):
@@ -125,6 +134,14 @@ class TestingTimeMapMeasures(unittest.TestCase):
             cm, mm, tokenize=True, stemming=True
         )
 
+        mm = compute_gensim_lsi_across_TimeMap(
+            cm, mm, tokenize=True, stemming=True
+        )
+
+        mm = compute_gensim_lda_across_TimeMap(
+            cm, mm, tokenize=True, stemming=True
+        )
+
         self.assertTrue( "timemap1" in mm.get_TimeMap_URIs() )
         self.assertTrue( "timemap2" in mm.get_TimeMap_URIs() )
 
@@ -144,12 +161,24 @@ class TestingTimeMapMeasures(unittest.TestCase):
 
                 for urim in mm.get_Memento_URIs_in_TimeMap(urit):
 
-                    self.assertAlmostEqual(
-                        mm.get_score(urit, urim, "timemap measures", measure),
-                        same_scores[measure],
-                        msg="measure {} does not compute the correct score "
-                        "for document sameness with URI-M {}".format(measure, urim)
-                    )
+                    # LDA does not appear to be deterministic
+                    if measure == "gensim_lda":
+
+                        self.assertGreaterEqual(
+                            mm.get_score(urit, urim, "timemap measures", measure),
+                            same_scores[measure],
+                            msg="measure {} does not compute the correct score "
+                            "for document sameness with URI-M {}".format(measure, urim)                            
+                        )
+
+                    else:
+
+                            self.assertAlmostEqual(
+                            mm.get_score(urit, urim, "timemap measures", measure),
+                            same_scores[measure],
+                            msg="measure {} does not compute the correct score "
+                            "for document sameness with URI-M {}".format(measure, urim)
+                        )
 
         shutil.rmtree(working_directory)
 
@@ -229,6 +258,15 @@ class TestingTimeMapMeasures(unittest.TestCase):
             cm, mm, tokenize=True, stemming=True
         )
 
+        mm = compute_gensim_lsi_across_TimeMap(
+            cm, mm, tokenize=True, stemming=True
+        )
+
+        mm = compute_gensim_lda_across_TimeMap(
+            cm, mm, tokenize=True, stemming=True
+        )
+
+
         self.assertTrue( "timemap1" in mm.get_TimeMap_URIs() )
 
         self.assertTrue( "memento11" in mm.get_Memento_URIs_in_TimeMap("timemap1") )
@@ -241,12 +279,24 @@ class TestingTimeMapMeasures(unittest.TestCase):
 
                 for urim in mm.get_Memento_URIs_in_TimeMap("timemap1"):
 
-                    self.assertAlmostEqual(
-                        mm.get_score(urit, urim, "timemap measures", measure),
-                        same_scores[measure],
-                        msg="measure {} does not compute the correct score "
-                        "for document sameness for URI-M {}".format(measure, urim)
-                    )
+                    # LDA does not appear to be deterministic
+                    if measure == "gensim_lda":
+
+                        self.assertGreaterEqual(
+                            mm.get_score(urit, urim, "timemap measures", measure),
+                            same_scores[measure],
+                            msg="measure {} does not compute the correct score "
+                            "for document sameness with URI-M {}".format(measure, urim)                            
+                        )
+
+                    else:
+
+                        self.assertAlmostEqual(
+                            mm.get_score(urit, urim, "timemap measures", measure),
+                            same_scores[measure],
+                            msg="measure {} does not compute the correct score "
+                            "for document sameness for URI-M {}".format(measure, urim)
+                        )
 
         shutil.rmtree(working_directory)
 
@@ -426,7 +476,8 @@ class TestingTimeMapMeasures(unittest.TestCase):
             # the way that I build the sentences does not
             # have enough different words
             if measure == "tfintersection" or measure == "cosine" or \
-                measure == "raw_simhash" or measure == "tf_simhash":
+                measure == "raw_simhash" or measure == "tf_simhash" or \
+                measure == "gensim_lda" or measure == "gensim_lsi":
                 continue
 
             for urit in mm.get_TimeMap_URIs():
@@ -626,12 +677,20 @@ class TestingTimeMapMeasures(unittest.TestCase):
 
         mm = compute_cosine_across_TimeMap(
             cm, mm, tokenize=None, stemming=True)
+
+        mm = compute_gensim_lsi_across_TimeMap(
+            cm, mm, tokenize=True, stemming=True
+        )
+
+        mm = compute_gensim_lda_across_TimeMap(
+            cm, mm, tokenize=True, stemming=True
+        )
         
         for urit in mm.get_TimeMap_URIs():
 
             for urim in mm.get_Memento_URIs_in_TimeMap(urit):
 
-                for measurename in ["cosine", "jaccard"]:
+                for measurename in ["cosine", "jaccard", "gensim_lda", "gensim_lsi"]:
 
                     self.assertEquals(
                         mm.get_Memento_measurement_error_message(urim, "timemap measures", measurename),
@@ -677,7 +736,7 @@ class TestingTimeMapMeasures(unittest.TestCase):
 
         # Rather than dealing with empty documents, this throws
         # ValueError: empty vocabulary; perhaps the documents only contain stop words
-        # it should handle the error gracefully
+        # it should handle the error gracefully, and this test confirms that it does
         mm = compute_cosine_across_TimeMap(
             cm, mm, tokenize=None, stemming=True)
 
@@ -736,11 +795,19 @@ class TestingTimeMapMeasures(unittest.TestCase):
         mm = compute_cosine_across_TimeMap(
             cm, mm, tokenize=None, stemming=True)
 
+        mm = compute_gensim_lsi_across_TimeMap(
+            cm, mm, tokenize=True, stemming=True
+        )
+
+        mm = compute_gensim_lda_across_TimeMap(
+            cm, mm, tokenize=True, stemming=True
+        )
+
         for urit in mm.get_TimeMap_URIs():
 
             for urim in mm.get_Memento_URIs_in_TimeMap(urit):
 
-                for measurename in ["cosine", "jaccard"]:
+                for measurename in ["cosine", "jaccard", "gensim_lda", "gensim_lsi"]:
 
                     self.assertEquals(
                         mm.get_Memento_measurement_error_message(urim, "timemap measures", measurename),
@@ -801,6 +868,14 @@ class TestingTimeMapMeasures(unittest.TestCase):
             "CollectionModelBoilerPlateRemovalFailureException(\"ParserError('Document is empty',)\",)"
         )
 
+        mm = compute_gensim_lda_across_TimeMap(
+            cm, mm, tokenize=True, stemming=True
+        )
+
+        self.assertEqual(
+            mm.get_Memento_measurement_error_message("memento12", "timemap measures", "gensim_lda"),
+            "CollectionModelBoilerPlateRemovalFailureException(\"ParserError('Document is empty',)\",)"
+        )
 
         shutil.rmtree(working_directory)
 

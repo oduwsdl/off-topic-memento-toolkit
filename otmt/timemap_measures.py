@@ -20,6 +20,8 @@ from sklearn.metrics.pairwise import cosine_similarity
 
 from simhash import Simhash
 
+from gensim import corpora, models, similarities
+
 from .collectionmodel import CollectionModelMementoErrorException, \
     CollectionModelBoilerPlateRemovalFailureException
 
@@ -679,6 +681,176 @@ def compute_cosine_across_TimeMap(collectionmodel, measuremodel, tokenize=None, 
 
     return measuremodel
 
+def compute_gensim_across_TimeMap(collectionmodel, measuremodel, measurename, gensim_model):
+    """Contains the appropriate arguments to score mementos using latent
+    semantic indexing (LSI) via gensim against the raw memento text content 
+    of all mementos in a TimeMap.
+
+    Note: The `tokenize` and `stemming` arguments have no affect and are purely
+    included to support the same signature as the other "compute_" functions
+    so that a factory pattern can be used.
+
+    Note: This function is very close to compute_score_across_TimeMap and that
+    function may be altered to support this measure in the future.
+    """
+
+    tokenize = True
+    remove_boilerplate = True
+    stemming = True
+
+    logger.info("Computing cosine score across TimeMap, beginning TimeMap iteration...")
+
+    urits = collectionmodel.getTimeMapURIList()
+    urittotal = len(urits)
+    uritcounter = 1
+
+    for urit in urits:
+
+        logger.info("Processing TimeMap {} of {}".format(uritcounter, urittotal))
+        logger.debug("Processing mementos from TimeMap at {}".format(urit))
+
+        timemap = collectionmodel.getTimeMap(urit)
+
+        memento_list = timemap["mementos"]["list"]
+
+        # some TimeMaps have no mementos
+        # e.g., http://wayback.archive-it.org/3936/timemap/link/http://www.peacecorps.gov/shutdown/?from=hpb
+        if len(memento_list) > 0:
+
+            first_urim = timemap["mementos"]["first"]["uri"]
+
+            logger.debug("Accessing content of first URI-M {} for calculations".format(first_urim))
+
+            try:
+                first_data = get_memento_data_for_measure(
+                    first_urim, collectionmodel, tokenize=tokenize, stemming=stemming, 
+                    remove_boilerplate=remove_boilerplate)
+
+            except CollectionModelBoilerPlateRemovalFailureException as e:
+                errormsg = "Boilerplate removal error with first memento in TimeMap, " \
+                    "cannot effectively compare memento content"
+
+                apply_measurement_error_msg_to_all_mementos(urit, memento_list,
+                    measuremodel, measurename, errormsg)
+                continue
+
+            if len(first_data) == 0:
+
+                errormsg = "After processing content, the first memento in TimeMap is now empty, cannot effectively compare memento content"
+                logger.warning(errormsg)
+
+                apply_measurement_error_msg_to_all_mementos(urit, memento_list,
+                    measuremodel, measurename, errormsg)
+
+                # move on to the next URI-T
+                uritcounter += 1
+                continue
+
+            mementototal = len(memento_list)
+            logger.info("There are {} mementos in this TimeMap".format(mementototal))
+
+            mementocounter = 1
+
+            processed_urims = []
+            error_urims = []
+            documents = []
+
+            # in case the mementos are not sorted in order of memento datetime
+            # we save the first one for comparison
+            processed_urims.append(first_urim)
+            documents.append(first_data)
+
+            for memento in memento_list:
+
+                logger.debug("Processing Memento {} of {}".format(mementocounter, mementototal))
+
+                urim = memento["uri"]
+
+                logger.debug("Accessing content of URI-M {} for calculations".format(urim))
+
+                try:
+
+                    # in case the mementos are not sorted in order of memento datetime
+                    # we ignore the first one for comparison because we already saved it
+                    if urim != first_urim:
+                        try:
+                            memento_data = get_memento_data_for_measure(
+                                urim, collectionmodel, tokenize=tokenize, 
+                                stemming=stemming, 
+                                remove_boilerplate=remove_boilerplate)
+                                
+                            processed_urims.append(urim)
+                            documents.append(memento_data)
+
+                        except CollectionModelBoilerPlateRemovalFailureException as e:
+                            errormsg = "Boilerplate could not be removed from " \
+                                "memento at URI-M {}; details: {}".format(urim, repr(e))
+                            logger.warning(errormsg)
+
+                            measuremodel.set_Memento_measurement_error(
+                                urit, urim, "timemap measures", measurename, repr(e)
+                            )
+
+                except CollectionModelMementoErrorException:
+                    errormsg = "Errors were recorded while attempting to " \
+                        "access URI-M {}, skipping {} calcualtions for this " \
+                        "URI-M".format(urim, measurename)
+                    logger.warning(errormsg)
+
+                    errorinfo = collectionmodel.getMementoErrorInformation(urim)
+
+                    measuremodel.set_Memento_access_error(
+                        urit, urim, errorinfo
+                    )
+                    error_urims.append(urim)
+                
+                mementocounter += 1
+
+            logger.info("There are {} mementos under consideration in this TimeMap".format(len(documents)))
+
+            num_topics = 2
+            dictionary = corpora.Dictionary(documents)
+            corpus = [ dictionary.doc2bow(text) for text in documents]
+            mod = gensim_model(corpus, id2word=dictionary, num_topics=num_topics)
+            index = similarities.MatrixSimilarity(mod[corpus])
+
+            for i in range(0, len(documents)):
+                
+                urim = processed_urims[i]
+                doc = documents[i]
+                vec_bow = dictionary.doc2bow(doc)
+                vec_lsi = mod[vec_bow]
+
+                sims = index[vec_lsi]
+                
+                # gensim outputs to float32, which is not serializable with 
+                # the Python json library
+                measuremodel.set_score(urit, urim, "timemap measures", measurename, 
+                    float(sims[0]) )
+                measuremodel.set_tokenized(urit, urim, "timemap measures", measurename, tokenize)
+                measuremodel.set_stemmed(urit, urim, "timemap measures", measurename, stemming)
+                measuremodel.set_removed_boilerplate(
+                    urit, urim, "timemap measures", measurename, remove_boilerplate
+                )                        
+
+            uritcounter += 1
+
+    return measuremodel
+
+def compute_gensim_lsi_across_TimeMap(collectionmodel, measuremodel, tokenize=None, stemming=None):
+
+    measuremodel = compute_gensim_across_TimeMap(collectionmodel, measuremodel,
+        "gensim_lsi", gensim_model=models.LsiModel)
+
+    return measuremodel
+
+def compute_gensim_lda_across_TimeMap(collectionmodel, measuremodel, tokenize=None, stemming=None):
+
+    measuremodel = compute_gensim_across_TimeMap(collectionmodel, measuremodel,
+        "gensim_lda", gensim_model=models.LdaModel)
+
+    return measuremodel
+
 supported_timemap_measures = {
     "cosine": {
         "name": "Cosine Similarity",
@@ -701,7 +873,7 @@ supported_timemap_measures = {
     "tfintersection": {
         "name": "TF-Intersection",
         "function": compute_tfintersection_across_TimeMap,
-        "comparison direction": "!=",
+        "comparison direction": "==",
         "default threshold": 0.0
     },
     "jaccard": {
@@ -727,19 +899,30 @@ supported_timemap_measures = {
         "function": compute_tfsimhash_across_TimeMap,
         "comparison direction": ">",
         "default threshold": 34
-    }
+    },
+    "gensim_lsi": {
+        "name": "Latent Semantic Indexing with Gensim",
+        "function": compute_gensim_lsi_across_TimeMap,
+        "comparison direction": "<",
+        "default threshold": 0.15
+    },
+    "gensim_lda": {
+        "name": "Latent Dirichlet Allocation with Gensim",
+        "function": compute_gensim_lda_across_TimeMap,
+        "comparison direction": "<",
+        "default threshold": 0.15
+    },
     # Note: these took way too long to execute
-    # ,
-    # "levenshtein": {
-    #     "name": "Levenshtein Distance",
-    #     "function": compute_levenshtein_across_TimeMap,
-    #     "comparison direction": ">",
-    #     "default threshold": 0.05
-    # },
-    # "nlevenshtein": {
-    #     "name": "Normalized Levenshtein Distance",
-    #     "function": compute_nlevenshtein_across_TimeMap,
-    #     "comparison direction": ">",
-    #     "default threshold": 0.05
-    # }
+    "levenshtein": {
+        "name": "Levenshtein Distance",
+        "function": compute_levenshtein_across_TimeMap,
+        "comparison direction": ">",
+        "default threshold": 0.05
+    },
+    "nlevenshtein": {
+        "name": "Normalized Levenshtein Distance",
+        "function": compute_nlevenshtein_across_TimeMap,
+        "comparison direction": ">",
+        "default threshold": 0.05
+    }
 }
