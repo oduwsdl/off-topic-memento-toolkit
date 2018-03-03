@@ -4,8 +4,9 @@ from .collectionmodel import CollectionModel, CollectionModelException, \
 from .archiveit_collection import ArchiveItCollection, ArchiveItCollectionException
 from .input_types import get_collection_model, supported_input_types, \
     discover_raw_urims, working_directory_default
-from .argument_processing import process_similarity_measure_inputs, \
-    process_input_types, get_logger, calculate_loglevel, process_output_types
+from .argument_processing import process_collection_similarity_measure_inputs, \
+    process_timemap_similarity_measure_inputs, process_input_types, \
+    get_logger, calculate_loglevel, process_output_types
 from .output_types import supported_output_types
 from .archive_information import generate_raw_urim, archive_mappings
 from .timemap_measures import compute_bytecount_across_TimeMap, \
@@ -15,6 +16,8 @@ from .timemap_measures import compute_bytecount_across_TimeMap, \
     compute_tfintersection_across_TimeMap, supported_timemap_measures, \
     compute_rawsimhash_across_TimeMap, compute_tfsimhash_across_TimeMap, \
     compute_gensim_lsi_across_TimeMap, compute_gensim_lda_across_TimeMap
+from .collection_measures import compute_jaccard_accross_collection, \
+    compute_sorensen_accross_collection, supported_collection_measures
 from .measuremodel import MeasureModel, MeasureModelNoSuchMemento, \
     MeasureModelNoSuchTimeMap, MeasureModelNoSuchMeasure, MeasureModelNoSuchMeasureType
 from .metadata_calcluations import save_Simhashes, save_raw_content_lengths
@@ -27,7 +30,8 @@ __all__ = ["CollectionModel", "CollectionModelException",
     "CollectionModelTimeMapErrorException", 
     "CollectionModelNoSuchMementoException",
     "ArchiveItCollection", "ArchiveItCollectionException",
-    "get_collection_model", "process_similarity_measure_inputs",
+    "get_collection_model", "process_collection_similarity_measure_inputs",
+    "process_timemap_similarity_measure_inputs",
     "process_input_types", "get_logger", "calculate_loglevel", 
     "supported_input_types", "supported_output_types",
     "generate_raw_urim", "archive_mappings",
@@ -40,7 +44,9 @@ __all__ = ["CollectionModel", "CollectionModelException",
     "compute_rawsimhash_across_TimeMap", "compute_tfsimhash_across_TimeMap",
     "MeasureModel", "MeasureModelNoSuchMemento",
     "MeasureModelNoSuchTimeMap", "MeasureModelNoSuchMeasure",
-    "save_Simhashes", "save_raw_content_lengths"
+    "save_Simhashes", "save_raw_content_lengths",
+    "compute_jaccard_accross_collection", "compute_sorensen_accross_collection",
+    "supported_collection_measures"
     ]
 
 import logging

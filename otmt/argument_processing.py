@@ -13,10 +13,26 @@ import logging
 import logging.config
 
 from .timemap_measures import supported_timemap_measures
+from .collection_measures import supported_collection_measures
 from .input_types import supported_input_types
 from .output_types import supported_output_types
 
-def process_similarity_measure_inputs(input_argument):
+def process_timemap_similarity_measure_inputs(input_argument):
+
+    measures_used = process_similarity_measure_inputs(input_argument,
+        supported_measures=supported_timemap_measures)
+
+    return measures_used
+
+def process_collection_similarity_measure_inputs(input_argument):
+
+    measures_used = process_similarity_measure_inputs(input_argument,
+        supported_measures=supported_collection_measures)
+
+    return measures_used
+
+def process_similarity_measure_inputs(input_argument, 
+    supported_measures):
     
     input_measures = input_argument.split(',')
 
@@ -28,7 +44,7 @@ def process_similarity_measure_inputs(input_argument):
             if '=' in measure:
                 measure_name, threshold = measure.split('=')
                 
-                if measure_name not in supported_timemap_measures:
+                if measure_name not in supported_measures:
                     raise argparse.ArgumentTypeError(
                         "measure '{}' is not supported at this time".format(
                             measure_name)
@@ -38,7 +54,7 @@ def process_similarity_measure_inputs(input_argument):
 
             else:
                 measures_used[measure] = \
-                    supported_timemap_measures[measure]['default threshold']
+                    supported_measures[measure]['default threshold']
 
         except KeyError:
             raise argparse.ArgumentTypeError(

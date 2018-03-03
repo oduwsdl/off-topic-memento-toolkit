@@ -76,6 +76,12 @@ class MeasureModel:
         self.scoremodel[urit][urim].setdefault("raw simhash value", None)
         self.scoremodel[urit][urim].setdefault("content length", None)
 
+        self.mementos_to_timemaps[urim] = urit
+        self.timemap_access_errormodel[urit] = None
+
+        self.memento_access_errormodel.setdefault(urit, {})
+        self.memento_access_errormodel[urit].setdefault(urim, None)
+
     def initialize_scoremodel_for_keys(self, urit, urim, measuretype, measure):
         """Sets up the data structure for scores and errors of
          URI-Ts and URI-Ms."""
@@ -92,17 +98,10 @@ class MeasureModel:
 
         self.scoremodel[urit][urim]["overall topic status"] = None
 
-        self.timemap_access_errormodel[urit] = None
-
-        self.memento_access_errormodel.setdefault(urit, {})
-        self.memento_access_errormodel[urit].setdefault(urim, None)
-
         self.memento_measure_errormodel.setdefault(urit, {})
         self.memento_measure_errormodel[urit].setdefault(urim, {})
         self.memento_measure_errormodel[urit][urim].setdefault(measuretype, {})
         self.memento_measure_errormodel[urit][urim][measuretype].setdefault(measure, None)
-
-        self.mementos_to_timemaps[urim] = urit
 
         if (measuretype, measure) not in self.measures:
             self.measures.append( (measuretype, measure) )

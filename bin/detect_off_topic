@@ -43,8 +43,7 @@ def process_arguments(args):
             otmt.supported_timemap_measures[measure]['default threshold'])
 
     parser.add_argument('-tm', '--timemap-measures', dest='timemap_measures',
-        default="cosine=0.15,wordcount=-0.85",
-        type=otmt.process_similarity_measure_inputs,
+        type=otmt.process_timemap_similarity_measure_inputs,
         help="The TimeMap-based similarity measures specified will be used. \n"
         "For each of these measures, the first memento in a TimeMap\n"
         "is compared with each subsequent memento to measure topic drift.\n"
@@ -53,6 +52,23 @@ def process_arguments(args):
         "(e.g., jaccard=0.10,cosine=0.15,wcount);\n"
         "Leave thresholds off to use default thresholds.\n"
         "Accepted values:\n{}".format(tmmeasurehelp)
+        )
+
+    cmmeasurehelp = ""
+    for measure in otmt.supported_collection_measures:
+        cmmeasurehelp += "* {} - {}, default threshold {}\n".format(
+            measure, otmt.supported_collection_measures[measure]['name'],
+            otmt.supported_collection_measures[measure]['default threshold'])
+
+    parser.add_argument('-cm', '--collection-measures', dest='collection_measures',
+        type=otmt.process_collection_similarity_measure_inputs,
+        help="The Collection-based similarity measures specified will be used. \n"
+        "For each of these measures, all content in the collection is taken into\n"
+        "account when determining if a given memento is off topic.\n"
+        "Specify measure with optional threshold separated by equals.\n"
+        "Multiple measures can be specified.\n"
+        "Leave thresholds off to use default thresholds.\n"
+        "Accepted values:\n{}".format(cmmeasurehelp)        
         )
 
     parser.add_argument('-l', '--logfile', dest='logfile',
@@ -79,7 +95,17 @@ def process_arguments(args):
         help="The number of topics to use for gensim_lda and gensim_lsi, "
         "ignored if these measures are not requested.")
 
-    return parser.parse_args()
+    args = parser.parse_args()
+
+    if args.compute_simhashes == False and \
+        args.compute_content_length == False and \
+        args.collection_measures == None and \
+        args.timemap_measures == None:
+
+        parser.error("must supply one of these options: \n"
+            " -tm, -cm, --compute-lengths, or --compute-simashes")
+
+    return args
 
 if __name__ == '__main__':
     """
@@ -106,7 +132,8 @@ if __name__ == '__main__':
 
     logger.info("Acquiring memento colleciton using input type {}".format(input_type))
 
-    logger.debug("timemap measures chosen: {}".format(args.timemap_measures))
+    logger.info("TimeMap measures chosen: {}".format(args.timemap_measures))
+    logger.info("Collection measures chosen: {}".format(args.collection_measures))
 
     # 1. Acquire content using the input types specified
     # the content is stored in a CollectionModel object
@@ -118,25 +145,43 @@ if __name__ == '__main__':
     # the results are stored in a MeasureModel object
     mm = otmt.MeasureModel()
 
-    for measure in args.timemap_measures:
+    if args.timemap_measures:
 
-        logger.info("Processing mementos using TimeMap measure {}".format(measure))
+        for measure in args.timemap_measures:
 
-        if measure == "gensim_lda" or measure == "gensim_lsi":
+            logger.info("Processing mementos using TimeMap measure {}".format(measure))
 
-            mm = otmt.supported_timemap_measures[measure]["function"](
-                cm, mm, num_topics=args.num_topics)
+            if measure == "gensim_lda" or measure == "gensim_lsi":
 
-        else:
+                mm = otmt.supported_timemap_measures[measure]["function"](
+                    cm, mm, num_topics=args.num_topics)
 
-            mm = otmt.supported_timemap_measures[measure]["function"](
+            else:
+
+                mm = otmt.supported_timemap_measures[measure]["function"](
+                    cm, mm)
+
+            threshold = args.timemap_measures[measure]
+
+            mm.calculate_offtopic_by_measure(
+                "timemap measures", measure, threshold,
+                otmt.supported_timemap_measures[measure]["comparison direction"]
+                )
+
+    if args.collection_measures:
+
+        for measure in args.collection_measures:
+
+            logger.info("Processing mementos using Collection measure {}".format(measure))
+
+            mm = otmt.supported_collection_measures[measure]["function"](
                 cm, mm)
 
-        threshold = args.timemap_measures[measure]
+            threshold = args.collection_measures[measure]
 
-        mm.calculate_offtopic_by_measure(
-            "timemap measures", measure, threshold,
-            otmt.supported_timemap_measures[measure]["comparison direction"]
+            mm.calculate_offtopic_by_measure(
+                "collection measures", measure, threshold,
+                otmt.supported_collection_measures[measure]["comparison direction"]
             )
 
     mm.calculate_overall_offtopic_status()
