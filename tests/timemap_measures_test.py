@@ -31,13 +31,14 @@ same_scores = {
     "raw_simhash": 0,
     "tf_simhash": 0,
     "gensim_lsi": 1.0,
-    "gensim_lda": 0.999999
+    "gensim_lda": 0.999
     # LDA is not deterministic, all of these values indicate that 
     # the test document is the same
     # 0.9999999403953552
     # 0.9999998807907104
     # 0.9999999403953552
     # 0.9999608397483826
+    # 0.9998424053192139
 }
 
 class TestingTimeMapMeasures(unittest.TestCase):
