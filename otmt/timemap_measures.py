@@ -681,7 +681,8 @@ def compute_cosine_across_TimeMap(collectionmodel, measuremodel, tokenize=None, 
 
     return measuremodel
 
-def compute_gensim_across_TimeMap(collectionmodel, measuremodel, measurename, gensim_model):
+def compute_gensim_across_TimeMap(collectionmodel, measuremodel, measurename, 
+    gensim_model, num_topics=2):
     """Contains the appropriate arguments to score mementos using latent
     semantic indexing (LSI) via gensim against the raw memento text content 
     of all mementos in a TimeMap.
@@ -698,7 +699,8 @@ def compute_gensim_across_TimeMap(collectionmodel, measuremodel, measurename, ge
     remove_boilerplate = True
     stemming = True
 
-    logger.info("Computing cosine score across TimeMap, beginning TimeMap iteration...")
+    logger.info("Computing gensim {} with {} topics score across TimeMap, "
+        "beginning TimeMap iteration...".format(measurename, num_topics))
 
     urits = collectionmodel.getTimeMapURIList()
     urittotal = len(urits)
@@ -808,46 +810,56 @@ def compute_gensim_across_TimeMap(collectionmodel, measuremodel, measurename, ge
 
             logger.info("There are {} mementos under consideration in this TimeMap".format(len(documents)))
 
-            num_topics = 2
             dictionary = corpora.Dictionary(documents)
             corpus = [ dictionary.doc2bow(text) for text in documents]
             mod = gensim_model(corpus, id2word=dictionary, num_topics=num_topics)
-            index = similarities.MatrixSimilarity(mod[corpus])
 
-            for i in range(0, len(documents)):
-                
-                urim = processed_urims[i]
-                doc = documents[i]
-                vec_bow = dictionary.doc2bow(doc)
-                vec_lsi = mod[vec_bow]
+            try:
+                index = similarities.MatrixSimilarity(mod[corpus])
 
-                sims = index[vec_lsi]
-                
-                # gensim outputs to float32, which is not serializable with 
-                # the Python json library
-                measuremodel.set_score(urit, urim, "timemap measures", measurename, 
-                    float(sims[0]) )
-                measuremodel.set_tokenized(urit, urim, "timemap measures", measurename, tokenize)
-                measuremodel.set_stemmed(urit, urim, "timemap measures", measurename, stemming)
-                measuremodel.set_removed_boilerplate(
-                    urit, urim, "timemap measures", measurename, remove_boilerplate
-                )                        
+                for i in range(0, len(documents)):
+                    
+                    urim = processed_urims[i]
+                    doc = documents[i]
+                    vec_bow = dictionary.doc2bow(doc)
+                    vec_lsi = mod[vec_bow]
+
+                    sims = index[vec_lsi]
+                    
+                    # gensim outputs to float32, which is not serializable with 
+                    # the Python json library
+                    measuremodel.set_score(urit, urim, "timemap measures", measurename, 
+                        float(sims[0]) )
+                    measuremodel.set_tokenized(urit, urim, "timemap measures", measurename, tokenize)
+                    measuremodel.set_stemmed(urit, urim, "timemap measures", measurename, stemming)
+                    measuremodel.set_removed_boilerplate(
+                        urit, urim, "timemap measures", measurename, remove_boilerplate
+                    )
+
+            except IndexError as e:
+                errormsg = "Gensim Error: {}".format(repr(e))
+                logger.warning(errormsg)
+
+                apply_measurement_error_msg_to_all_mementos(urit, memento_list,
+                    measuremodel, measurename, errormsg)
 
             uritcounter += 1
 
     return measuremodel
 
-def compute_gensim_lsi_across_TimeMap(collectionmodel, measuremodel, tokenize=None, stemming=None):
+def compute_gensim_lsi_across_TimeMap(collectionmodel, measuremodel, tokenize=None, stemming=None,
+    num_topics=2):
 
     measuremodel = compute_gensim_across_TimeMap(collectionmodel, measuremodel,
-        "gensim_lsi", gensim_model=models.LsiModel)
+        "gensim_lsi", gensim_model=models.LsiModel, num_topics=num_topics)
 
     return measuremodel
 
-def compute_gensim_lda_across_TimeMap(collectionmodel, measuremodel, tokenize=None, stemming=None):
+def compute_gensim_lda_across_TimeMap(collectionmodel, measuremodel, tokenize=None, stemming=None,
+    num_topics=2):
 
     measuremodel = compute_gensim_across_TimeMap(collectionmodel, measuremodel,
-        "gensim_lda", gensim_model=models.LdaModel)
+        "gensim_lda", gensim_model=models.LdaModel, num_topics=num_topics)
 
     return measuremodel
 
@@ -907,7 +919,7 @@ supported_timemap_measures = {
         "default threshold": 0.15
     },
     "gensim_lda": {
-        "name": "Latent Dirichlet Allocation with Gensim",
+        "name": "Latent Dirichlet Allocation with Gensim (EXPERIMENTAL)",
         "function": compute_gensim_lda_across_TimeMap,
         "comparison direction": "<",
         "default threshold": 0.15

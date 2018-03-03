@@ -75,6 +75,10 @@ def process_arguments(args):
         action='store_true',
         help="Compute content lengths of all raw memento content")
 
+    parser.add_argument('--number-of-topics', dest="num_topics", type=int,
+        help="The number of topics to use for gensim_lda and gensim_lsi, "
+        "ignored if these measures are not requested.")
+
     return parser.parse_args()
 
 if __name__ == '__main__':
@@ -118,8 +122,15 @@ if __name__ == '__main__':
 
         logger.info("Processing mementos using TimeMap measure {}".format(measure))
 
-        mm = otmt.supported_timemap_measures[measure]["function"](
-            cm, mm)
+        if measure == "gensim_lda" or measure == "gensim_lsi":
+
+            mm = otmt.supported_timemap_measures[measure]["function"](
+                cm, mm, num_topics=args.num_topics)
+
+        else:
+
+            mm = otmt.supported_timemap_measures[measure]["function"](
+                cm, mm)
 
         threshold = args.timemap_measures[measure]
 
