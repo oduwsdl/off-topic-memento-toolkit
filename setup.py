@@ -38,7 +38,8 @@ setup(name='offtopic2',
         'requests',
         'numpy',
         'scipy',
-        'simhash'
+        'simhash',
+        'gensim'
     ],
     setup_requires=['nltk'],
     test_suite="tests",

@@ -848,7 +848,7 @@ def compute_gensim_across_TimeMap(collectionmodel, measuremodel, measurename,
     return measuremodel
 
 def compute_gensim_lsi_across_TimeMap(collectionmodel, measuremodel, tokenize=None, stemming=None,
-    num_topics=2):
+    num_topics=10):
 
     measuremodel = compute_gensim_across_TimeMap(collectionmodel, measuremodel,
         "gensim_lsi", gensim_model=models.LsiModel, num_topics=num_topics)
@@ -924,7 +924,6 @@ supported_timemap_measures = {
         "comparison direction": "<",
         "default threshold": 0.15
     },
-    # Note: these took way too long to execute
     "levenshtein": {
         "name": "Levenshtein Distance",
         "function": compute_levenshtein_across_TimeMap,
