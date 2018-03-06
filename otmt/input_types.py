@@ -1,3 +1,13 @@
+# -*- coding: utf-8 -*-
+
+"""
+otmt.input_types
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+This module exists to permit different ways of inseting data into 
+a MeasureModel, including downloading from TimeMaps and collections.
+"""
+
 import sys
 import logging
 import json
@@ -19,10 +29,6 @@ from .collectionmodel import CollectionModel
 from .archiveit_collection import ArchiveItCollection
 from .archive_information import generate_raw_urim
 
-# from offtopic import CollectionModel
-# from offtopic import ArchiveItCollection
-# from offtopic import generate_raw_urim
-
 logger = logging.getLogger(__name__)
 
 cpu_count = multiprocessing.cpu_count()
@@ -37,6 +43,9 @@ def json_serial(obj):
     raise TypeError ("Type %s not serializable" % type(obj))
 
 def extract_urim_mdt_content_from_record(record):
+    """This function extracts the URI-M, memento-datetime, headers and content
+    from a WARC record object provided by warcio.
+    """
 
     urir = None
     memento_datetime = None
@@ -83,6 +92,9 @@ def extract_urim_mdt_content_from_record(record):
     return urir, memento_datetime, headers, content
 
 def generate_timemap_from_timemap_data(urir, timemap_data):
+    """This function generates a TimeMap for `urir` given `timemap_data`
+    stored in a dictionary.
+    """
 
     timemap_dict = {}
 
@@ -122,6 +134,9 @@ def generate_timemap_from_timemap_data(urir, timemap_data):
     return timemap_dict
 
 def get_collection_model_from_warc(warcfiles, working_directory):
+    """This function takes the files specified in `warcfiles` and 
+    fills a colleciton model with their headers and HTTP entities.
+    """
 
     logger.warning("Only HTML entities are extracted from warcfiles")
 
@@ -167,6 +182,9 @@ def get_collection_model_from_warc(warcfiles, working_directory):
     return cm
 
 def generate_archiveit_urits(cid, seed_uris):
+    """This function generates TimeMap URIs (URI-Ts) for a list of `seed_uris`
+    from an Archive-It colleciton specified by `cid`.
+    """
 
     urit_list = []
 
@@ -180,6 +198,10 @@ def generate_archiveit_urits(cid, seed_uris):
     return urit_list
 
 def get_head_responses(session, uris):
+    """This function creates a futures object for each URI-M in `uris,
+    using an existing `session` object from requests-futures. Only HEAD
+    requests are performed.
+    """
 
     futures = {}
 
@@ -192,6 +214,10 @@ def get_head_responses(session, uris):
     return futures
 
 def get_uri_responses(session, raw_uris):
+    """This function creates a futures object for each URI-M in `raw_uris`,
+    using an existing `session` object from requests-futures. Only GET
+    requests are performed.
+    """
 
     futures = {}
 
@@ -204,6 +230,9 @@ def get_uri_responses(session, raw_uris):
     return futures
 
 def list_generator(input_list):
+    """This function generates the next item in a list. It is useful for lists
+    that have their items deleted while one is iterating through them.
+    """
 
     logger.debug("list generator called")
 
@@ -213,8 +242,10 @@ def list_generator(input_list):
             logger.debug("yielding {}".format(item))
             yield item
 
-# TODO: fix this function to use the new discover_raw_urims, etc. functions
 def get_collection_model_from_archiveit(archiveit_cid, working_directory):
+    """This function takes an Archive-It Collection ID as `archiveit_cid` and
+    fills a collection model with the contents of that collection.
+    """
 
     archiveit_cid = archiveit_cid[0]
 
@@ -311,6 +342,9 @@ def get_collection_model_from_archiveit(archiveit_cid, working_directory):
     return cm
 
 def discover_raw_urims(urimlist, futures=None):
+    """This function checks that the URI-Ms in `urimlist` are valid mementos,
+    following all redirects and checking for a Memento-Datetime header.
+    """
 
     raw_urimdata = {}
     errordata = {}
@@ -375,6 +409,9 @@ def discover_raw_urims(urimlist, futures=None):
     return raw_urimdata, errordata
 
 def fetch_and_save_memento_content(urimlist, collectionmodel):
+    """This function takes a `urimlist` and saves the raw memento content in 
+    `collectionmodel`.
+    """
 
     logger.info("Discovering raw mementos")
     raw_urimdata, errordata = discover_raw_urims(urimlist)
@@ -438,6 +475,9 @@ def fetch_and_save_memento_content(urimlist, collectionmodel):
     return collectionmodel
 
 def get_collection_model_from_timemap(urits, working_directory):
+    """This function fills a collection model using one or more TimeMaps
+    stored in `urits`.
+    """
 
     cm = CollectionModel(working_directory=working_directory)
 
@@ -472,6 +512,9 @@ def get_collection_model_from_timemap(urits, working_directory):
     return cm
 
 def get_collection_model_from_datafile(datafile, working_directory):
+    """This function generates a collection, including TimeMaps from a gold
+    standard testing data file. It is used mainly for testing.
+    """
 
     datafile = datafile[0]
 
@@ -527,6 +570,9 @@ def get_collection_model_from_datafile(datafile, working_directory):
     return cm
 
 def get_collection_model_from_directory(working_directory):
+    """This function just loads a colleciton model from an existing
+    directory. It is used mainly for testing.
+    """
     
     cm = CollectionModel(working_directory)
 
@@ -541,6 +587,11 @@ supported_input_types = {
 }
 
 def get_collection_model(input_type, arguments, working_directory):
+    """This factory method takes `input_type` along with `arguments` and uses
+    `supported_input_types` to run the correct function for producing
+    the collection model filled via the different input methods,
+    such as Archive-It collection ID or TimeMap.
+    """
 
     logger.info("Using input type {}".format(input_type))
     logger.debug("input type arguments: {}".format(arguments))

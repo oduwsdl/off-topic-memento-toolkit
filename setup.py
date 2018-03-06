@@ -18,7 +18,7 @@ class Install(_install):
 
 setup(name='offtopic2',
     cmdclass={'install': Install},
-    version='0.9.0a0',
+    version='1.0.0a0',
     description='Tools for determinine if web archive collecions are Off-Topic',
     url='http://github.com/shawnmjones/offtopic2',
     author='Shawn M. Jones',
