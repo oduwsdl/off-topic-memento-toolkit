@@ -46,6 +46,7 @@ With TimeMap measures, each memento in a TimeMap is compared to the first mement
 * Simhash on the term frequencies of the raw memento content (keyword: `tf_simhash`)
 * Jaccard Distance (keyword: `jaccard`)
 * Sørensen-Dice Distance (keyword: `sorensen`)
+* Latent Semantic Indexing with Gensim (keyword: `gensim_lsi`)
 
 TimeMap measures are specified by the `-tm` argument followed by the keyword of the desired measure. Optionally, one can specify a threshold value followed by a =, like so:
 
