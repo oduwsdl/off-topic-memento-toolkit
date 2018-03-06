@@ -1,5 +1,6 @@
 from setuptools import setup
 from setuptools.command.install import install as _install
+from os import path
 
 # Python packaging info: http://python-packaging.readthedocs.io/en/latest/index.html
 # More Python packaging info: http://python-packaging-user-guide.readthedocs.io/tutorials/distributing-packages/
@@ -16,11 +17,18 @@ class Install(_install):
         nltk.download("stopwords")
         nltk.download("punkt")
 
-setup(name='offtopic2',
+here = path.abspath(path.dirname(__file__))
+
+with open(path.join(here, 'README.md'), encoding='utf-8') as f:
+    long_description = f.read()
+
+setup(
+    name='offtopic2',
     cmdclass={'install': Install},
     version='1.0.0a0',
-    description='Tools for determinine if web archive collecions are Off-Topic',
-    url='http://github.com/shawnmjones/offtopic2',
+    description='Tools for determining if web archive collecions are Off-Topic',
+    long_description=long_description,
+    url='https://github.com/oduwsdl/off-topic-memento-toolkit',
     author='Shawn M. Jones',
     author_email='jones.shawn.m@gmail.com',
     license='MIT',
@@ -43,5 +51,16 @@ setup(name='offtopic2',
     ],
     setup_requires=['nltk'],
     test_suite="tests",
-    zip_safe=True
+    zip_safe=True,
+    classifiers=[
+        'Development Status :: 3 - Alpha',
+        'Intended Audience :: Developers',
+        'Intended Audience :: Information Technology',
+        'Intended Audience :: Science/Research',
+        'Topic :: Internet :: WWW/HTTP',
+        'Topic :: Text Processing',
+        'License :: OSI Approved :: MIT License',
+        'Programming Language :: Python :: 3.6',
+    ],
+    keywords='webarchives memento similarity offtopic'
     )
