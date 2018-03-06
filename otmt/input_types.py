@@ -395,7 +395,7 @@ def fetch_and_save_memento_content(urimlist, collectionmodel):
         raw_urims.append(raw_urim)
 
     logger.info("Issuing requests for {} raw mementos".format(len(raw_urims)))
-    logger.info("Really issuing requests for {} raw mementos".format(len(set(raw_urims))))
+    
     with FuturesSession(max_workers=cpu_count) as session:
         futures = get_uri_responses(session, raw_urims)
 

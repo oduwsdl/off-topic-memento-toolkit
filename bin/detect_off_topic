@@ -60,16 +60,16 @@ def process_arguments(args):
             measure, otmt.supported_collection_measures[measure]['name'],
             otmt.supported_collection_measures[measure]['default threshold'])
 
-    parser.add_argument('-cm', '--collection-measures', dest='collection_measures',
-        type=otmt.process_collection_similarity_measure_inputs,
-        help="The Collection-based similarity measures specified will be used. \n"
-        "For each of these measures, all content in the collection is taken into\n"
-        "account when determining if a given memento is off topic.\n"
-        "Specify measure with optional threshold separated by equals.\n"
-        "Multiple measures can be specified.\n"
-        "Leave thresholds off to use default thresholds.\n"
-        "Accepted values:\n{}".format(cmmeasurehelp)        
-        )
+    # parser.add_argument('-cm', '--collection-measures', dest='collection_measures',
+    #     type=otmt.process_collection_similarity_measure_inputs,
+    #     help="The Collection-based similarity measures specified will be used. \n"
+    #     "For each of these measures, all content in the collection is taken into\n"
+    #     "account when determining if a given memento is off topic.\n"
+    #     "Specify measure with optional threshold separated by equals.\n"
+    #     "Multiple measures can be specified.\n"
+    #     "Leave thresholds off to use default thresholds.\n"
+    #     "Accepted values:\n{}".format(cmmeasurehelp)        
+    #     )
 
     parser.add_argument('-l', '--logfile', dest='logfile',
         default=sys.stdout,
@@ -99,11 +99,11 @@ def process_arguments(args):
 
     if args.compute_simhashes == False and \
         args.compute_content_length == False and \
-        args.collection_measures == None and \
         args.timemap_measures == None:
+        # args.collection_measures == None and \
 
         parser.error("must supply one of these options: \n"
-            " -tm, -cm, --compute-lengths, or --compute-simashes")
+            " -tm, --compute-lengths, or --compute-simashes")
 
     return args
 
@@ -133,7 +133,7 @@ if __name__ == '__main__':
     logger.info("Acquiring memento colleciton using input type {}".format(input_type))
 
     logger.info("TimeMap measures chosen: {}".format(args.timemap_measures))
-    logger.info("Collection measures chosen: {}".format(args.collection_measures))
+    # logger.info("Collection measures chosen: {}".format(args.collection_measures))
 
     # 1. Acquire content using the input types specified
     # the content is stored in a CollectionModel object
@@ -168,21 +168,21 @@ if __name__ == '__main__':
                 otmt.supported_timemap_measures[measure]["comparison direction"]
                 )
 
-    if args.collection_measures:
+    # if args.collection_measures:
 
-        for measure in args.collection_measures:
+    #     for measure in args.collection_measures:
 
-            logger.info("Processing mementos using Collection measure {}".format(measure))
+    #         logger.info("Processing mementos using Collection measure {}".format(measure))
 
-            mm = otmt.supported_collection_measures[measure]["function"](
-                cm, mm)
+    #         mm = otmt.supported_collection_measures[measure]["function"](
+    #             cm, mm)
 
-            threshold = args.collection_measures[measure]
+    #         threshold = args.collection_measures[measure]
 
-            mm.calculate_offtopic_by_measure(
-                "collection measures", measure, threshold,
-                otmt.supported_collection_measures[measure]["comparison direction"]
-            )
+    #         mm.calculate_offtopic_by_measure(
+    #             "collection measures", measure, threshold,
+    #             otmt.supported_collection_measures[measure]["comparison direction"]
+    #         )
 
     mm.calculate_overall_offtopic_status()
 
