@@ -885,7 +885,7 @@ supported_timemap_measures = {
     "tfintersection": {
         "name": "TF-Intersection",
         "function": compute_tfintersection_across_TimeMap,
-        "comparison direction": "==",
+        "comparison direction": ">",
         "default threshold": 0.0
     },
     "jaccard": {
@@ -916,7 +916,7 @@ supported_timemap_measures = {
         "name": "Latent Semantic Indexing with Gensim",
         "function": compute_gensim_lsi_across_TimeMap,
         "comparison direction": "<",
-        "default threshold": 0.08,
+        "default threshold": 0.07,
         "default number of topics": 10
     },
     "gensim_lda": {
