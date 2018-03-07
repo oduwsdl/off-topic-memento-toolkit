@@ -916,13 +916,15 @@ supported_timemap_measures = {
         "name": "Latent Semantic Indexing with Gensim",
         "function": compute_gensim_lsi_across_TimeMap,
         "comparison direction": "<",
-        "default threshold": 0.08
+        "default threshold": 0.08,
+        "default number of topics": 10
     },
     "gensim_lda": {
         "name": "Latent Dirichlet Allocation with Gensim (EXPERIMENTAL)",
         "function": compute_gensim_lda_across_TimeMap,
         "comparison direction": "<",
-        "default threshold": 0.15
+        "default threshold": 0.15,
+        "default number of topics": 2
     },
     "levenshtein": {
         "name": "Levenshtein Distance",

@@ -153,8 +153,13 @@ if __name__ == '__main__':
 
             if measure == "gensim_lda" or measure == "gensim_lsi":
 
+                if args.num_topics:
+                    num_topics = int(args.num_topics)
+                else:
+                    num_topics = otmt.supported_timemap_measures[measure]["default number of topics"]
+
                 mm = otmt.supported_timemap_measures[measure]["function"](
-                    cm, mm, num_topics=args.num_topics)
+                    cm, mm, num_topics=num_topics)
 
             else:
 
