@@ -23,7 +23,7 @@ with open(path.join(here, 'README.md'), encoding='utf-8') as f:
     long_description = f.read()
 
 setup(
-    name='offtopic2',
+    name='otmt',
     cmdclass={'install': Install},
     version='1.0.0a0',
     description='Tools for determining if web archive collecions are Off-Topic',
@@ -33,7 +33,7 @@ setup(
     author_email='jones.shawn.m@gmail.com',
     license='MIT',
     packages=['otmt'],
-    scripts=['bin/detect_off_topic', 'bin/download_collection'],
+    scripts=['bin/detect_off_topic'],
     install_requires=[
         'requests_futures',
         'bs4',
@@ -47,7 +47,8 @@ setup(
         'numpy',
         'scipy',
         'simhash',
-        'gensim'
+        'gensim',
+        'lxml'
     ],
     setup_requires=['nltk'],
     test_suite="tests",
