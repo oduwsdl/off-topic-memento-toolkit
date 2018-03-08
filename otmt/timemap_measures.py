@@ -520,11 +520,11 @@ def tfintersection_scoredistance(first_data, memento_data):
         if token in top_20ish_memento_tokens:
             number_of_intersecting_terms += 1
 
-    logger.debug("number of intersecting terms: {}".format(number_of_intersecting_terms))
+    # logger.debug("number of intersecting terms: {}".format(number_of_intersecting_terms))
 
-    score = len(top_20ish_first_tokens) - number_of_intersecting_terms
+    # score = len(top_20ish_first_tokens) - number_of_intersecting_terms
 
-    return score
+    return number_of_intersecting_terms
 
 def compute_tfintersection_across_TimeMap(collectionmodel, measuremodel, tokenize=None, stemming=True):
     """Contains the appropriate arguments to run the TF-Intersection 

@@ -23,7 +23,7 @@ same_scores = {
     "cosine": 1.0,
     "bytecount": 0,
     "wordcount": 0,
-    "tfintersection": 0,
+    "tfintersection": 2, # in these toy cases the answer is 2
     "jaccard": 0.0,
     "sorensen": 0,
     "levenshtein": 0,
@@ -538,8 +538,8 @@ class TestingTimeMapMeasures(unittest.TestCase):
             'Pack', 'my', 'box', 'with', 'five', 'dozen', 'liquor', 'jugs'
             ]
 
-        memcontent1 = bytes("<html><body>{}</body></html>".format(" ".join(full_sentence[0:20])), "utf8")
-        memcontent2 = bytes("<html><body>{}</body></html>".format(" ".join(full_sentence[20:-1])), "utf8")
+        memcontent1 = bytes("<html><body>{}</body></html>".format(" ".join(full_sentence[0:30])), "utf8")
+        memcontent2 = bytes("<html><body>{}</body></html>".format(" ".join(full_sentence[10:40])), "utf8")
 
         timemap_content ="""<original1>; rel="original",
 <timemap1>; rel="self"; type="application/link-format"; from="Tue, 21 Mar 2016 15:45:06 GMT"; until="Tue, 21 Mar 2018 15:45:12 GMT",
@@ -566,7 +566,7 @@ class TestingTimeMapMeasures(unittest.TestCase):
         # the terms 'quick' and 'jump' overlap, giving 2 overlapping terms
         # 11 - 2 = 9, hence the comparison score of 9
         expected_scores = {   'timemaps': {   'timemap1': {   'memento11': {   'timemap measures': {   'tfintersection': {   'comparison score': 0}}},
-                                    'memento12': {   'timemap measures': {   'tfintersection': {   'comparison score': 9}}}}}}
+                                    'memento12': {   'timemap measures': {   'tfintersection': {   'comparison score': 11}}}}}}
 
         # for regression
         self.assertAlmostEqual(
