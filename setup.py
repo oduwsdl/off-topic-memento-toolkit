@@ -27,6 +27,7 @@ setup(
     cmdclass={'install': Install},
     version='1.0.0a0',
     description='Tools for determining if web archive collecions are Off-Topic',
+    long_description_content_type="text/markdown",
     long_description=long_description,
     url='https://github.com/oduwsdl/off-topic-memento-toolkit',
     author='Shawn M. Jones',
