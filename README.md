@@ -8,9 +8,9 @@ AlNoamany, Y., Weigle, M.C. & Nelson, M.L. Detecting off-topic pages within Time
 
 # Quick start
 
-After cloning this repository, change into the resulting directory and type the following command to install the software:
+The software is now available on PyPI:
 
-`python ./setup.py install`
+`pip install otmt`
 
 This installs the `detect_off_topic` command on your system, along with the `offtopic` Python library. To determine if the content in Archive-It collection is off-topic:
 
