@@ -44,6 +44,7 @@ def process_arguments(args):
 
     parser.add_argument('-tm', '--timemap-measures', dest='timemap_measures',
         type=otmt.process_timemap_similarity_measure_inputs,
+        default='cosine',
         help="The TimeMap-based similarity measures specified will be used. \n"
         "For each of these measures, the first memento in a TimeMap\n"
         "is compared with each subsequent memento to measure topic drift.\n"

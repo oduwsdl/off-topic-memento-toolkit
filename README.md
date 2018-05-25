@@ -78,3 +78,11 @@ The output JSON file has the following format:
 
 CSV output is also supported via the `-ot` option:
 `detect_off_topic -i archiveit=7877 -o outputfile.csv -ot csv`
+
+## Installing for development
+
+To run the tests associated with the OTMT, execute:
+`python ./setup.py test`
+
+To install to run locally, run (within the base of the source directory):
+`pip install .`
