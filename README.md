@@ -6,6 +6,10 @@ This code is based on work by:
 
 AlNoamany, Y., Weigle, M.C. & Nelson, M.L. Detecting off-topic pages within TimeMaps in Web archives. *International Journal on Digital Libraries* (2016) 17: 203. https://doi.org/10.1007/s00799-016-0183-5
 
+and an early version of it was evaluated in:
+
+Jones, S.M., Weigle, M.C & Nelson, M.L. The Off-Topic Memento Toolkit. *Proceedings of the 15th International Conference on Digital Preservation* (2018) https://arxiv.org/abs/1806.06870
+
 # Quick start
 
 The software is now available on PyPI:
@@ -21,7 +25,8 @@ This stores the information about each memento and TimeMap of Archive-It collect
 # More details
 
 ## Input types
-To accomplish this, the OTMT accepts the following inputs:
+
+To accomplish this, OTMT accepts the following inputs:
 * an Archive-It collection ID
 * URIs for one or more Memento TimeMaps (see RFC 7089)
 * one or more files in Web ARChive (WARC) format (see ISO 28500)
@@ -36,6 +41,21 @@ For one or more TimeMaps, specify them with the `timemap` keyword followed by an
 
 Likewise, for one or more WARC files:
 `detect_off_topic -i warc=example1.warc.gz,example2.warc.gz -o outputfile.json`
+
+### Notes For WARCs:
+When analyzing WARCs, OTMT:
+1. generates a TimeMap for each seed it encounters
+2. generates an entry in this TimeMap for the seed with an internal URI-M and a memento-datetime derived from record's WARC-Date header
+3. once done with all WARCs, presents the TimeMaps as if they had been downloaded to the measure part of the architecture
+4. The measure part of the architecture (currently) takes the first memento and compares it to each other memento in the TimeMap
+
+In summary, OTMT pulls in all of the data from all WARCs and analyzes it together. For TimeMap Measures, it uses the first memento in the TimeMap as the basis for comparison with other mementos in the TimeMap.
+
+There is no URI canonicalization like the Internet Archive does with URIs like edition.cnn.com and www.cnn.com. OTMT does not compare example.org and example2.org because they would have separate URI-Rs and hence separate TimeMaps.
+
+### Notes For TimeMaps:
+
+In this case, OTMT does not aggregate data from all TimeMaps, instead treating them separately. If two TimeMaps serve the same URI-R, then OTMT does not reconcile them into one. Such functionality would indeed be useful. If added, one could compare TimeMaps for the same URI-R across multiple collections or even multiple archives. If this functionality is desired, [please request it as a feature](https://github.com/oduwsdl/off-topic-memento-toolkit/issues).
 
 ## TimeMap Measures
 With TimeMap measures, each memento in a TimeMap is compared to the first memento of that TimeMap. The comparison is performed using one or more of the following measures:
