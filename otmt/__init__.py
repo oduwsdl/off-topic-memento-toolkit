@@ -1,7 +1,6 @@
 from .collectionmodel import CollectionModel, CollectionModelException, \
     CollectionModelMementoErrorException, CollectionModelTimeMapErrorException, \
     CollectionModelNoSuchMementoException, CollectionModelNoSuchTimeMapException
-from .archiveit_collection import ArchiveItCollection, ArchiveItCollectionException
 from .input_types import get_collection_model, supported_input_types, \
     discover_raw_urims, working_directory_default
 from .argument_processing import process_collection_similarity_measure_inputs, \
@@ -29,7 +28,6 @@ __all__ = ["CollectionModel", "CollectionModelException",
     "CollectionModelMementoErrorException", 
     "CollectionModelTimeMapErrorException", 
     "CollectionModelNoSuchMementoException",
-    "ArchiveItCollection", "ArchiveItCollectionException",
     "get_collection_model", "process_collection_similarity_measure_inputs",
     "process_timemap_similarity_measure_inputs",
     "process_input_types", "get_logger", "calculate_loglevel", 
