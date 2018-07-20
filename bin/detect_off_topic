@@ -4,6 +4,9 @@ import sys
 import logging
 import argparse
 
+import requests
+import requests_cache
+
 import otmt
 
 def process_arguments(args):
@@ -84,6 +87,10 @@ def process_arguments(args):
         action='store_true',
         help="This will lower the logging level to only show warnings or errors")
 
+    parser.add_argument('-cf', '--cachefile', dest='cachefile',
+        default='/tmp/otmt',
+        help="The path to the SQLite cache file used to cache HTTP requests")
+
     parser.add_argument('--compute-simhashes', dest='compute_simhashes',
         action='store_true',
         help="Compute Simhashes of all raw memento content")
@@ -127,6 +134,8 @@ if __name__ == '__main__':
 
     logger.info('Starting topic analysis run.')
     logger.debug('command-line arguments: {}'.format(args))
+
+    requests_cache.install_cache(args.cachefile, backend='sqlite')
 
     input_type = args.input_type[0]
     input_type_arguments = args.input_type[1]

@@ -24,9 +24,10 @@ from datetime import date
 from requests_futures.sessions import FuturesSession
 from requests.exceptions import ConnectionError, TooManyRedirects
 from warcio.archiveiterator import ArchiveIterator
+from aiu import ArchiveItCollection
 
 from .collectionmodel import CollectionModel
-from .archiveit_collection import ArchiveItCollection
+# from .archiveit_collection import ArchiveItCollection
 from .archive_information import generate_raw_urim
 
 logger = logging.getLogger(__name__)
@@ -253,8 +254,7 @@ def get_collection_model_from_archiveit(archiveit_cid, working_directory):
         archiveit_cid
     ))
 
-    aic = ArchiveItCollection(archiveit_cid, working_directory=working_directory,
-        logger=logger)
+    aic = ArchiveItCollection(archiveit_cid, logger=logger)
 
     logger.debug("creating collection model")
 
