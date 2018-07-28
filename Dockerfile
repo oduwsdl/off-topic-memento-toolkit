@@ -2,6 +2,8 @@ FROM python:3.6.4-stretch
 
 WORKDIR /app
 
-ADD . /app
+COPY . /app
 
-RUN python ./setup.py install
+RUN pip install -r requirements.txt
+
+RUN pip install .

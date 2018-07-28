@@ -451,7 +451,7 @@ class CollectionModel:
                         for paragraph in paragraphs:
                             bpfile.write(bytes("{}\n".format(paragraph.text), "utf8"))
 
-                except lxml.etree.ParserError as e:
+                except (lxml.etree.ParserError, lxml.etree.XMLSyntaxError) as e:
                     raise CollectionModelBoilerPlateRemovalFailureException(repr(e))
 
             with open(boilerplate_filename, 'rb') as bpfile:

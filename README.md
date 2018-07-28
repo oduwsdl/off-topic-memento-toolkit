@@ -12,7 +12,7 @@ Jones, S.M., Weigle, M.C & Nelson, M.L. The Off-Topic Memento Toolkit. *Proceedi
 
 # Quick start
 
-The software is now available on PyPI:
+The software is now available on PyPI **and requires a minimum of Python 3.6**:
 
 `pip install otmt`
 
