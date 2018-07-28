@@ -444,11 +444,6 @@ def fetch_and_save_memento_content(urimlist, collectionmodel):
     raw_urimdata, errordata = discover_raw_urims(urimlist)
 
     logger.debug("Storing error data in collection model")
-    for urim in errordata:
-        errormsg = errordata[urim]
-        collectionmodel.addMementoError(
-            urim, b"", {}, bytes(errormsg, "utf8")
-        )
 
     invert_raw_urimdata_mapping = {}
     raw_urims = []
@@ -490,26 +485,48 @@ def fetch_and_save_memento_content(urimlist, collectionmodel):
 
             logger.debug("Raw URI-M {} is done".format(raw_urim))
 
-            response = futures[raw_urim].result()
+            try:
 
-            http_status = response.status_code
-            memento_content = bytes(response.text, 'utf8')
-            memento_headers = dict(response.headers)    
-            memento_headers["http-status"] = http_status
+                response = futures[raw_urim].result()
 
-            # sometimes, via redirects, the different URI-Ms end up at the 
-            # same raw URI-M
-            logger.debug("There are {} URI-Ms leading to raw URI-M {}".format(
-                len(invert_raw_urimdata_mapping[raw_urim]), raw_urim
-            ))
-            for urim in invert_raw_urimdata_mapping[raw_urim]:
-                collectionmodel.addMemento(urim, memento_content, memento_headers)
+                http_status = response.status_code
+                memento_content = bytes(response.text, 'utf8')
+                memento_headers = dict(response.headers)    
+                memento_headers["http-status"] = http_status
 
-            logger.debug("Removing raw URI-M {} from processing list".format(raw_urim))
+                # sometimes, via redirects, the different URI-Ms end up at the 
+                # same raw URI-M
+                logger.debug("There are {} URI-Ms leading to raw URI-M {}".format(
+                    len(invert_raw_urimdata_mapping[raw_urim]), raw_urim
+                ))
+                for urim in invert_raw_urimdata_mapping[raw_urim]:
+                    collectionmodel.addMemento(urim, memento_content, memento_headers)
 
-            completed_raw_urims.append(raw_urim)
+                logger.debug("Removing raw URI-M {} from processing list".format(raw_urim))
+
+            except ConnectionError as e:
+                urim = invert_raw_urimdata_mapping[raw_urim]
+                logger.warning("While acquiring memento at {} there was an error of {}, "
+                    "this event is being recorded".format(urim, repr(e)))
+                errordata[urim] = repr(e)
+
+            except TooManyRedirects as e:
+                urim = invert_raw_urimdata_mapping[raw_urim]
+                logger.warning("While acquiring memento at {} there was an error of {},"
+                    "this event is being recorded".format(urim, repr(e)))
+                errordata[urim] = repr(e)
+
+            finally:
+                logger.debug("Removing URI-M {} from the processing list".format(urim))
+                completed_raw_urims.append(raw_urim)
 
         leftovers = list(set(raw_urims) - set(completed_raw_urims))
+
+    for urim in errordata:
+        errormsg = errordata[urim]
+        collectionmodel.addMementoError(
+            urim, b"", {}, bytes(errormsg, "utf8")
+        )
 
     return collectionmodel
 
