@@ -22,6 +22,8 @@ from datetime import datetime
 from datetime import date
 
 from requests_futures.sessions import FuturesSession
+from requests.adapters import HTTPAdapter
+from urllib3.util.retry import Retry
 from requests.exceptions import ConnectionError, TooManyRedirects
 from warcio.archiveiterator import ArchiveIterator
 from aiu import ArchiveItCollection
@@ -270,7 +272,19 @@ def get_collection_model_from_archiveit(archiveit_cid, working_directory):
 
     urits = generate_archiveit_urits(archiveit_cid, seed_uris)
 
-    with FuturesSession(max_workers=cpu_count) as session:
+    retry_session = requests.Session()
+    retry = Retry(
+        total=10,
+        read=10,
+        connect=10,
+        backoff_factor=0.3,
+        status_forcelist=(500, 502, 504)
+    )
+    adapter = HTTPAdapter(max_retries=retry)
+    retry_session.mount('http://', adapter)
+    retry_session.mount('https://', adapter)  
+
+    with FuturesSession(max_workers=cpu_count, session=retry_session) as session:
         futures = get_uri_responses(session, urits)
 
     working_uri_list = list(futures.keys())
@@ -350,6 +364,19 @@ def discover_raw_urims(urimlist, futures=None):
     errordata = {}
 
     if futures == None:
+
+        retry_session = requests.Session()
+        retry = Retry(
+            total=10,
+            read=10,
+            connect=10,
+            backoff_factor=0.3,
+            status_forcelist=(500, 502, 504)
+        )
+        adapter = HTTPAdapter(max_retries=retry)
+        retry_session.mount('http://', adapter)
+        retry_session.mount('https://', adapter)  
+
         with FuturesSession(max_workers=cpu_count) as session:
             futures = get_head_responses(session, urimlist)
 
@@ -432,7 +459,19 @@ def fetch_and_save_memento_content(urimlist, collectionmodel):
         raw_urims.append(raw_urim)
 
     logger.info("Issuing requests for {} raw mementos".format(len(raw_urims)))
-    
+
+    retry_session = requests.Session()
+    retry = Retry(
+        total=10,
+        read=10,
+        connect=10,
+        backoff_factor=0.3,
+        status_forcelist=(500, 502, 504)
+    )
+    adapter = HTTPAdapter(max_retries=retry)
+    retry_session.mount('http://', adapter)
+    retry_session.mount('https://', adapter)  
+
     with FuturesSession(max_workers=cpu_count) as session:
         futures = get_uri_responses(session, raw_urims)
 
