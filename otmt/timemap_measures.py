@@ -149,7 +149,7 @@ def compute_score_across_TimeMap(collectionmodel, measuremodel,
                     first_urim, collectionmodel, tokenize=tokenize, stemming=stemming, 
                     remove_boilerplate=remove_boilerplate)
 
-            except CollectionModelBoilerPlateRemovalFailureException as e:
+            except (CollectionModelBoilerPlateRemovalFailureException, CollectionModelMementoErrorException) as e:
                 errormsg = "Boilerplate removal error with first memento in TimeMap, " \
                     "cannot effectively compare memento content"
 
@@ -199,7 +199,7 @@ def compute_score_across_TimeMap(collectionmodel, measuremodel,
                             urit, urim, "timemap measures", measurename, remove_boilerplate
                         )
 
-                    except CollectionModelBoilerPlateRemovalFailureException as e:
+                    except (CollectionModelBoilerPlateRemovalFailureException, CollectionModelMementoErrorException) as e:
                         errormsg = "Boilerplate could not be removed from " \
                             "memento at URI-M {}; details: {}".format(urim, repr(e))
                         logger.warning(errormsg)
@@ -584,7 +584,7 @@ def compute_cosine_across_TimeMap(collectionmodel, measuremodel, tokenize=None, 
             try:
                 first_data = collectionmodel.getMementoContentWithoutBoilerplate(first_urim)
 
-            except CollectionModelBoilerPlateRemovalFailureException as e:
+            except (CollectionModelBoilerPlateRemovalFailureException, CollectionModelMementoErrorException) as e:
                 errormsg = "Boilerplate removal error with first memento in TimeMap, " \
                     "cannot effectively compare memento content"
 
@@ -637,7 +637,8 @@ def compute_cosine_across_TimeMap(collectionmodel, measuremodel, tokenize=None, 
                             processed_urims.append(urim)
                             documents.append(memento_data)
 
-                        except CollectionModelBoilerPlateRemovalFailureException as e:
+                        except (CollectionModelBoilerPlateRemovalFailureException, 
+                            CollectionModelMementoErrorException, UnicodeDecodeError) as e:
                             errormsg = "Boilerplate could not be removed from " \
                                 "memento at URI-M {}; details: {}".format(urim, repr(e))
                             logger.warning(errormsg)

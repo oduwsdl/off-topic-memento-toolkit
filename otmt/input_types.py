@@ -508,7 +508,15 @@ def fetch_and_save_memento_content(urimlist, collectionmodel):
                 urim = invert_raw_urimdata_mapping[raw_urim]
                 logger.warning("While acquiring memento at {} there was an error of {}, "
                     "this event is being recorded".format(urim, repr(e)))
-                errordata[urim] = repr(e)
+                
+
+                try:
+                    errordata[urim] = repr(e)
+                except TypeError as e:
+                    logger.debug("errordata type: {}".format(type(errordata)))
+                    logger.debug("e type: {}".format(type(e)))
+                    logger.debug("repr(e): {}".format(repr(e)))
+                    logger.warning("failed to record error for URI-M {}".format(urim))
 
             except TooManyRedirects as e:
                 urim = invert_raw_urimdata_mapping[raw_urim]
