@@ -25,7 +25,7 @@ with open(path.join(here, 'README.md'), encoding='utf-8') as f:
 setup(
     name='otmt',
     cmdclass={'install': Install},
-    version='1.0.0a1',
+    version='1.0.0a2',
     description='Tools for determining if web archive collecions are Off-Topic',
     long_description_content_type="text/markdown",
     long_description=long_description,

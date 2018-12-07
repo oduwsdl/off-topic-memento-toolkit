@@ -346,6 +346,8 @@ def get_collection_model_from_archiveit(archiveit_cid, working_directory):
                 # raw_urim = generate_raw_urim(memento["uri"])
                 # urims.append(raw_urim)
                 urims.append(memento["uri"])
+        except KeyError as e:
+            logger.exception("Skipping TimeMap at {} due to errors\nTimeMap Object: {}".format(urit, timemap))
         except Exception as e:
             logger.error("Error encountered processing TimeMap at {}".format(urit))
             logger.error("TimeMap Object: {}".format(timemap))

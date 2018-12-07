@@ -179,7 +179,11 @@ class CollectionModel:
 
                 tmdata = json.load(jsonin)
 
-                mdt = tmdata['mementos']['first']['datetime']
+                try:
+                    mdt = tmdata['mementos']['first']['datetime']
+                except KeyError:
+                    logger.exception("failed to read TimeMap for URI-T {}, skipping...".format(urit))
+                    continue
                 
                 tmdata['mementos']['first']['datetime'] = datetime.strptime(
                     mdt, "%Y-%m-%dT%H:%M:%S"

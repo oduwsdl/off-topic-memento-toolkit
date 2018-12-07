@@ -32,7 +32,11 @@ def save_Simhashes(collectionmodel, measuremodel):
 
         timemap = collectionmodel.getTimeMap(urit)
 
-        memento_list = timemap["mementos"]["list"]
+        try:
+            memento_list = timemap["mementos"]["list"]
+        except KeyError:
+            logger.exception("Failed to detect mementos in TimeMap {} - skipping...")
+            continue
 
         if len(memento_list) > 0:
 
@@ -73,7 +77,11 @@ def save_raw_content_lengths(collectionmodel, measuremodel):
 
         timemap = collectionmodel.getTimeMap(urit)
 
-        memento_list = timemap["mementos"]["list"]
+        try:
+            memento_list = timemap["mementos"]["list"]
+        except KeyError:
+            logger.exception("Failed to detect mementos in TimeMap {} - skipping...")
+            continue
 
         if len(memento_list) > 0:
 

@@ -23,7 +23,8 @@ from simhash import Simhash
 from gensim import corpora, models, similarities
 
 from .collectionmodel import CollectionModelMementoErrorException, \
-    CollectionModelBoilerPlateRemovalFailureException
+    CollectionModelBoilerPlateRemovalFailureException, \
+    CollectionModelNoSuchMementoException
 
 logger = logging.getLogger(__name__)
 
@@ -571,7 +572,11 @@ def compute_cosine_across_TimeMap(collectionmodel, measuremodel, tokenize=None, 
 
         timemap = collectionmodel.getTimeMap(urit)
 
-        memento_list = timemap["mementos"]["list"]
+        try:
+            memento_list = timemap["mementos"]["list"]
+        except KeyError as e:
+            logger.exception("Failed to process TimeMap at {}".format(urit))
+            continue
 
         # some TimeMaps have no mementos
         # e.g., http://wayback.archive-it.org/3936/timemap/link/http://www.peacecorps.gov/shutdown/?from=hpb
@@ -584,7 +589,7 @@ def compute_cosine_across_TimeMap(collectionmodel, measuremodel, tokenize=None, 
             try:
                 first_data = collectionmodel.getMementoContentWithoutBoilerplate(first_urim)
 
-            except (CollectionModelBoilerPlateRemovalFailureException, CollectionModelMementoErrorException) as e:
+            except (CollectionModelBoilerPlateRemovalFailureException, CollectionModelMementoErrorException, CollectionModelNoSuchMementoException) as e:
                 errormsg = "Boilerplate removal error with first memento in TimeMap, " \
                     "cannot effectively compare memento content"
 
@@ -647,13 +652,17 @@ def compute_cosine_across_TimeMap(collectionmodel, measuremodel, tokenize=None, 
                                 urit, urim, "timemap measures", measurename, repr(e)
                             )
 
-                except CollectionModelMementoErrorException:
+                except (CollectionModelMementoErrorException,  CollectionModelNoSuchMementoException):
                     errormsg = "Errors were recorded while attempting to " \
                         "access URI-M {}, skipping {} calcualtions for this " \
                         "URI-M".format(urim, measurename)
                     logger.warning(errormsg)
 
-                    errorinfo = collectionmodel.getMementoErrorInformation(urim)
+                    try:
+                        errorinfo = collectionmodel.getMementoErrorInformation(urim)
+
+                    except CollectionModelNoSuchMementoException as e:
+                        errorinfo = str(e)
 
                     measuremodel.set_Memento_access_error(
                         urit, urim, errorinfo
@@ -662,23 +671,38 @@ def compute_cosine_across_TimeMap(collectionmodel, measuremodel, tokenize=None, 
                 
                 mementocounter += 1
 
-            # our full_tokenize function handles stop words
-            tfidf_vectorizer = TfidfVectorizer(tokenizer=full_tokenize, stop_words=None)
-            tfidf_matrix = tfidf_vectorizer.fit_transform(documents)
-            cscores = cosine_similarity(tfidf_matrix[0:1], tfidf_matrix)
+            try:
+                # our full_tokenize function handles stop words
+                tfidf_vectorizer = TfidfVectorizer(tokenizer=full_tokenize, stop_words=None)
+                tfidf_matrix = tfidf_vectorizer.fit_transform(documents)
+            except ValueError as e:
+                errormsg = "Errors were recorded while attempting to generate " \
+                    "TF-IDF information for the TimeMap {}".format(urit)
+                logger.exception(errormsg)
 
-            for i in range(0, len(cscores[0])):
-                urim = processed_urims[i]
-                logger.debug("saving cosine scores for URI-M {}".format(urim))
+                for memento in memento_list:
+                    urim = memento["uri"]
 
-                measuremodel.set_score(urit, urim, "timemap measures", measurename, cscores[0][i])
-                measuremodel.set_tokenized(urit, urim, "timemap measures", measurename, tokenize)
-                measuremodel.set_stemmed(urit, urim, "timemap measures", measurename, stemming)
-                measuremodel.set_removed_boilerplate(
-                    urit, urim, "timemap measures", measurename, remove_boilerplate
-                )                        
+                    measuremodel.set_Memento_measurement_error(
+                        urit, urim, "timemap measures", measurename, repr(e)
+                    )
 
-            uritcounter += 1
+            else:
+
+                cscores = cosine_similarity(tfidf_matrix[0:1], tfidf_matrix)
+
+                for i in range(0, len(cscores[0])):
+                    urim = processed_urims[i]
+                    logger.debug("saving cosine scores for URI-M {}".format(urim))
+
+                    measuremodel.set_score(urit, urim, "timemap measures", measurename, cscores[0][i])
+                    measuremodel.set_tokenized(urit, urim, "timemap measures", measurename, tokenize)
+                    measuremodel.set_stemmed(urit, urim, "timemap measures", measurename, stemming)
+                    measuremodel.set_removed_boilerplate(
+                        urit, urim, "timemap measures", measurename, remove_boilerplate
+                    )
+            finally:                        
+                uritcounter += 1
 
     return measuremodel
 
