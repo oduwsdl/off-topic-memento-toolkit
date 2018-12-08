@@ -12,6 +12,8 @@ import logging
 
 from simhash import Simhash
 
+from . import CollectionModelNoSuchMementoException
+
 logger = logging.getLogger(__name__)
 
 def save_Simhashes(collectionmodel, measuremodel):
@@ -44,13 +46,18 @@ def save_Simhashes(collectionmodel, measuremodel):
 
                 urim = memento["uri"]
 
-                if collectionmodel.getMementoErrorInformation(urim):
-                    shash = "No Simhash due to error"
+                try:
 
-                else:
-                    shash = Simhash( 
-                        str(collectionmodel.getMementoContent(urim))
-                        ).value
+                    if collectionmodel.getMementoErrorInformation(urim):
+                        shash = "No Simhash due to error"
+
+                    else:
+                        shash = Simhash( 
+                            str(collectionmodel.getMementoContent(urim))
+                            ).value
+
+                except CollectionModelNoSuchMementoException:
+                    shash = "No Simhash due to access error"
 
                 measuremodel.set_simhash(urit, urim, shash)
 
@@ -89,11 +96,16 @@ def save_raw_content_lengths(collectionmodel, measuremodel):
 
                 urim = memento["uri"]
 
-                if collectionmodel.getMementoErrorInformation(urim):
-                    length = "No length due to error"
+                try:
 
-                else:
-                    length = len(collectionmodel.getMementoContent(urim))
+                    if collectionmodel.getMementoErrorInformation(urim):
+                        length = "No length due to error"
+
+                    else:
+                        length = len(collectionmodel.getMementoContent(urim))
+
+                except CollectionModelNoSuchMementoException:
+                    length = "No length due to access error"
 
                 measuremodel.set_content_length(urit, urim, length)
 
