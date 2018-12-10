@@ -276,5 +276,3 @@ class InputTypeTest(unittest.TestCase):
             errordata["https://wayback.archive-it.org/web/19700101000000/http://toomanyredirects"],
             "TooManyRedirects('toomanyredirects')"
         )
-
-        
