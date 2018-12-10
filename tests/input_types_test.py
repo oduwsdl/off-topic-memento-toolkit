@@ -269,12 +269,12 @@ class InputTypeTest(unittest.TestCase):
 
         self.assertEqual(
             errordata["https://wayback.archive-it.org/web/19700101000000/http://connectionerror"],
-            "ConnectionError('connectionerror',)"
+            "ConnectionError('connectionerror')"
         )
 
         self.assertEqual(
             errordata["https://wayback.archive-it.org/web/19700101000000/http://toomanyredirects"],
-            "TooManyRedirects('toomanyredirects',)"
+            "TooManyRedirects('toomanyredirects')"
         )
 
         
