@@ -2,6 +2,13 @@ from setuptools import setup
 from setuptools.command.install import install as _install
 from os import path
 
+# to get pylint to shut up
+__appname__ = None
+__appversion__ = None
+
+# __appname__, __appversion__, and friends come from here
+exec(open("otmt/version.py").read())
+
 # Python packaging info: http://python-packaging.readthedocs.io/en/latest/index.html
 # More Python packaging info: http://python-packaging-user-guide.readthedocs.io/tutorials/distributing-packages/
 # Python version info: https://www.python.org/dev/peps/pep-0440/
@@ -23,9 +30,9 @@ with open(path.join(here, 'README.md'), encoding='utf-8') as f:
     long_description = f.read()
 
 setup(
-    name='otmt',
+    name=__appname__.lower(),
     cmdclass={'install': Install},
-    version='1.0.0a2',
+    version=__appversion__,
     description='Tools for determining if web archive collecions are Off-Topic',
     long_description_content_type="text/markdown",
     long_description=long_description,
@@ -44,8 +51,9 @@ setup(
         'justext==2.2.0',
         'lxml==4.2.1',
         'nltk==3.3',
-        'numpy==1.14.3',
-        'requests==2.18.4',
+        'numpy==1.16.0',
+        'paramiko==2.4.2',
+        'requests==2.20.0',
         'requests_cache==0.4.13',
         'requests_futures==0.9.7',
         'scikit-learn==0.20.0',

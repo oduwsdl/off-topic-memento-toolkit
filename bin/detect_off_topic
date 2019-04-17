@@ -8,6 +8,7 @@ import requests
 import requests_cache
 
 import otmt
+from otmt.version import __appversion__
 
 def process_arguments(args):
 
@@ -92,16 +93,29 @@ def process_arguments(args):
         help="The path to the SQLite cache file used to cache HTTP requests")
 
     parser.add_argument('--compute-simhashes', dest='compute_simhashes',
-        action='store_true',
+        action='store_true', default=True,
+        help="Compute Simhashes of all raw memento content.\n"
+        "This is the default behavior, this flag is provided for backward compatibility.")
+
+    parser.add_argument('--no-compute-simhashes', dest='compute_simhashes',
+        action='store_false',
         help="Compute Simhashes of all raw memento content")
 
     parser.add_argument('--compute-lengths', dest='compute_content_length',
-        action='store_true',
+        action='store_true', default=True,
+        help="Compute content lengths of all raw memento content.\n"
+        "This is the default behavior, this flag is provided for backward compatibility.")
+
+    parser.add_argument('--no-compute-lengths', dest='compute_content_length',
+        action='store_true', 
         help="Compute content lengths of all raw memento content")
 
     parser.add_argument('--number-of-topics', dest="num_topics", type=int,
         help="The number of topics to use for gensim_lda and gensim_lsi, "
         "ignored if these measures are not requested.")
+
+    parser.add_argument('--version', action='version', 
+        version=__appversion__)
 
     args = parser.parse_args()
 
