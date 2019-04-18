@@ -47,6 +47,7 @@ setup(
         'bs4==0.0.1',
         'distance==0.1.3',
         'gensim==3.4.0',
+        'google-compute-engine==2.8.13',
         'html5lib==1.0.1',
         'justext==2.2.0',
         'langdetect==1.0.7',
