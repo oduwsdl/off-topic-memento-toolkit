@@ -110,6 +110,10 @@ def process_arguments(args):
         action='store_false', default=True,
         help="Do not compute content lengths of all raw memento content")
 
+    parser.add_argument('--no-detect-languages', dest='detect_languages',
+        action='store_false', default=True,
+        help="Do not perform language detection on raw memento content")
+
     parser.add_argument('--number-of-topics', dest="num_topics", type=int,
         help="The number of topics to use for gensim_lda and gensim_lsi, "
         "ignored if these measures are not requested.")
@@ -135,8 +139,12 @@ def get_list_of_offtopic(measuremodel):
 
     for urit in measuremodel.get_TimeMap_URIs():
         for urim in measuremodel.get_Memento_URIs_in_TimeMap(urit):
-            if measuremodel.get_overall_off_topic_status(urim) == "off-topic":
-                offtopic_mementos.append(urim)
+
+            try:
+                if measuremodel.get_overall_off_topic_status(urim) == "off-topic":
+                    offtopic_mementos.append(urim)
+            except KeyError:
+                logger.error("failed to get off-topic status for URI-M {}".format(urim))
 
     return offtopic_mementos
 
@@ -146,8 +154,12 @@ def get_list_of_ontopic(measuremodel):
 
     for urit in measuremodel.get_TimeMap_URIs():
         for urim in measuremodel.get_Memento_URIs_in_TimeMap(urit):
-            if measuremodel.get_overall_off_topic_status(urim) == "on-topic":
-                ontopic_mementos.append(urim)
+
+            try:
+                if measuremodel.get_overall_off_topic_status(urim) == "on-topic":
+                    ontopic_mementos.append(urim)
+            except KeyError:
+                logger.error("failed to get on-topic status for URI-M {}".format(urim))
 
     return ontopic_mementos
 
@@ -240,11 +252,15 @@ if __name__ == '__main__':
     # 3. Perform an additional calculations
     if args.compute_simhashes:
         logger.info("computing Simhashes")
-        mm = otmt.save_Simhashes(cm, mm)
+        mm = otmt.compute_Simhashes(cm, mm)
 
     if args.compute_content_length:
         logger.info("computing content lengths")
-        mm = otmt.save_raw_content_lengths(cm, mm)
+        mm = otmt.compute_raw_content_lengths(cm, mm)
+
+    if args.detect_languages:
+        logger.info("detecting languages")
+        mm = otmt.detect_languages(cm, mm)
 
     # 4. Save the results in the format specified
     logger.info("saving ouput as type {}".format(args.output_type))

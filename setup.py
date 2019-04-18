@@ -49,6 +49,7 @@ setup(
         'gensim==3.4.0',
         'html5lib==1.0.1',
         'justext==2.2.0',
+        'langdetect==1.0.7',
         'lxml==4.2.1',
         'nltk==3.3',
         'numpy==1.16.0',

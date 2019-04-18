@@ -178,6 +178,14 @@ class MeasureModel:
         self.initialize_scoremodel_for_urit_urim(urit, urim)
         self.scoremodel[urit][urim]["raw simhash value"] = simhash_value
 
+    def set_language(self, urit, urim, language):
+        """Sets the `language` for a given `urim`, belonging to a given
+        `urit`.
+        """
+
+        self.initialize_scoremodel_for_urit_urim(urit, urim)
+        self.scoremodel[urit][urim]["language"] = language
+
     def get_simhash(self, urit, urim):
         """Gets the simhash value for a given `urim`, belonging to a given
         `urit`.
@@ -194,6 +202,23 @@ class MeasureModel:
             self.handle_key_error(e, urit, urim, None, None)
 
         return simhash_value
+
+    def get_language(self, urit, urim):
+        """Gets the language value for a given `urim`, belonging to a given
+        `urit`.
+        """
+
+        language_value = None
+
+        try:
+            if "language" in self.scoremodel[urit][urim]:
+                language_value = self.scoremodel[urit][urim]["language"]
+            else:
+                language_value = None
+        except KeyError as e:
+            self.handle_key_error(e, urit, urim, None, None)
+
+        return language_value
 
     def set_TimeMap_access_error(self, urit, errormsg):
         """Associates `errormsg` with a given `urit` when the error involves
@@ -512,6 +537,10 @@ class MeasureModel:
                         if self.get_content_length(urit,urim):
                             outputdata[urit][urim]["content length"] = \
                                 self.get_content_length(urit, urim)
+
+                        if self.get_language(urit, urim):
+                            outputdata[urit][urim]["language"] = \
+                                self.get_language(urit, urim)
 
                         for measuretype, measurename in self.get_Measures():
 
