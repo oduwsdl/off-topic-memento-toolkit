@@ -40,6 +40,16 @@ def process_arguments(args):
         "* csv - a CSV file containinig similar data to the JSON format"
         )
 
+    parser.add_argument('--offtopic-file', dest='offtopic_file',
+        default=None,
+        help='If this is set, then only write the off-topic URI-Ms to this file.'
+    )
+
+    parser.add_argument('--ontopic-file', dest='ontopic_file',
+        default=None,
+        help='If this is set, then only write the on-topic URI-Ms to this file.'
+    )
+
     tmmeasurehelp = ""
     for measure in otmt.supported_timemap_measures:
         tmmeasurehelp += "* {} - {}, default threshold {}\n".format(
@@ -92,23 +102,13 @@ def process_arguments(args):
         default='/tmp/otmt',
         help="The path to the SQLite cache file used to cache HTTP requests")
 
-    parser.add_argument('--compute-simhashes', dest='compute_simhashes',
-        action='store_true', default=True,
-        help="Compute Simhashes of all raw memento content.\n"
-        "This is the default behavior, this flag is provided for backward compatibility.")
-
     parser.add_argument('--no-compute-simhashes', dest='compute_simhashes',
-        action='store_false',
-        help="Compute Simhashes of all raw memento content")
-
-    parser.add_argument('--compute-lengths', dest='compute_content_length',
-        action='store_true', default=True,
-        help="Compute content lengths of all raw memento content.\n"
-        "This is the default behavior, this flag is provided for backward compatibility.")
+        action='store_false', default=True,
+        help="Do not compute Simhashes of all raw memento content")
 
     parser.add_argument('--no-compute-lengths', dest='compute_content_length',
-        action='store_true', 
-        help="Compute content lengths of all raw memento content")
+        action='store_false', default=True,
+        help="Do not compute content lengths of all raw memento content")
 
     parser.add_argument('--number-of-topics', dest="num_topics", type=int,
         help="The number of topics to use for gensim_lda and gensim_lsi, "
@@ -128,6 +128,28 @@ def process_arguments(args):
             " -tm, --compute-lengths, or --compute-simashes")
 
     return args
+
+def get_list_of_offtopic(measuremodel):
+
+    offtopic_mementos = []
+
+    for urit in measuremodel.get_TimeMap_URIs():
+        for urim in measuremodel.get_Memento_URIs_in_TimeMap(urit):
+            if measuremodel.get_overall_off_topic_status(urim) == "off-topic":
+                offtopic_mementos.append(urim)
+
+    return offtopic_mementos
+
+def get_list_of_ontopic(measuremodel):
+
+    ontopic_mementos = []
+
+    for urit in measuremodel.get_TimeMap_URIs():
+        for urim in measuremodel.get_Memento_URIs_in_TimeMap(urit):
+            if measuremodel.get_overall_off_topic_status(urim) == "on-topic":
+                ontopic_mementos.append(urim)
+
+    return ontopic_mementos
 
 if __name__ == '__main__':
     """
@@ -231,5 +253,25 @@ if __name__ == '__main__':
         args.output_filename, mm, cm)
 
     logger.info("output written to {}".format(args.output_filename))
+
+    if args.offtopic_file:
+        
+        offtopic_mementos = get_list_of_offtopic(mm)
+
+        with open(args.offtopic_file, 'w') as f:
+            for urim in offtopic_mementos:
+                f.write("{}\n".format(urim))
+
+        logger.info("off-topic URI-Ms saved to {}".format(args.offtopic_file))
+
+    if args.ontopic_file:
+        
+        ontopic_mementos = get_list_of_ontopic(mm)
+
+        with open(args.ontopic_file, 'w') as f:
+            for urim in ontopic_mementos:
+                f.write("{}\n".format(urim))
+
+        logger.info("on-topic URI-Ms saved to {}".format(args.ontopic_file))
 
     logger.info("Finished analysis run")
