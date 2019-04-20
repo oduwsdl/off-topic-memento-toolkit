@@ -1,0 +1,53 @@
+#!python
+
+import sys
+import logging
+import argparse
+import json
+
+import requests
+import requests_cache
+
+import otmt
+from otmt.version import __appversion__
+
+def process_arguments(args):
+    
+    parser = argparse.ArgumentParser(prog="{}".format(args[0]),
+        description='Discovers duplicates in output file from OTMT')
+
+    parser.add_argument('-i', '--input', dest='input_filename',
+        required=True,
+        help="A JSON file produced by the detect_off_topic command"
+    )
+
+    parser.add_argument('-o', '--output', dest='output_filename',
+        required=True,
+        help="The output file listing the URI-Ms of all duplicates."
+    )
+
+    args = parser.parse_args()
+
+    return args
+
+if __name__ == '__main__':
+
+    args = process_arguments(sys.argv)
+
+    with open(args.input_filename) as f:
+        jsondata = json.load(f)
+
+    simhash_to_urim = {}
+
+    for urit in jsondata:
+        for urim in jsondata[urit]:
+            simhash = jsondata[urit][urim]["raw memento simhash value"]
+
+            if simhash not in simhash_to_urim.keys():
+                simhash_to_urim[simhash] = urim
+
+    with open(args.output_filename, 'w') as f:
+        for urim in simhash_to_urim.values():
+            f.write("{}\n".format(urim))
+
+    

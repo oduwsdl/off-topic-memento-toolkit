@@ -41,7 +41,10 @@ setup(
     author_email='jones.shawn.m@gmail.com',
     license='MIT',
     packages=['otmt'],
-    scripts=['bin/detect_off_topic'],
+    scripts=[
+        'bin/detect_off_topic',
+        'bin/detect_collection_nonduplicates'
+    ],
     install_requires=[
         'aiu==0.1.1a1',
         'bs4==0.0.1',
