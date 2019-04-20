@@ -5,6 +5,8 @@ import logging
 import argparse
 import json
 
+from simhash import Simhash
+
 import requests
 import requests_cache
 
@@ -19,6 +21,11 @@ def process_arguments(args):
     parser.add_argument('-i', '--input', dest='input_filename',
         required=True,
         help="A JSON file produced by the detect_off_topic command"
+    )
+
+    parser.add_argument('-t', '--threshold', dest='threshold',
+        required=False, default=0.2,
+        help="A threshold value for detecting duplicates"
     )
 
     parser.add_argument('-o', '--output', dest='output_filename',
@@ -37,17 +44,41 @@ if __name__ == '__main__':
     with open(args.input_filename) as f:
         jsondata = json.load(f)
 
-    simhash_to_urim = {}
+    # distance_for_urim = []
+    nonduplicates = []
+
+    # Note: to compute a distance, we actually need some kind
+    # of basis, like the simhash of the previous memento
 
     for urit in jsondata:
-        for urim in jsondata[urit]:
-            simhash = jsondata[urit][urim]["raw memento simhash value"]
 
-            if simhash not in simhash_to_urim.keys():
-                simhash_to_urim[simhash] = urim
+        prior_simhashes = []
+        previous_simhash = 0
+        previous_urim = ""
+
+        for urim in jsondata[urit]:
+            shash = jsondata[urit][urim]["raw memento simhash value"]
+
+            print("{}\t{}".format(shash, urim))
+
+            if shash not in prior_simhashes:
+                prior_simhashes.append( shash )
+
+                distance = Simhash(shash).distance(Simhash(previous_simhash))
+
+                print("{}\t{}\t{}".format(
+                    distance, urim, previous_urim
+                ))
+
+                if distance / 64 > float(args.threshold):
+                    nonduplicates.append(urim)
+
+                previous_simhash = shash
+                previous_urim = urim
 
     with open(args.output_filename, 'w') as f:
-        for urim in simhash_to_urim.values():
+
+        for urim in nonduplicates:
             f.write("{}\n".format(urim))
 
     
