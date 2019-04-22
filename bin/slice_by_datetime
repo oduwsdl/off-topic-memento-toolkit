@@ -10,7 +10,7 @@ from datetime import datetime
 def process_arguments(args):
 
     parser = argparse.ArgumentParser(prog="{}".format(args[0]),
-        description='Only selects mementos with a given language')
+        description='Slices a collection of mementos based on size')
 
     parser.add_argument('-i', '--input', dest='input_filename',
         required=True,
@@ -25,7 +25,8 @@ def process_arguments(args):
 
     parser.add_argument('-o', '--output', dest='output_filename',
         required=True,
-        help="The output file listing the URI-Ms of all mementos with the given language."
+        help="The tab-delimited output file listing\n"
+            "the URI-Ms of all mementos with their slices."
     )
 
     args = parser.parse_args()

@@ -45,7 +45,9 @@ setup(
         'bin/detect_off_topic',
         'bin/exclude_duplicates',
         'bin/select_by_language',
-        'bin/slice_by_datetime'
+        'bin/slice_by_datetime',
+        'bin/cluster_by_simhash',
+        'bin/select_high_quality'
     ],
     install_requires=[
         'aiu==0.1.1a1',
