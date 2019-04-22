@@ -44,7 +44,8 @@ setup(
     scripts=[
         'bin/detect_off_topic',
         'bin/exclude_duplicates',
-        'bin/select_by_language'
+        'bin/select_by_language',
+        'bin/slice_by_datetime'
     ],
     install_requires=[
         'aiu==0.1.1a1',
