@@ -59,14 +59,14 @@ if __name__ == '__main__':
 
     N = len(consideration_urims)
 
-    print("there are {} URI-Ms under consideration".format(N))
+    # print("there are {} URI-Ms under consideration".format(N))
 
     if N > 28:
         slice_count = math.floor( 28 + math.log10(N) )
     else:
         slice_count = N
 
-    print("generating {} slices".format(slice_count))
+    # print("generating {} slices".format(slice_count))
 
     mdt_list = []
 
@@ -74,6 +74,7 @@ if __name__ == '__main__':
         for urim in jsondata[urit]:
 
             if urim in consideration_urims:
+                # print("examining URI-M {}".format(urim))
 
                 mdt = datetime.strptime(
                     jsondata[urit][urim]['memento-datetime'],
@@ -90,11 +91,13 @@ if __name__ == '__main__':
 
     number_of_items_per_slice = math.floor( N / slice_count )
 
-    print("number of items per slice: {}".format(number_of_items_per_slice))
+    # print("number of items per slice: {}".format(number_of_items_per_slice))
 
     for i in range(0, len(sorted_mdt_list)):
 
         urim = sorted_mdt_list[i][1]
+        current_slice.append( urim )
+
         # print("working on memento {}, slice {}/{}".format(
         #     i, slice_number, slice_count))
 
@@ -105,10 +108,9 @@ if __name__ == '__main__':
             slice_number += 1
             current_slice = []
 
-        current_slice.append( urim )
-
     with open(args.output_filename, 'w') as f:
 
         for slice_number in slices:
             for urim in slices[slice_number]:
+                # print("writing out urim {}".format(urim))
                 f.write("{}\t{}\n".format(slice_number, urim))

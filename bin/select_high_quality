@@ -93,6 +93,18 @@ def get_memento_damage(memento_uri, memento_damage_uri):
     if memento_damage_uri == None:
         return 0
 
+    if memento_damage_uri.endswith('/'):
+        api_endpoint = "{}api/damage/{}".format(
+            memento_damage_uri, memento_uri)
+    else:
+        api_endpoint = "{}/api/damage/{}".format(
+            memento_damage_uri, memento_uri)
+
+    r = requests.get(api_endpoint)
+    damagedata = r.json()
+
+    return damagedata['total_damage']
+
 def compute_quality_score(urim, memento_damage_uri):
 
     damage_wt = -0.40 # THIS IS NEGATIVE VALUE
@@ -121,11 +133,11 @@ if __name__ == '__main__':
             sliceid, clusterid, urim = line.split('\t')
             sliceclusters.setdefault("{}~~{}".format(sliceid, clusterid), []).append(urim)
 
-    if 'memento_damage_uri' not in vars(args):
+    if 'damage_uri' not in vars(args):
         print("Memento Damage service not specified, skipping damage calculations")
         memento_damage_uri = None
     else:
-        memento_damage_uri = args.memento_damage_uri
+        memento_damage_uri = args.damage_uri
 
     story_urims = []
 
@@ -137,9 +149,11 @@ if __name__ == '__main__':
             score = compute_quality_score(urim, memento_damage_uri)
             scores.append( (score, urim) )
 
-        topscore = sorted(scores, reverse=True)[0][1]
-
-        story_urims.append(topscore)
+        topitem = sorted(scores, reverse=True)[0]
+        topscore = topitem[0]
+        topurim = topitem[1]
+        # print("top score for {}:{}".format(topurim, topscore))
+        story_urims.append(topurim)
 
     with open(args.output_filename, 'w') as f:
 
