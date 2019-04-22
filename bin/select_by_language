@@ -1,0 +1,79 @@
+#!python
+
+import sys
+import argparse
+import json
+
+def process_arguments(args):
+
+    parser = argparse.ArgumentParser(prog="{}".format(args[0]),
+        description='Only selects mementos with a given language')
+
+    parser.add_argument('-i', '--input', dest='input_filename',
+        required=True,
+        help="A JSON file produced by the detect_off_topic command"
+    )
+
+    parser.add_argument('-l', '--lang', dest='language',
+        required=True,
+        help="The language code for the desired language (e.g., en)"
+    )
+
+    parser.add_argument('-c', '--consideration-file', 
+        dest='consideration_filename', required=False,
+        help="A file containing the URI-Ms to solely consider.\n"
+            "URI-Ms not in this file will be ignored."
+    )
+
+    parser.add_argument('-o', '--output', dest='output_filename',
+        required=True,
+        help="The output file listing the URI-Ms of all mementos with the given language."
+    )
+
+    args = parser.parse_args()
+
+    return args
+
+if __name__ == '__main__':
+
+    args = process_arguments(sys.argv)
+
+    with open(args.input_filename) as f:
+        jsondata = json.load(f)
+
+    langonly = []
+
+    consideration_urims = []
+    consider_only_some_urims = False
+
+    if args.consideration_filename:
+
+        consider_only_some_urims = True
+
+        with open(args.consideration_filename) as f:
+            for line in f:
+                line = line.strip()
+                consideration_urims.append(line)
+
+    for urit in jsondata:
+
+        for urim in jsondata[urit]:
+
+            language = jsondata[urit][urim]["language"]
+
+            if consider_only_some_urims:
+
+                if urim in consideration_urims:
+
+                    if language == args.language:
+                        langonly.append(urim)
+
+            else:
+
+                if language == args.language:
+                    langonly.append(urim)
+
+    with open(args.output_filename, 'w') as f:
+
+        for urim in langonly:
+            f.write("{}\n".format(urim))

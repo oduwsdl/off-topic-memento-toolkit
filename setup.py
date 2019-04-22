@@ -43,7 +43,8 @@ setup(
     packages=['otmt'],
     scripts=[
         'bin/detect_off_topic',
-        'bin/exclude_duplicates'
+        'bin/exclude_duplicates',
+        'bin/select_by_language'
     ],
     install_requires=[
         'aiu==0.1.1a1',

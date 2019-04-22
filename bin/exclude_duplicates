@@ -36,7 +36,7 @@ def process_arguments(args):
 
     parser.add_argument('-o', '--output', dest='output_filename',
         required=True,
-        help="The output file listing the URI-Ms of all duplicates."
+        help="The output file listing the URI-Ms of all non-duplicates."
     )
 
     args = parser.parse_args()
@@ -50,7 +50,6 @@ if __name__ == '__main__':
     with open(args.input_filename) as f:
         jsondata = json.load(f)
 
-    # distance_for_urim = []
     nonduplicates = []
 
     consideration_urims = []
@@ -73,11 +72,11 @@ if __name__ == '__main__':
 
         for urim in jsondata[urit]:
 
+            shash = jsondata[urit][urim]["raw memento simhash value"]
+
             if consider_only_some_urims:
 
-                if urim in consideration_urims:                
-
-                    shash = jsondata[urit][urim]["raw memento simhash value"]
+                if urim in consideration_urims:        
 
                     if shash not in prior_simhashes:
                         prior_simhashes.append( shash )
