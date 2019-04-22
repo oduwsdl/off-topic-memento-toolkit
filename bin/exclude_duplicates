@@ -28,6 +28,12 @@ def process_arguments(args):
         help="A threshold value for detecting duplicates"
     )
 
+    parser.add_argument('-c', '--consideration-file', 
+        dest='consideration_filename', required=False,
+        help="A file containing the URI-Ms to solely consider.\n"
+            "URI-Ms not in this file will be ignored."
+    )
+
     parser.add_argument('-o', '--output', dest='output_filename',
         required=True,
         help="The output file listing the URI-Ms of all duplicates."
@@ -47,8 +53,17 @@ if __name__ == '__main__':
     # distance_for_urim = []
     nonduplicates = []
 
-    # Note: to compute a distance, we actually need some kind
-    # of basis, like the simhash of the previous memento
+    consideration_urims = []
+    consider_only_some_urims = False
+
+    if args.consideration_filename:
+
+        consider_only_some_urims = True
+
+        with open(args.consideration_filename) as f:
+            for line in f:
+                line = line.strip()
+                consideration_urims.append(line)
 
     for urit in jsondata:
 
@@ -57,18 +72,33 @@ if __name__ == '__main__':
         previous_urim = ""
 
         for urim in jsondata[urit]:
-            shash = jsondata[urit][urim]["raw memento simhash value"]
 
-            print("{}\t{}".format(shash, urim))
+            if consider_only_some_urims:
 
-            if shash not in prior_simhashes:
+                if urim in consideration_urims:                
+
+                    shash = jsondata[urit][urim]["raw memento simhash value"]
+
+                    if shash not in prior_simhashes:
+                        prior_simhashes.append( shash )
+
+                        distance = Simhash(shash).distance(Simhash(previous_simhash))
+
+                        # print("{}\t{}\t{}".format(
+                        #     distance, urim, previous_urim
+                        # ))
+
+                        if distance / 64 > float(args.threshold):
+                            nonduplicates.append(urim)
+
+                        previous_simhash = shash
+                        previous_urim = urim
+            
+            else:
+
                 prior_simhashes.append( shash )
 
                 distance = Simhash(shash).distance(Simhash(previous_simhash))
-
-                print("{}\t{}\t{}".format(
-                    distance, urim, previous_urim
-                ))
 
                 if distance / 64 > float(args.threshold):
                     nonduplicates.append(urim)

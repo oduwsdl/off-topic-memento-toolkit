@@ -262,6 +262,8 @@ if __name__ == '__main__':
         logger.info("detecting languages")
         mm = otmt.detect_languages(cm, mm)
 
+    mm = otmt.extract_memento_datetimes(cm, mm)
+
     # 4. Save the results in the format specified
     logger.info("saving ouput as type {}".format(args.output_type))
 

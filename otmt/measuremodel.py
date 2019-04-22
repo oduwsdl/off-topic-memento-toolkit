@@ -178,6 +178,13 @@ class MeasureModel:
         self.initialize_scoremodel_for_urit_urim(urit, urim)
         self.scoremodel[urit][urim]["raw simhash value"] = simhash_value
 
+    def set_memento_datetime(self, urit, urim, memento_datetime):
+        """Sets the `memento-datetime` value for a given `urim`, belonging to
+        a given `urit`.
+        """
+        self.initialize_scoremodel_for_urit_urim(urit, urim)
+        self.scoremodel[urit][urim]["memento-datetime"] = memento_datetime
+
     def set_language(self, urit, urim, language):
         """Sets the `language` for a given `urim`, belonging to a given
         `urit`.
@@ -219,6 +226,23 @@ class MeasureModel:
             self.handle_key_error(e, urit, urim, None, None)
 
         return language_value
+
+    def get_memento_datetime(self, urit, urim):
+        """Gets the memento-datetime for a given `urim`, belonging to a given
+        `urit`.
+        """
+
+        memento_datetime = None
+
+        try:
+            if "memento-datetime" in self.scoremodel[urit][urim]:
+                memento_datetime = self.scoremodel[urit][urim]["memento-datetime"]
+            else:
+                memento_datetime = None
+        except KeyError as e:
+            self.handle_key_error(e, urit, urim, None, None)
+
+        return memento_datetime
 
     def set_TimeMap_access_error(self, urit, errormsg):
         """Associates `errormsg` with a given `urit` when the error involves
@@ -541,6 +565,12 @@ class MeasureModel:
                         if self.get_language(urit, urim):
                             outputdata[urit][urim]["language"] = \
                                 self.get_language(urit, urim)
+
+                        if self.get_memento_datetime(urit, urim):
+                            outputdata[urit][urim]["memento-datetime"] = \
+                                self.get_memento_datetime(urit, urim).strftime(
+                                    "%Y/%m/%d %H:%M:%S GMT"
+                                )
 
                         for measuretype, measurename in self.get_Measures():
 

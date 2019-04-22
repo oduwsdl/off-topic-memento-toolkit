@@ -20,7 +20,7 @@ from .collection_measures import compute_jaccard_accross_collection, \
 from .measuremodel import MeasureModel, MeasureModelNoSuchMemento, \
     MeasureModelNoSuchTimeMap, MeasureModelNoSuchMeasure, MeasureModelNoSuchMeasureType
 from .metadata_calcluations import compute_Simhashes, compute_raw_content_lengths, \
-    detect_languages
+    detect_languages, extract_memento_datetimes
 
 # __init__.py documentation: https://docs.python.org/3/tutorial/modules.html#packages
 # file/folder info: https://www.python.org/dev/peps/pep-0008/#package-and-module-names
@@ -45,7 +45,7 @@ __all__ = ["CollectionModel", "CollectionModelException",
     "MeasureModelNoSuchTimeMap", "MeasureModelNoSuchMeasure",
     "compute_Simhashes", "compute_raw_content_lengths",
     "compute_jaccard_accross_collection", "compute_sorensen_accross_collection",
-    "supported_collection_measures"
+    "supported_collection_measures", "detect_languages", "extract_memento_datetimes"
     ]
 
 import logging

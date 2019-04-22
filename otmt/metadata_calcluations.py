@@ -162,3 +162,36 @@ def detect_languages(collectionmodel, measuremodel):
         uritcount += 1 
 
     return measuremodel
+
+def extract_memento_datetimes(collectionmodel, measuremodel):
+
+    urits = collectionmodel.getTimeMapURIList()
+    urittotal = len(urits)
+    uritcount = 1
+
+    for urit in urits:
+
+        logger.info("calculating content lengths on mementos in TimeMap {} of {}".format(
+            uritcount, urittotal
+        ))
+
+        timemap = collectionmodel.getTimeMap(urit)
+
+        try:
+            memento_list = timemap["mementos"]["list"]
+        except KeyError:
+            logger.exception("Failed to detect mementos in TimeMap {} - skipping...")
+            continue
+
+        if len(memento_list) > 0:
+
+            for memento in memento_list:
+
+                urim = memento["uri"]
+                memento_datetime = memento['datetime']
+
+                measuremodel.set_memento_datetime(urit, urim, memento_datetime)
+
+        uritcount += 1
+
+    return measuremodel
