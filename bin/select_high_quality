@@ -100,10 +100,24 @@ def get_memento_damage(memento_uri, memento_damage_uri):
         api_endpoint = "{}/api/damage/{}".format(
             memento_damage_uri, memento_uri)
 
-    r = requests.get(api_endpoint)
-    damagedata = r.json()
+    try:
+        r = requests.get(api_endpoint)
+    except requests.exceptions.RequestException:
+        print("Failed to download Memento Damage data for URI-M {} "
+            "using endpoint {}".format(urim, api_endpoint))
+        return 0
 
-    return damagedata['total_damage']
+    try:
+        damagedata = r.json()
+    except json.decoder.JSONDecodeError:
+        print("Failed to extract Memento Damage data for URI-M {} "
+            "using endpoint {}".format(urim, api_endpoint))
+        return 0
+
+    if 'total_damage' in damagedata:
+        return damagedata['total_damage']
+    else:
+        return 0
 
 def compute_quality_score(urim, memento_damage_uri):
 
