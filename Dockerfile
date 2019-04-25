@@ -1,9 +1,14 @@
-FROM python:3.6.4-stretch
+FROM python:3.7.3-stretch
 
 WORKDIR /app
 
 COPY . /app
 
-RUN pip install -r requirements.txt
+RUN python setup.py install
 
-RUN pip install .
+RUN mkdir /otmt-work
+
+WORKDIR /otmt-work
+
+# keep the container running so we can execute otmt commands
+CMD ["tail", "-f", "/dev/null"]
