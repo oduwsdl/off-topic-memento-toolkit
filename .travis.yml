@@ -6,7 +6,7 @@ dist: xenial
 sudo: true
 
 script:
-  - apt-get install -y python-scipy
+  - sudo apt-get install -y python-scipy
   - python setup.py install
   - python setup.py test
   - python setup.py sdist bdist
