@@ -5,6 +5,11 @@ python: "3.7"
 dist: xenial
 sudo: true
 
+before_install:
+  - sudo apt-get install -y libblas-dev
+  - sudo apt-get install -y liblapack-dev
+  - sudo apt-get install -y gfortran
+
 script:
   - python setup.py install
   - python setup.py test
