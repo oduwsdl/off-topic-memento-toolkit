@@ -4,7 +4,7 @@ WORKDIR /app
 
 COPY . /app
 
-RUN python setup.py install
+RUN pip install .
 
 RUN mkdir /otmt-work
 
