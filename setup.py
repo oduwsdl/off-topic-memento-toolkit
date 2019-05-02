@@ -62,7 +62,7 @@ setup(
         'nltk==3.3',
         'numpy==1.16.0',
         'paramiko==2.4.2',
-        'requests==2.20.0',
+        'requests==2.21.0',
         'requests_cache==0.4.13',
         'requests_futures==0.9.7',
         'scikit-learn==0.20.0',
