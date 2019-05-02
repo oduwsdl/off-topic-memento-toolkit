@@ -1,0 +1,16 @@
+version: '3.3'
+
+services:
+    mementodamage:
+        image: erikaris/memento-damage:latest
+        restart: always
+        ports:
+            - "8888:80"
+
+    otmt:
+        depends_on:
+            - mementodamage
+        image: otmt:latest
+        restart: always
+        volumes: 
+            - .:/otmt-work

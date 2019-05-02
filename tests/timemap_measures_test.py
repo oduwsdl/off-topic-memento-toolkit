@@ -858,7 +858,7 @@ class TestingTimeMapMeasures(unittest.TestCase):
 
         self.assertEqual(
             mm.get_Memento_measurement_error_message("memento12", "timemap measures", "jaccard"),
-            "CollectionModelBoilerPlateRemovalFailureException(\"ParserError('Document is empty',)\",)"
+            "CollectionModelBoilerPlateRemovalFailureException('XMLSyntaxError(None)')"
         )
 
         mm = compute_cosine_across_TimeMap(
@@ -866,7 +866,7 @@ class TestingTimeMapMeasures(unittest.TestCase):
 
         self.assertEqual(
             mm.get_Memento_measurement_error_message("memento12", "timemap measures", "cosine"),
-            "CollectionModelBoilerPlateRemovalFailureException(\"ParserError('Document is empty',)\",)"
+            "CollectionModelBoilerPlateRemovalFailureException('XMLSyntaxError(None)')"
         )
 
         mm = compute_gensim_lda_across_TimeMap(
@@ -875,7 +875,7 @@ class TestingTimeMapMeasures(unittest.TestCase):
 
         self.assertEqual(
             mm.get_Memento_measurement_error_message("memento12", "timemap measures", "gensim_lda"),
-            "CollectionModelBoilerPlateRemovalFailureException(\"ParserError('Document is empty',)\",)"
+            "CollectionModelBoilerPlateRemovalFailureException('XMLSyntaxError(None)')"
         )
 
         shutil.rmtree(working_directory)

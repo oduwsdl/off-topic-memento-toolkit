@@ -1,0 +1,113 @@
+#!python
+
+import sys
+import logging
+import argparse
+import json
+
+from simhash import Simhash
+
+import requests
+import requests_cache
+
+import otmt
+from otmt.version import __appversion__
+
+def process_arguments(args):
+    
+    parser = argparse.ArgumentParser(prog="{}".format(args[0]),
+        description='Discovers duplicates in output file from OTMT')
+
+    parser.add_argument('-i', '--input', dest='input_filename',
+        required=True,
+        help="A JSON file produced by the detect_off_topic command"
+    )
+
+    parser.add_argument('-t', '--threshold', dest='threshold',
+        required=False, default=0.2,
+        help="A threshold value for detecting duplicates"
+    )
+
+    parser.add_argument('-c', '--consideration-file', 
+        dest='consideration_filename', required=False,
+        help="A file containing the URI-Ms to solely consider.\n"
+            "URI-Ms not in this file will be ignored."
+    )
+
+    parser.add_argument('-o', '--output', dest='output_filename',
+        required=True,
+        help="The output file listing the URI-Ms of all non-duplicates."
+    )
+
+    args = parser.parse_args()
+
+    return args
+
+if __name__ == '__main__':
+
+    args = process_arguments(sys.argv)
+
+    with open(args.input_filename) as f:
+        jsondata = json.load(f)
+
+    nonduplicates = []
+
+    consideration_urims = []
+    consider_only_some_urims = False
+
+    if args.consideration_filename:
+
+        consider_only_some_urims = True
+
+        with open(args.consideration_filename) as f:
+            for line in f:
+                line = line.strip()
+                consideration_urims.append(line)
+
+    for urit in jsondata:
+
+        prior_simhashes = []
+        previous_simhash = 0
+        previous_urim = ""
+
+        for urim in jsondata[urit]:
+
+            shash = jsondata[urit][urim]["raw memento simhash value"]
+
+            if consider_only_some_urims:
+
+                if urim in consideration_urims:        
+
+                    if shash not in prior_simhashes:
+                        prior_simhashes.append( shash )
+
+                        distance = Simhash(shash).distance(Simhash(previous_simhash))
+
+                        # print("{}\t{}\t{}".format(
+                        #     distance, urim, previous_urim
+                        # ))
+
+                        if distance / 64 > float(args.threshold):
+                            nonduplicates.append(urim)
+
+                        previous_simhash = shash
+                        previous_urim = urim
+            
+            else:
+
+                prior_simhashes.append( shash )
+
+                distance = Simhash(shash).distance(Simhash(previous_simhash))
+
+                if distance / 64 > float(args.threshold):
+                    nonduplicates.append(urim)
+
+                previous_simhash = shash
+                previous_urim = urim
+
+    with open(args.output_filename, 'w') as f:
+
+        for urim in nonduplicates:
+            f.write("{}\n".format(urim))
+
+    

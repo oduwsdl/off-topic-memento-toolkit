@@ -179,7 +179,11 @@ class CollectionModel:
 
                 tmdata = json.load(jsonin)
 
-                mdt = tmdata['mementos']['first']['datetime']
+                try:
+                    mdt = tmdata['mementos']['first']['datetime']
+                except KeyError:
+                    logger.exception("failed to read TimeMap for URI-T {}, skipping...".format(urit))
+                    continue
                 
                 tmdata['mementos']['first']['datetime'] = datetime.strptime(
                     mdt, "%Y-%m-%dT%H:%M:%S"
@@ -451,7 +455,7 @@ class CollectionModel:
                         for paragraph in paragraphs:
                             bpfile.write(bytes("{}\n".format(paragraph.text), "utf8"))
 
-                except lxml.etree.ParserError as e:
+                except (lxml.etree.ParserError, lxml.etree.XMLSyntaxError) as e:
                     raise CollectionModelBoilerPlateRemovalFailureException(repr(e))
 
             with open(boilerplate_filename, 'rb') as bpfile:

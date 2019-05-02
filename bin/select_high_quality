@@ -1,0 +1,175 @@
+#!python
+
+import sys
+import argparse
+import json
+import re
+
+from urllib.parse import urlparse
+
+import requests
+import requests_cache
+
+def process_arguments(args):
+
+    parser = argparse.ArgumentParser(prog="{}".format(args[0]),
+        description='Slices a collection of mementos based on size')
+
+    parser.add_argument('-i', '--input', '--cluster-file',
+        dest='cluster_filename', required=True,
+        help="A file containing the URI-Ms with their slices and clusters,\n"
+            "as produced by the cluster_by_simhash command."
+    )
+
+    parser.add_argument('-cf', '--cachefile', dest='cachefile',
+        default='/tmp/otmt',
+        help="The path to the SQLite cache file used to cache HTTP requests")
+
+    parser.add_argument('--damage_uri',
+        dest="damage_uri", required=False,
+        help="A URI endpoint for the Memento-Damage service\n"
+            "(e.g., http://localhost:8888)."
+    )
+
+    parser.add_argument('-o', '--output', dest='output_filename',
+        required=True,
+        help="The tab-delimited output file listing the URI-Ms of all mementos"
+            " with the given language."
+    )
+
+    args = parser.parse_args()
+
+    return args
+
+def get_memento_uri_category(memento_uri):
+    """This code comes from 
+    https://github.com/yasmina85/DSA-stories/blob/master/src/memento_picker.py
+    """
+    base_ait_idx_end = memento_uri.find('http',10)
+    original_uri = memento_uri[ base_ait_idx_end:]
+    
+    o = urlparse(original_uri)
+    hostname = o.hostname
+    if hostname == None:
+        return -1  
+    if  bool(re.search('.*twitter.*', hostname)) or bool(re.search('.*t.co.*', hostname)) or \
+        bool(re.search('.*redd.it.*', hostname)) or bool(re.search('.*twitter.*', hostname)) or \
+        bool(re.search('.*facebook.*', hostname)) or bool(re.search('.*fb.me.*', hostname)) or \
+        bool(re.search('.*plus.google.*', hostname))  or   bool(re.search('.*wiki.*', hostname)) or \
+        bool(re.search('.*globalvoicesonline.*', hostname))  or  bool(re.search('.*fbcdn.*', hostname)):
+        return 0.5
+    elif  bool(re.search('.*cnn.*', hostname)) or  bool(re.search('.*bbc.*', hostname)) or \
+        bool(re.search('news', hostname)) or  bool(re.search('.*news.*', hostname)) or  \
+        bool(re.search('.*rosaonline.*', hostname))or  bool(re.search('.*aljazeera.*', hostname)) or  \
+        bool(re.search('.*guardian.*', hostname)) or  bool(re.search('.*USATODAY.*', hostname)) or  \
+        bool(re.search('.*nytimes.*', hostname))or  bool(re.search('.*abc.*', hostname))or  \
+        bool(re.search('.*foxnews.*', hostname)) or  bool(re.search('.*allvoices.*', hostname)) or \
+        bool(re.search('.*huffingtonpost.*', hostname)) :
+        return 0.7 
+    elif  bool(re.search('.*dailymotion.*', hostname)) or  \
+        bool(re.search('.*youtube.*', hostname)) or \
+        bool(re.search('.*youtu.be.*', hostname)): 
+        return 0.7
+    elif bool(re.search('.*wordpress.*', hostname)) or  bool(re.search('.*blog.*', hostname)):
+        return 0.4
+    elif  bool(re.search('.*flickr.*', hostname)) or bool(re.search('.*flic.kr.*', hostname)) or  \
+        bool(re.search('.*instagram.*', hostname)) or  bool(re.search('.*twitpic.*', hostname)):
+        return 0.6
+    else:
+        return 0
+
+def get_memento_depth(mem_uri):
+    """This code comes from:
+    https://github.com/yasmina85/DSA-stories/blob/master/src/memento_picker.py
+    """
+    if mem_uri.endswith('/'):
+        mem_uri = mem_uri[0:-1]
+    original_uri_idx = mem_uri.find('http',10)
+    original_uri = mem_uri[original_uri_idx+7:-1]
+    level = original_uri.count('/')
+    return level/10.0
+
+def get_memento_damage(memento_uri, memento_damage_uri):
+    if memento_damage_uri == None:
+        return 0
+
+    if memento_damage_uri.endswith('/'):
+        api_endpoint = "{}api/damage/{}".format(
+            memento_damage_uri, memento_uri)
+    else:
+        api_endpoint = "{}/api/damage/{}".format(
+            memento_damage_uri, memento_uri)
+
+    try:
+        r = requests.get(api_endpoint)
+    except requests.exceptions.RequestException:
+        print("Failed to download Memento Damage data for URI-M {} "
+            "using endpoint {}".format(urim, api_endpoint))
+        return 0
+
+    try:
+        damagedata = r.json()
+    except json.decoder.JSONDecodeError:
+        print("Failed to extract Memento Damage data for URI-M {} "
+            "using endpoint {}".format(urim, api_endpoint))
+        return 0
+
+    if 'total_damage' in damagedata:
+        return damagedata['total_damage']
+    else:
+        return 0
+
+def compute_quality_score(urim, memento_damage_uri):
+
+    damage_wt = -0.40 # THIS IS NEGATIVE VALUE
+    category_wt = 0.15
+    level_wt = 0.45
+
+    damage_val = get_memento_damage(urim, memento_damage_uri)
+    category_val = get_memento_uri_category(urim)
+    level_val = get_memento_depth(urim)
+    score = damage_wt * damage_val + category_wt * category_val + level_wt * level_val
+
+    return score
+
+if __name__ == '__main__':
+
+    args = process_arguments(sys.argv)
+
+    requests_cache.install_cache(args.cachefile, backend='sqlite')
+
+    sliceclusters = {}
+
+    with open(args.cluster_filename) as f:
+        
+        for line in f:
+            line = line.strip()
+            sliceid, clusterid, urim = line.split('\t')
+            sliceclusters.setdefault("{}~~{}".format(sliceid, clusterid), []).append(urim)
+
+    if 'damage_uri' not in vars(args):
+        print("Memento Damage service not specified, skipping damage calculations")
+        memento_damage_uri = None
+    else:
+        memento_damage_uri = args.damage_uri
+
+    story_urims = []
+
+    for slicecluster in sliceclusters:
+
+        scores = []
+
+        for urim in sliceclusters[slicecluster]:
+            score = compute_quality_score(urim, memento_damage_uri)
+            scores.append( (score, urim) )
+
+        topitem = sorted(scores, reverse=True)[0]
+        topscore = topitem[0]
+        topurim = topitem[1]
+        # print("top score for {}:{}".format(topurim, topscore))
+        story_urims.append(topurim)
+
+    with open(args.output_filename, 'w') as f:
+
+        for urim in story_urims:
+            f.write("{}\n".format(urim))

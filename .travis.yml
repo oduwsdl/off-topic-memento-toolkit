@@ -1,10 +1,15 @@
-language: python
 
-python: 
-  - "3.6"
+# from https://github.com/travis-ci/travis-ci/issues/9831
+language: python
+python: "3.7"
+dist: xenial
+sudo: true
+
+install:
+  - sudo apt-get install -y python-scipy
 
 script:
-  - python setup.py install
+  - pip install .
   - python setup.py test
   - python setup.py sdist bdist
   

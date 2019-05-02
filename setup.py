@@ -2,6 +2,13 @@ from setuptools import setup
 from setuptools.command.install import install as _install
 from os import path
 
+# to get pylint to shut up
+__appname__ = None
+__appversion__ = None
+
+# __appname__, __appversion__, and friends come from here
+exec(open("otmt/version.py").read())
+
 # Python packaging info: http://python-packaging.readthedocs.io/en/latest/index.html
 # More Python packaging info: http://python-packaging-user-guide.readthedocs.io/tutorials/distributing-packages/
 # Python version info: https://www.python.org/dev/peps/pep-0440/
@@ -23,9 +30,9 @@ with open(path.join(here, 'README.md'), encoding='utf-8') as f:
     long_description = f.read()
 
 setup(
-    name='otmt',
+    name=__appname__.lower(),
     cmdclass={'install': Install},
-    version='1.0.0a1',
+    version=__appversion__,
     description='Tools for determining if web archive collecions are Off-Topic',
     long_description_content_type="text/markdown",
     long_description=long_description,
@@ -34,22 +41,34 @@ setup(
     author_email='jones.shawn.m@gmail.com',
     license='MIT',
     packages=['otmt'],
-    scripts=['bin/detect_off_topic'],
+    scripts=[
+        'bin/detect_off_topic',
+        'bin/exclude_duplicates',
+        'bin/select_by_language',
+        'bin/slice_by_datetime',
+        'bin/cluster_by_simhash',
+        'bin/select_high_quality'
+    ],
     install_requires=[
-        'bs4',
-        'distance',
-        'gensim',
-        'html5lib',
-        'justext',
-        'lxml',
-        'nltk',
-        'numpy',
-        'requests',
-        'requests_futures',
-        'scikit-learn',
-        'scipy',
-        'simhash',
-        'warcio'
+        'aiu==0.1.1a1',
+        'bs4==0.0.1',
+        'distance==0.1.3',
+        'gensim==3.4.0',
+        'google-compute-engine==2.8.13',
+        'html5lib==1.0.1',
+        'justext==2.2.0',
+        'langdetect==1.0.7',
+        'lxml==4.2.1',
+        'nltk==3.3',
+        'numpy==1.16.0',
+        'paramiko==2.4.2',
+        'requests==2.20.0',
+        'requests_cache==0.4.13',
+        'requests_futures==0.9.7',
+        'scikit-learn==0.20.0',
+        'scipy==1.1.0',
+        'simhash==1.9.0',
+        'warcio==1.5.1'
     ],
     setup_requires=['nltk'],
     test_suite="tests",

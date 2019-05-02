@@ -1,0 +1,116 @@
+#!python
+
+import sys
+import argparse
+import json
+import math
+
+from datetime import datetime
+
+def process_arguments(args):
+
+    parser = argparse.ArgumentParser(prog="{}".format(args[0]),
+        description='Slices a collection of mementos based on size')
+
+    parser.add_argument('-i', '--input', dest='input_filename',
+        required=True,
+        help="A JSON file produced by the detect_off_topic command"
+    )
+
+    parser.add_argument('-c', '--consideration-file', 
+        dest='consideration_filename', required=False,
+        help="A file containing the URI-Ms to solely consider.\n"
+            "URI-Ms not in this file will be ignored."
+    )
+
+    parser.add_argument('-o', '--output', dest='output_filename',
+        required=True,
+        help="The tab-delimited output file listing\n"
+            "the URI-Ms of all mementos with their slices."
+    )
+
+    args = parser.parse_args()
+
+    return args
+
+if __name__ == '__main__':
+
+    args = process_arguments(sys.argv)
+
+    with open(args.input_filename) as f:
+        jsondata = json.load(f)
+
+    consideration_urims = []
+    consider_only_some_urims = False
+
+    if args.consideration_filename:
+
+        consider_only_some_urims = True
+
+        with open(args.consideration_filename) as f:
+            for line in f:
+                line = line.strip()
+                consideration_urims.append(line)
+
+    else:
+        for urit in jsondata:
+            for urim in jsondata[urit]:
+                consideration_urims.append(urim)
+
+    N = len(consideration_urims)
+
+    # print("there are {} URI-Ms under consideration".format(N))
+
+    if N > 28:
+        slice_count = math.floor( 28 + math.log10(N) )
+    else:
+        slice_count = N
+
+    # print("generating {} slices".format(slice_count))
+
+    mdt_list = []
+
+    for urit in jsondata:
+        for urim in jsondata[urit]:
+
+            if urim in consideration_urims:
+                # print("examining URI-M {}".format(urim))
+
+                mdt = datetime.strptime(
+                    jsondata[urit][urim]['memento-datetime'],
+                    '%Y/%m/%d %H:%M:%S GMT'
+                )
+
+                mdt_list.append( (mdt, urim) )
+
+    sorted_mdt_list = sorted(mdt_list)
+    slices = []
+    current_slice = []
+    slice_number = 0
+    slices = {}
+
+    number_of_items_per_slice = math.floor( N / slice_count )
+
+    # print("number of items per slice: {}".format(number_of_items_per_slice))
+
+    for i in range(0, len(sorted_mdt_list)):
+
+        urim = sorted_mdt_list[i][1]
+        current_slice.append( urim )
+
+        # print("working on memento {}, slice {}/{}".format(
+        #     i, slice_number, slice_count))
+
+        if i % number_of_items_per_slice == 0:
+            # print("found end at i = {}".format(i))
+
+            slices[slice_number] = current_slice
+            slice_number += 1
+            current_slice = []
+
+    with open(args.output_filename, 'w') as f:
+
+        for slice_number in slices:
+            for urim in slices[slice_number]:
+                # print("writing out urim {}".format(urim))
+                f.write("{}\t{}\n".format(slice_number, urim))

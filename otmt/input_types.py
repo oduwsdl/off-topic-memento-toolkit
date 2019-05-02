@@ -22,11 +22,14 @@ from datetime import datetime
 from datetime import date
 
 from requests_futures.sessions import FuturesSession
+from requests.adapters import HTTPAdapter
+from urllib3.util.retry import Retry
 from requests.exceptions import ConnectionError, TooManyRedirects
 from warcio.archiveiterator import ArchiveIterator
+from aiu import ArchiveItCollection
 
 from .collectionmodel import CollectionModel
-from .archiveit_collection import ArchiveItCollection
+# from .archiveit_collection import ArchiveItCollection
 from .archive_information import generate_raw_urim
 
 logger = logging.getLogger(__name__)
@@ -253,8 +256,7 @@ def get_collection_model_from_archiveit(archiveit_cid, working_directory):
         archiveit_cid
     ))
 
-    aic = ArchiveItCollection(archiveit_cid, working_directory=working_directory,
-        logger=logger)
+    aic = ArchiveItCollection(archiveit_cid, logger=logger)
 
     logger.debug("creating collection model")
 
@@ -270,7 +272,19 @@ def get_collection_model_from_archiveit(archiveit_cid, working_directory):
 
     urits = generate_archiveit_urits(archiveit_cid, seed_uris)
 
-    with FuturesSession(max_workers=cpu_count) as session:
+    retry_session = requests.Session()
+    retry = Retry(
+        total=10,
+        read=10,
+        connect=10,
+        backoff_factor=0.3,
+        status_forcelist=(500, 502, 504)
+    )
+    adapter = HTTPAdapter(max_retries=retry)
+    retry_session.mount('http://', adapter)
+    retry_session.mount('https://', adapter)  
+
+    with FuturesSession(max_workers=cpu_count, session=retry_session) as session:
         futures = get_uri_responses(session, urits)
 
     working_uri_list = list(futures.keys())
@@ -332,6 +346,8 @@ def get_collection_model_from_archiveit(archiveit_cid, working_directory):
                 # raw_urim = generate_raw_urim(memento["uri"])
                 # urims.append(raw_urim)
                 urims.append(memento["uri"])
+        except KeyError as e:
+            logger.exception("Skipping TimeMap at {} due to errors\nTimeMap Object: {}".format(urit, timemap))
         except Exception as e:
             logger.error("Error encountered processing TimeMap at {}".format(urit))
             logger.error("TimeMap Object: {}".format(timemap))
@@ -350,6 +366,19 @@ def discover_raw_urims(urimlist, futures=None):
     errordata = {}
 
     if futures == None:
+
+        retry_session = requests.Session()
+        retry = Retry(
+            total=10,
+            read=10,
+            connect=10,
+            backoff_factor=0.3,
+            status_forcelist=(500, 502, 504)
+        )
+        adapter = HTTPAdapter(max_retries=retry)
+        retry_session.mount('http://', adapter)
+        retry_session.mount('https://', adapter)  
+
         with FuturesSession(max_workers=cpu_count) as session:
             futures = get_head_responses(session, urimlist)
 
@@ -417,11 +446,6 @@ def fetch_and_save_memento_content(urimlist, collectionmodel):
     raw_urimdata, errordata = discover_raw_urims(urimlist)
 
     logger.debug("Storing error data in collection model")
-    for urim in errordata:
-        errormsg = errordata[urim]
-        collectionmodel.addMementoError(
-            urim, b"", {}, bytes(errormsg, "utf8")
-        )
 
     invert_raw_urimdata_mapping = {}
     raw_urims = []
@@ -432,7 +456,19 @@ def fetch_and_save_memento_content(urimlist, collectionmodel):
         raw_urims.append(raw_urim)
 
     logger.info("Issuing requests for {} raw mementos".format(len(raw_urims)))
-    
+
+    retry_session = requests.Session()
+    retry = Retry(
+        total=10,
+        read=10,
+        connect=10,
+        backoff_factor=0.3,
+        status_forcelist=(500, 502, 504)
+    )
+    adapter = HTTPAdapter(max_retries=retry)
+    retry_session.mount('http://', adapter)
+    retry_session.mount('https://', adapter)  
+
     with FuturesSession(max_workers=cpu_count) as session:
         futures = get_uri_responses(session, raw_urims)
 
@@ -451,26 +487,56 @@ def fetch_and_save_memento_content(urimlist, collectionmodel):
 
             logger.debug("Raw URI-M {} is done".format(raw_urim))
 
-            response = futures[raw_urim].result()
+            try:
 
-            http_status = response.status_code
-            memento_content = bytes(response.text, 'utf8')
-            memento_headers = dict(response.headers)    
-            memento_headers["http-status"] = http_status
+                response = futures[raw_urim].result()
 
-            # sometimes, via redirects, the different URI-Ms end up at the 
-            # same raw URI-M
-            logger.debug("There are {} URI-Ms leading to raw URI-M {}".format(
-                len(invert_raw_urimdata_mapping[raw_urim]), raw_urim
-            ))
-            for urim in invert_raw_urimdata_mapping[raw_urim]:
-                collectionmodel.addMemento(urim, memento_content, memento_headers)
+                http_status = response.status_code
+                memento_content = bytes(response.text, 'utf8')
+                memento_headers = dict(response.headers)    
+                memento_headers["http-status"] = http_status
 
-            logger.debug("Removing raw URI-M {} from processing list".format(raw_urim))
+                # sometimes, via redirects, the different URI-Ms end up at the 
+                # same raw URI-M
+                logger.debug("There are {} URI-Ms leading to raw URI-M {}".format(
+                    len(invert_raw_urimdata_mapping[raw_urim]), raw_urim
+                ))
+                for urim in invert_raw_urimdata_mapping[raw_urim]:
+                    collectionmodel.addMemento(urim, memento_content, memento_headers)
 
-            completed_raw_urims.append(raw_urim)
+                logger.debug("Removing raw URI-M {} from processing list".format(raw_urim))
+
+            except ConnectionError as e:
+                urim = invert_raw_urimdata_mapping[raw_urim]
+                logger.warning("While acquiring memento at {} there was an error of {}, "
+                    "this event is being recorded".format(urim, repr(e)))
+                
+
+                try:
+                    errordata[urim] = repr(e)
+                except TypeError as e:
+                    logger.debug("errordata type: {}".format(type(errordata)))
+                    logger.debug("e type: {}".format(type(e)))
+                    logger.debug("repr(e): {}".format(repr(e)))
+                    logger.warning("failed to record error for URI-M {}".format(urim))
+
+            except TooManyRedirects as e:
+                urim = invert_raw_urimdata_mapping[raw_urim]
+                logger.warning("While acquiring memento at {} there was an error of {},"
+                    "this event is being recorded".format(urim, repr(e)))
+                errordata[urim] = repr(e)
+
+            finally:
+                logger.debug("Removing URI-M {} from the processing list".format(urim))
+                completed_raw_urims.append(raw_urim)
 
         leftovers = list(set(raw_urims) - set(completed_raw_urims))
+
+    for urim in errordata:
+        errormsg = errordata[urim]
+        collectionmodel.addMementoError(
+            urim, b"", {}, bytes(errormsg, "utf8")
+        )
 
     return collectionmodel
 
