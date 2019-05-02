@@ -11,4 +11,5 @@ RUN mkdir /otmt-work
 WORKDIR /otmt-work
 
 # keep the container running so we can execute otmt commands
-CMD ["tail", "-f", "/dev/null"]
+# CMD ["tail", "-f", "/dev/null"]
+ENTRYPOINT /bin/bash
