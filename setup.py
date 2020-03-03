@@ -59,7 +59,7 @@ setup(
         'justext==2.2.0',
         'langdetect==1.0.7',
         'lxml==4.2.1',
-        'nltk==3.3',
+        'nltk==3.4.5',
         'numpy==1.16.0',
         'paramiko==2.4.2',
         'requests==2.22.0',
