@@ -50,7 +50,7 @@ setup(
         'bin/select_high_quality'
     ],
     install_requires=[
-        'aiu==0.1.1a1',
+        'aiu==0.1.1a4',
         'bs4==0.0.1',
         'distance==0.1.3',
         'gensim==3.4.0',
@@ -62,13 +62,13 @@ setup(
         'nltk==3.3',
         'numpy==1.16.0',
         'paramiko==2.4.2',
-        'requests==2.21.0',
+        'requests==2.22.0',
         'requests_cache==0.4.13',
-        'requests_futures==0.9.7',
+        'requests_futures==0.9.9',
         'scikit-learn==0.20.0',
         'scipy==1.1.0',
         'simhash==1.9.0',
-        'warcio==1.5.1'
+        'warcio==1.7.1'
     ],
     setup_requires=['nltk'],
     test_suite="tests",
