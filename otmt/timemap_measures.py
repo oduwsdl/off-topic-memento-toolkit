@@ -135,7 +135,11 @@ def compute_score_across_TimeMap(collectionmodel, measuremodel,
 
         timemap = collectionmodel.getTimeMap(urit)
 
-        memento_list = timemap["mementos"]["list"]
+        try:
+            memento_list = timemap["mementos"]["list"]
+        except KeyError:
+            logger.exception("Malformed TimeMap or empty TimeMap at {} , skipping...".format(uri))
+            continue
 
         # some TimeMaps have no mementos
         # e.g., http://wayback.archive-it.org/3936/timemap/link/http://www.peacecorps.gov/shutdown/?from=hpb
