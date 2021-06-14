@@ -138,7 +138,7 @@ def compute_score_across_TimeMap(collectionmodel, measuremodel,
         try:
             memento_list = timemap["mementos"]["list"]
         except KeyError:
-            logger.exception("Malformed TimeMap or empty TimeMap at {} , skipping...".format(uri))
+            logger.exception("Malformed TimeMap or empty TimeMap at {} , skipping...".format(urit))
             continue
 
         # some TimeMaps have no mementos
