@@ -6,10 +6,10 @@ authors:
   orcid: "https://orcid.org/0000-0002-4372-870X"
 - family-names: "Nelson"
   given-names: "Michael"
-  orcid: "0000-0003-3749-8116"
+  orcid: "https://orcid.org/0000-0003-3749-8116"
 - family-names: "Weigle"
   given-names: "Michele"
-  orcid: "0000-0002-2787-7166"
+  orcid: "https://orcid.org/0000-0002-2787-7166"
 title: "The Off Topic Memento Toolkit (OTMT)"
 version: 1.0.4
 date-released: 2020-07-21
