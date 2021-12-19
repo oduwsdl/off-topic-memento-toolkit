@@ -178,24 +178,31 @@ class CollectionModel:
                 self.working_directory, filename_digest)) as jsonin:
 
                 tmdata = json.load(jsonin)
+                mementolist = None # so it fails if something goes wrong
 
                 try:
-                    mdt = tmdata['mementos']['first']['datetime']
+                    mementolist = copy.deepcopy(tmdata['mementos']['list'])
                 except KeyError:
-                    logger.exception("failed to read TimeMap for URI-T {}, skipping...".format(urit))
-                    continue
-                
-                tmdata['mementos']['first']['datetime'] = datetime.strptime(
-                    mdt, "%Y-%m-%dT%H:%M:%S"
-                )
+                    logger.exception("failed to acquire a list of mementos from TimeMap for URI-T {}, skipping...".format(urit))
 
-                mdt = tmdata['mementos']['last']['datetime']
+                mementos_to_sort = []
 
-                tmdata['mementos']['last']['datetime'] = datetime.strptime(
-                    mdt, "%Y-%m-%dT%H:%M:%S"
-                )
+                for memento in mementolist:
+                    mdt = datetime.strptime(
+                        memento['datetime'],
+                        '%Y-%m-%dT%H:%M:%S'
+                    )
+                    urim = memento['uri']
+                    mementos_to_sort.append((mdt, urim))
 
-                mementolist = copy.deepcopy(tmdata['mementos']['list'])
+                sorted_mementos = sorted(mementos_to_sort)
+
+                tmdata['mementos'].setdefault('first', {})
+                tmdata['mementos'].setdefault('last', {})
+                tmdata['mementos']['first'].setdefault('datetime', sorted_mementos[0][0])
+                tmdata['mementos']['first'].setdefault('uri', sorted_mementos[0][1])
+                tmdata['mementos']['last'].setdefault('datetime', sorted_mementos[-1][0])
+                tmdata['mementos']['last'].setdefault('uri', sorted_mementos[-1][1])
 
                 tmdata['mementos']['list'] = []
 
